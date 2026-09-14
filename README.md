@@ -1,8 +1,10 @@
 # Trener 2
 
+**Idea by Edwin**
+
 Osobna aplikacja treningowa Android rozwijana w repozytorium `edwinkarolczyk/Trener-`.
 
-## Stan 0.4.0
+## Stan 0.4.1
 
 - tryb solo i trening dla 2 osób na jednym telefonie,
 - START / PAUZA / WZNÓW / STOP,
@@ -17,8 +19,10 @@ Osobna aplikacja treningowa Android rozwijana w repozytorium `edwinkarolczyk/Tre
 - przypomnienia treningowe Android z wyborem dni i godziny,
 - eksport / import historii i ustawień do JSON,
 - wspólna sesja dwóch telefonów po lokalnym Wi-Fi / hotspocie,
-- gospodarz tworzy sesję i otrzymuje 6-cyfrowy kod,
-- partner dołącza po IP gospodarza i kodzie,
+- gospodarz tworzy sesję i otrzymuje kod QR oraz 6-cyfrowy kod zapasowy,
+- drugi użytkownik jest w interfejsie nazwany `Kumpel z siłowni`,
+- Kumpel z siłowni może dołączyć przez zeskanowanie QR bez przepisywania IP i kodu,
+- ręczne IP + kod pozostają jako awaryjna metoda połączenia,
 - oba telefony widzą postęp obu osób na żywo,
 - każdy telefon prowadzi własne ciężary, serie, przerwy i progresję,
 - historia wspólnego treningu zapisuje, który użytkownik był właścicielem danego telefonu,
@@ -28,9 +32,12 @@ Osobna aplikacja treningowa Android rozwijana w repozytorium `edwinkarolczyk/Tre
 
 1. Oba telefony muszą być w tej samej sieci Wi-Fi albo jeden może udostępnić hotspot.
 2. Na telefonie gospodarza: `Ustawienia -> Dwa telefony -> Utwórz sesję`.
-3. Na drugim telefonie wpisz IP gospodarza i 6-cyfrowy kod, następnie wybierz `Dołącz`.
-4. Gospodarz wybiera plan i uruchamia trening. Partner otrzymuje ten sam plan automatycznie.
-5. Każdy wpisuje swoje serie na swoim telefonie.
+3. Gospodarz pokazuje wygenerowany kod QR.
+4. Na telefonie `Kumpel z siłowni` wybierz `Zeskanuj QR` i zeskanuj kod gospodarza.
+5. Aplikacja sama uzupełni IP i kod oraz rozpocznie łączenie.
+6. Jeśli QR nie zadziała, nadal można wpisać IP gospodarza i 6-cyfrowy kod ręcznie.
+7. Gospodarz wybiera plan i uruchamia trening. Kumpel z siłowni otrzymuje ten sam plan automatycznie.
+8. Każdy wpisuje swoje serie na swoim telefonie.
 
 Połączenie działa wyłącznie w sieci lokalnej i nie wymaga Internetu. Sesja jest chroniona kodem, ale transport nie jest szyfrowany, dlatego funkcja jest przeznaczona do zaufanej sieci domowej / prywatnego hotspotu.
 
