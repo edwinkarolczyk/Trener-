@@ -5,18 +5,29 @@ import android.app.Activity;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
+import android.util.Base64;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.MultiFormatWriter;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.integration.android.IntentIntegrator;
+import com.google.zxing.integration.android.IntentResult;
+
 import org.json.JSONObject;
+
+import java.io.ByteArrayOutputStream;
 
 public class MainActivity extends Activity {
     private static final int NOTIFICATION_PERMISSION_REQUEST = 101;
@@ -33,7 +44,18 @@ public class MainActivity extends Activity {
 
         webView = new WebView(this);
         webView.setBackgroundColor(Color.rgb(9, 9, 9));
-        webView.setWebViewClient(new WebViewClient());
+        webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                view.evaluateJavascript(
+                        "(function(){if(document.getElementById('trener-qr-addon'))return;"
+                                + "var s=document.createElement('script');s.id='trener-qr-addon';"
+                                + "s.src='qr-addon.js';document.body.appendChild(s);})();",
+                        null
+                );
+            }
+        });
 
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
@@ -91,6 +113,23 @@ public class MainActivity extends Activity {
         final String js = "window.TrenerWifi&&window.TrenerWifi.nativeMessage("
                 + JSONObject.quote(message == null ? "" : message) + ");";
         runOnUiThread(() -> webView.evaluateJavascript(js, null));
+    }
+
+    private void emitQrScan(String payload) {
+        if (webView == null) return;
+        final String js = "window.TrenerQr&&window.TrenerQr.nativeScan("
+                + JSONObject.quote(payload == null ? "" : payload) + ");";
+        runOnUiThread(() -> webView.evaluateJavascript(js, null));
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        IntentResult result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
+        if (result != null) {
+            if (result.getContents() != null) emitQrScan(result.getContents());
+            return;
+        }
+        super.onActivityResult(requestCode, resultCode, data);
     }
 
     @Override
@@ -174,6 +213,41 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public boolean wifiHosting() {
             return localSession != null && localSession.isHosting();
+        }
+
+        @JavascriptInterface
+        public String wifiQr(String payload) {
+            if (payload == null || payload.length() > 512) return "";
+            try {
+                final int size = 320;
+                BitMatrix matrix = new MultiFormatWriter().encode(payload, BarcodeFormat.QR_CODE, size, size);
+                Bitmap bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+                int[] pixels = new int[size * size];
+                for (int y = 0; y < size; y++) {
+                    int offset = y * size;
+                    for (int x = 0; x < size; x++) {
+                        pixels[offset + x] = matrix.get(x, y) ? Color.BLACK : Color.WHITE;
+                    }
+                }
+                bitmap.setPixels(pixels, 0, size, 0, 0, size, size);
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
+                return "data:image/png;base64," + Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP);
+            } catch (Exception e) {
+                return "";
+            }
+        }
+
+        @JavascriptInterface
+        public void scanWifiQr() {
+            runOnUiThread(() -> {
+                IntentIntegrator integrator = new IntentIntegrator(MainActivity.this);
+                integrator.setDesiredBarcodeFormats(IntentIntegrator.QR_CODE);
+                integrator.setPrompt("Zeskanuj kod QR kumpla z siłowni");
+                integrator.setBeepEnabled(false);
+                integrator.setOrientationLocked(true);
+                integrator.initiateScan();
+            });
         }
     }
 }
