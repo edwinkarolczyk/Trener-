@@ -1,0 +1,3 @@
+# Trener
+
+Aplikacja treningowa Android.
