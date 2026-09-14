@@ -1,5 +1,11 @@
 # Zmiany
 
+## 0.4.2
+- nowe logo Trener 2 z czerwono-czarnym hantlem i motywem krwi,
+- logo ustawione jako ikona aplikacji Android,
+- to samo logo użyte na ekranie startowym podczas uruchamiania,
+- zachowany branding `Trener 2 — Idea by Edwin`.
+
 ## 0.4.1
 - branding `Trener 2 — Idea by Edwin`,
 - drugi użytkownik nazwany `Kumpel z siłowni`,
