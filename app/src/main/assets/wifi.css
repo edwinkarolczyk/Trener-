@@ -1,0 +1,89 @@
+.connectionStatus{
+  margin:12px 0;
+  padding:12px 14px;
+  border:1px solid #3a3a3a;
+  border-radius:13px;
+  background:#101010;
+  color:#cfcfcf;
+  font-weight:850;
+}
+.connectionStatus.ok{border-color:#256b48;background:#10251a;color:#73efad}
+.connectionStatus.bad{border-color:#7d2a31;background:#2d1114;color:#ff8f98}
+.wifiMeta{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:8px;
+  margin:10px 0 12px;
+}
+.wifiMeta>div{
+  background:#101010;
+  border:1px solid #2f2f2f;
+  border-radius:13px;
+  padding:11px;
+  min-width:0;
+}
+.wifiMeta span{
+  display:block;
+  color:#8d8d8d;
+  font-size:10px;
+  margin-bottom:4px;
+}
+.wifiMeta b{
+  display:block;
+  font-size:13px;
+  overflow-wrap:anywhere;
+}
+.wifiSplit{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+.wifiPane{
+  background:#101010;
+  border:1px solid #303030;
+  border-radius:15px;
+  padding:13px;
+}
+.wifiPane h3{margin:0 0 4px}
+.wifiPane button{width:100%;margin-top:10px}
+.wifiDisconnect{width:100%;margin-top:10px}
+.wifiNote{margin-bottom:0}
+.wifiLive{
+  margin-top:12px;
+  background:#101010;
+  border:1px solid #355345;
+  border-radius:15px;
+  padding:12px;
+}
+.wifiLiveHead{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  color:#82efb5;
+  font-size:11px;
+}
+.wifiLiveHead span{color:#aaa}
+.liveGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-top:8px;
+}
+.livePerson{
+  background:#171717;
+  border:1px solid #303030;
+  border-radius:12px;
+  padding:10px;
+}
+.livePerson strong{display:block;font-size:13px}
+.livePerson span{display:block;color:#aaa;font-size:11px;margin-top:3px}
+.livePerson.done{border-color:#256b48;background:#10251a}
+.livePerson.done strong{color:#73efad}
+button:disabled{opacity:.48;cursor:not-allowed}
+@media(max-width:700px){
+  .wifiMeta{grid-template-columns:1fr 1fr}
+  .wifiMeta>div:first-child{grid-column:1/-1}
+  .wifiSplit{grid-template-columns:1fr}
+  .liveGrid{grid-template-columns:1fr 1fr}
+}
