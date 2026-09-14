@@ -16,9 +16,13 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
+import org.json.JSONObject;
+
 public class MainActivity extends Activity {
     private static final int NOTIFICATION_PERMISSION_REQUEST = 101;
+
     private WebView webView;
+    private LocalSessionManager localSession;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,11 +34,25 @@ public class MainActivity extends Activity {
         webView = new WebView(this);
         webView.setBackgroundColor(Color.rgb(9, 9, 9));
         webView.setWebViewClient(new WebViewClient());
+
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setAllowFileAccess(true);
         settings.setDefaultTextEncodingName("UTF-8");
+
+        localSession = new LocalSessionManager(new LocalSessionManager.Listener() {
+            @Override
+            public void onStatus(String status, String detail) {
+                emitWifiStatus(status, detail);
+            }
+
+            @Override
+            public void onMessage(String message) {
+                emitWifiMessage(message);
+            }
+        });
+
         webView.addJavascriptInterface(new AndroidBridge(this), "Android");
         webView.loadUrl("file:///android_asset/index.html");
         setContentView(webView);
@@ -58,6 +76,28 @@ public class MainActivity extends Activity {
                 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, NOTIFICATION_PERMISSION_REQUEST);
         }
+    }
+
+    private void emitWifiStatus(String status, String detail) {
+        if (webView == null) return;
+        final String js = "window.TrenerWifi&&window.TrenerWifi.nativeStatus("
+                + JSONObject.quote(status == null ? "" : status) + ","
+                + JSONObject.quote(detail == null ? "" : detail) + ");";
+        runOnUiThread(() -> webView.evaluateJavascript(js, null));
+    }
+
+    private void emitWifiMessage(String message) {
+        if (webView == null) return;
+        final String js = "window.TrenerWifi&&window.TrenerWifi.nativeMessage("
+                + JSONObject.quote(message == null ? "" : message) + ");";
+        runOnUiThread(() -> webView.evaluateJavascript(js, null));
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (localSession != null) localSession.disconnect();
+        if (webView != null) webView.destroy();
+        super.onDestroy();
     }
 
     @Override
@@ -99,6 +139,41 @@ public class MainActivity extends Activity {
             } else {
                 vibrator.vibrate(duration);
             }
+        }
+
+        @JavascriptInterface
+        public void wifiHost(String code) {
+            if (localSession != null) localSession.host(code);
+        }
+
+        @JavascriptInterface
+        public void wifiJoin(String hostIp, String code) {
+            if (localSession != null) localSession.join(hostIp, code);
+        }
+
+        @JavascriptInterface
+        public boolean wifiSend(String payload) {
+            return localSession != null && localSession.send(payload);
+        }
+
+        @JavascriptInterface
+        public void wifiDisconnect() {
+            if (localSession != null) localSession.disconnect();
+        }
+
+        @JavascriptInterface
+        public String wifiLocalIp() {
+            return localSession == null ? "—" : localSession.getLocalIp();
+        }
+
+        @JavascriptInterface
+        public boolean wifiConnected() {
+            return localSession != null && localSession.isConnected();
+        }
+
+        @JavascriptInterface
+        public boolean wifiHosting() {
+            return localSession != null && localSession.isHosting();
         }
     }
 }
