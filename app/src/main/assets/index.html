@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#090909">
+<title>Trener 2</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <header class="appHeader">
+    <div>
+      <h1>TRENER <b>2</b></h1>
+      <p>Trening prowadzony jak przez trenera</p>
+    </div>
+    <div id="clock" class="clock">00:00</div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="start">Start</button>
+    <button class="tab" data-tab="plan">Plan</button>
+    <button class="tab" data-tab="history">Historia</button>
+    <button class="tab" data-tab="progress">Postępy</button>
+    <button class="tab" data-tab="diet">Dieta</button>
+    <button class="tab" data-tab="settings">Ustawienia</button>
+  </nav>
+
+  <main>
+    <section id="start" class="screen show">
+      <div id="setup" class="card heroCard">
+        <div class="eyebrow">DZISIEJSZY TRENING</div>
+        <h2>Ustaw sesję</h2>
+
+        <div class="modeRow">
+          <button id="soloBtn" class="mode active">1 osoba</button>
+          <button id="duoBtn" class="mode">2 osoby</button>
+        </div>
+
+        <label>Osoba 1</label>
+        <input id="nameA" value="Edwin">
+
+        <div id="partnerWrap" class="hidden">
+          <label>Osoba 2</label>
+          <input id="nameB" value="Partner">
+        </div>
+
+        <label>Trening</label>
+        <select id="planSelect">
+          <option value="mon">Poniedziałek — klatka + triceps</option>
+          <option value="wed">Środa — plecy + biceps</option>
+          <option value="fri">Piątek — barki + nogi + brzuch</option>
+          <option value="biceps">Dodatkowo — biceps</option>
+          <option id="customOption" value="custom" disabled>Mój trening mieszany — brak</option>
+        </select>
+
+        <div class="twoCols">
+          <div>
+            <label>Najmniejszy skok ciężaru [kg]</label>
+            <input id="stepKg" type="number" step="0.5" value="2.5">
+          </div>
+          <div>
+            <label>Cel</label>
+            <div class="readonly">Siła + masa</div>
+          </div>
+        </div>
+
+        <button id="startBtn" class="primary bigBtn">START TRENINGU</button>
+        <p class="hint">Solo: po serii pełna przerwa. W duecie aplikacja przełącza ćwiczącego i pilnuje odpoczynku obu osób.</p>
+      </div>
+
+      <section id="training" class="card trainingCard hidden">
+        <div class="topline">
+          <span id="stateBadge" class="badge green">TRENING</span>
+          <span id="planTitle" class="small"></span>
+        </div>
+        <div id="athlete" class="athlete">Edwin</div>
+        <h2 id="exercise">Ćwiczenie</h2>
+        <div id="series" class="series">Seria 1/4</div>
+        <div id="target" class="target">Cel: 8–10 powtórzeń</div>
+        <div id="technique" class="technique"></div>
+
+        <div class="inputs">
+          <div><label>Ciężar [kg]</label><input id="weight" type="number" step="0.5" placeholder="kg"></div>
+          <div><label id="repsLabel">Powtórzenia</label><input id="reps" type="number" placeholder="powt."></div>
+        </div>
+        <button id="saveSetBtn" class="success bigBtn">ZAPISZ SERIĘ</button>
+
+        <div id="restBox" class="restBox">
+          <div class="small">PRZERWA</div>
+          <div id="restTime" class="restTime">GOTOWY</div>
+          <button id="skipRestBtn" class="secondary hidden">POMIŃ PRZERWĘ</button>
+        </div>
+
+        <div id="coach" class="coach">Trener: zostaw 1–2 powtórzenia w zapasie i pilnuj techniki.</div>
+
+        <div class="controls">
+          <button id="pauseBtn" class="secondary">PAUZA</button>
+          <button id="stopBtn" class="danger">STOP</button>
+        </div>
+      </section>
+
+      <div class="grid2 compactTop">
+        <div class="miniCard"><span>Plan</span><b>PON / ŚR / PT</b></div>
+        <div class="miniCard"><span>Sprzęt</span><b>2 gryfy • 2 ławki</b></div>
+      </div>
+    </section>
+
+    <section id="plan" class="screen">
+      <div class="card">
+        <div class="eyebrow">PLAN TYGODNIA</div>
+        <h2>Poniedziałek / Środa / Piątek</h2>
+        <div class="dayCard"><b>PON</b><div><strong>Klatka + triceps</strong><span>Wyciskanie płasko, skos, wąsko, pompki</span></div></div>
+        <div class="dayCard"><b>ŚR</b><div><strong>Plecy + biceps</strong><span>Wiosłowania, uginania</span></div></div>
+        <div class="dayCard"><b>PT</b><div><strong>Barki + nogi + brzuch</strong><span>Żołnierskie, przysiady, wykroki, plank</span></div></div>
+      </div>
+
+      <div class="card">
+        <div class="eyebrow">TRENING MIESZANY</div>
+        <h2>Zbuduj własny trening</h2>
+        <p class="hint">Zaznacz ćwiczenia, które chcesz zrobić. Zapisany zestaw pojawi się na ekranie Start.</p>
+        <label>Nazwa</label>
+        <input id="customName" value="Mój trening mieszany">
+        <div id="exerciseBuilder" class="exerciseBuilder"></div>
+        <button id="saveCustomBtn" class="primary">ZAPISZ TRENING MIESZANY</button>
+      </div>
+    </section>
+
+    <section id="history" class="screen">
+      <div class="card">
+        <div class="eyebrow">HISTORIA</div>
+        <h2>Wykonane treningi</h2>
+        <div id="historyContent" class="hint">Brak zapisanych treningów.</div>
+      </div>
+    </section>
+
+    <section id="progress" class="screen">
+      <div class="card">
+        <div class="eyebrow">POSTĘPY</div>
+        <h2>Masa i siła</h2>
+        <div class="twoCols">
+          <div><label>Masa ciała [kg]</label><input id="bodyWeight" type="number" step="0.1" placeholder="np. 70.0"></div>
+          <div class="alignEnd"><button id="saveWeightBtn" class="primary">ZAPISZ WAGĘ</button></div>
+        </div>
+        <div class="statsGrid">
+          <div class="stat"><span>Aktualna masa</span><b id="currentWeight">—</b></div>
+          <div class="stat"><span>Treningi</span><b id="trainingCount">0</b></div>
+          <div class="stat"><span>Serie</span><b id="setCount">0</b></div>
+          <div class="stat"><span>Objętość</span><b id="totalVolume">0</b></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Rekordy ćwiczeń</h2>
+        <div id="recordsContent" class="hint">Po pierwszych treningach pojawią się tu najlepsze ciężary.</div>
+      </div>
+
+      <div class="card">
+        <h2>Zdjęcia sylwetki</h2>
+        <p class="hint">Zdjęcia są zapisywane lokalnie w aplikacji na tym telefonie. Nie trafiają na GitHub ani do chmury.</p>
+        <label class="fileBtn">DODAJ ZDJĘCIE<input id="progressPhoto" type="file" accept="image/*" hidden></label>
+        <div id="photoGallery" class="photoGallery"></div>
+      </div>
+    </section>
+
+    <section id="diet" class="screen">
+      <div class="card dietHero">
+        <span class="statusSoon">PROJEKT UI — LICZENIE WYŁĄCZONE</span>
+        <h2>Dieta</h2>
+        <p class="hint">Na razie tylko widok. Liczenie kalorii i makro wdrożymy później, bez mieszania tego z obecnym treningiem.</p>
+        <div class="macroGrid">
+          <div><span>Kalorie</span><b>— kcal</b></div>
+          <div><span>Białko</span><b>— g</b></div>
+          <div><span>Węglowodany</span><b>— g</b></div>
+          <div><span>Tłuszcze</span><b>— g</b></div>
+        </div>
+        <button class="secondary disabledBtn" disabled>DODAJ POSIŁEK — WKRÓTCE</button>
+      </div>
+      <div class="card placeholder"><h3>Dzisiejsze posiłki</h3><p>Brak danych — moduł celowo nie liczy jeszcze kalorii.</p></div>
+      <div class="card placeholder"><h3>Lista zakupów</h3><p>Tu później dodamy tygodniowe zakupy pod Biedronkę / Lidl.</p></div>
+    </section>
+
+    <section id="settings" class="screen">
+      <div class="card">
+        <div class="eyebrow">POWIADOMIENIA</div>
+        <h2>Przypomnienia o treningu</h2>
+        <label class="switchRow"><input id="reminderEnabled" type="checkbox"><span>Włącz przypomnienia</span></label>
+        <div class="weekdayRow">
+          <label><input class="dayCheck" type="checkbox" value="2" checked><span>Pon</span></label>
+          <label><input class="dayCheck" type="checkbox" value="4" checked><span>Śr</span></label>
+          <label><input class="dayCheck" type="checkbox" value="6" checked><span>Pt</span></label>
+          <label><input class="dayCheck" type="checkbox" value="7"><span>Sob</span></label>
+          <label><input class="dayCheck" type="checkbox" value="1"><span>Nd</span></label>
+        </div>
+        <label>Godzina przypomnienia</label>
+        <input id="reminderTime" type="time" value="18:00">
+        <button id="saveReminderBtn" class="primary">ZAPISZ POWIADOMIENIA</button>
+        <p id="reminderStatus" class="hint">Powiadomienia są wyłączone.</p>
+      </div>
+
+      <div class="card">
+        <div class="eyebrow">DWA TELEFONY</div>
+        <h2>Połączenie z partnerem</h2>
+        <p class="hint">Historia i trening na żywo przez Wi‑Fi będą kolejnym etapem. Obecna wersja nie udaje synchronizacji — dane są lokalne.</p>
+        <button class="secondary disabledBtn" disabled>POŁĄCZ PARTNERA — WKRÓTCE</button>
+      </div>
+
+      <div class="card">
+        <div class="eyebrow">DANE</div>
+        <h2>Kopia treningów</h2>
+        <div class="controls">
+          <button id="exportBtn" class="secondary">EKSPORT JSON</button>
+          <label class="secondary fileBtn inlineFile">IMPORT JSON<input id="importFile" type="file" accept="application/json" hidden></label>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="toast" class="toast"></div>
+<script src="app.js"></script>
+</body>
+</html>
