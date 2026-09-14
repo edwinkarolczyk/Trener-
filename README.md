@@ -4,8 +4,9 @@
 
 Osobna aplikacja treningowa Android rozwijana w repozytorium `edwinkarolczyk/Trener-`.
 
-## Stan 0.4.1
+## Stan 0.4.2
 
+- nowe czerwono-czarne logo z hantlem jako ikona aplikacji i ekran uruchamiania,
 - tryb solo i trening dla 2 osób na jednym telefonie,
 - START / PAUZA / WZNÓW / STOP,
 - automatyczne przerwy zależne od ćwiczenia,
