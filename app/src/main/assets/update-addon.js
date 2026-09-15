@@ -152,11 +152,19 @@
     }
   }
 
+  function loadV050Addon(){
+    if(document.getElementById('trener-v050-addon'))return;
+    const script=document.createElement('script');
+    script.id='trener-v050-addon';script.src='v050-addon.js';document.body.appendChild(script);
+  }
+
   function loadProgressionAddon(){
-    if(document.getElementById('trener-progression-addon'))return;
+    if(document.getElementById('trener-progression-addon')){loadV050Addon();return;}
     const script=document.createElement('script');
     script.id='trener-progression-addon';
     script.src='progression-addon.js';
+    script.onload=loadV050Addon;
+    script.onerror=loadV050Addon;
     document.body.appendChild(script);
   }
 
