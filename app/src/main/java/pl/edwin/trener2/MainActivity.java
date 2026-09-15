@@ -209,6 +209,14 @@ public class MainActivity extends Activity {
         }
     }
 
+    private String appVersionName() {
+        try {
+            return getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
+        } catch (PackageManager.NameNotFoundException e) {
+            return "0.0.0";
+        }
+    }
+
     private void emitWifiStatus(String status, String detail) {
         if (webView == null) return;
         final String js = "window.TrenerWifi&&window.TrenerWifi.nativeStatus("
@@ -352,7 +360,7 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public String getAppVersion() {
-            return BuildConfig.VERSION_NAME;
+            return appVersionName();
         }
 
         @JavascriptInterface
