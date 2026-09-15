@@ -22,14 +22,15 @@ public final class ReminderScheduler {
     public static void saveAndSchedule(Context context, String daysCsv, int hour, int minute) {
         hour = Math.max(0, Math.min(hour, 23));
         minute = Math.max(0, Math.min(minute, 59));
+        String days = daysCsv == null ? "" : daysCsv;
         SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         prefs.edit()
                 .putBoolean(KEY_ENABLED, true)
-                .putString(KEY_DAYS, daysCsv == null ? "" : daysCsv)
+                .putString(KEY_DAYS, days)
                 .putInt(KEY_HOUR, hour)
                 .putInt(KEY_MINUTE, minute)
                 .apply();
-        scheduleInternal(context, daysCsv, hour, minute);
+        scheduleInternal(context, days, hour, minute);
     }
 
     public static void disable(Context context) {
@@ -43,7 +44,7 @@ public final class ReminderScheduler {
         if (!prefs.getBoolean(KEY_ENABLED, false)) return;
         scheduleInternal(
                 context,
-                prefs.getString(KEY_DAYS, "2,4,6"),
+                prefs.getString(KEY_DAYS, ""),
                 prefs.getInt(KEY_HOUR, 18),
                 prefs.getInt(KEY_MINUTE, 0)
         );
@@ -52,7 +53,7 @@ public final class ReminderScheduler {
     public static String getConfigJson(Context context) {
         SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         boolean enabled = prefs.getBoolean(KEY_ENABLED, false);
-        String days = prefs.getString(KEY_DAYS, "2,4,6");
+        String days = prefs.getString(KEY_DAYS, "");
         int hour = prefs.getInt(KEY_HOUR, 18);
         int minute = prefs.getInt(KEY_MINUTE, 0);
         return "{\"enabled\":" + enabled + ",\"days\":\"" + days + "\",\"hour\":" + hour + ",\"minute\":" + minute + "}";
@@ -61,6 +62,8 @@ public final class ReminderScheduler {
     private static void scheduleInternal(Context context, String daysCsv, int hour, int minute) {
         cancelAll(context);
         Set<Integer> days = parseDays(daysCsv);
+        if (days.isEmpty()) return;
+
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         if (alarmManager == null) return;
 
@@ -111,18 +114,12 @@ public final class ReminderScheduler {
 
     private static Set<Integer> parseDays(String csv) {
         Set<Integer> result = new HashSet<>();
-        if (csv != null) {
-            for (String part : csv.split(",")) {
-                try {
-                    int day = Integer.parseInt(part.trim());
-                    if (day >= Calendar.SUNDAY && day <= Calendar.SATURDAY) result.add(day);
-                } catch (NumberFormatException ignored) {}
-            }
-        }
-        if (result.isEmpty()) {
-            result.add(Calendar.MONDAY);
-            result.add(Calendar.WEDNESDAY);
-            result.add(Calendar.FRIDAY);
+        if (csv == null || csv.trim().isEmpty()) return result;
+        for (String part : csv.split(",")) {
+            try {
+                int day = Integer.parseInt(part.trim());
+                if (day >= Calendar.SUNDAY && day <= Calendar.SATURDAY) result.add(day);
+            } catch (NumberFormatException ignored) {}
         }
         return result;
     }

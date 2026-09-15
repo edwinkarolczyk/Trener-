@@ -47,10 +47,10 @@
 
         <label>Trening</label>
         <select id="planSelect">
-          <option value="mon">Poniedziałek — klatka + triceps</option>
-          <option value="wed">Środa — plecy + biceps</option>
-          <option value="fri">Piątek — barki + nogi + brzuch</option>
-          <option value="biceps">Dodatkowo — biceps</option>
+          <option value="mon">Trening A — klatka + triceps</option>
+          <option value="wed">Trening B — plecy + biceps</option>
+          <option value="fri">Trening C — barki + nogi + brzuch</option>
+          <option value="biceps">Trening dodatkowy — biceps</option>
           <option id="customOption" value="custom" disabled>Mój trening mieszany — brak</option>
         </select>
 
@@ -101,18 +101,19 @@
       </section>
 
       <div class="grid2 compactTop">
-        <div class="miniCard"><span>Plan</span><b>PON / ŚR / PT</b></div>
+        <div class="miniCard"><span>Plan</span><b>DOWOLNE DNI</b></div>
         <div class="miniCard"><span>Sprzęt</span><b>2 gryfy • 2 ławki</b></div>
       </div>
     </section>
 
     <section id="plan" class="screen">
       <div class="card">
-        <div class="eyebrow">PLAN TYGODNIA</div>
-        <h2>Poniedziałek / Środa / Piątek</h2>
-        <div class="dayCard"><b>PON</b><div><strong>Klatka + triceps</strong><span>Wyciskanie płasko, skos, wąsko, pompki</span></div></div>
-        <div class="dayCard"><b>ŚR</b><div><strong>Plecy + biceps</strong><span>Wiosłowania, uginania</span></div></div>
-        <div class="dayCard"><b>PT</b><div><strong>Barki + nogi + brzuch</strong><span>Żołnierskie, przysiady, wykroki, plank</span></div></div>
+        <div class="eyebrow">PLANY BAZOWE</div>
+        <h2>Trening A / B / C</h2>
+        <p class="hint">To gotowe zestawy, a nie przypisane dni. W sekcji „Twój tydzień” sam wybierasz, kiedy wykonujesz każdy trening.</p>
+        <div class="dayCard"><b>A</b><div><strong>Klatka + triceps</strong><span>Wyciskanie płasko, skos, wąsko, pompki</span></div></div>
+        <div class="dayCard"><b>B</b><div><strong>Plecy + biceps</strong><span>Wiosłowania, uginania</span></div></div>
+        <div class="dayCard"><b>C</b><div><strong>Barki + nogi + brzuch</strong><span>Żołnierskie, przysiady, wykroki, plank</span></div></div>
       </div>
 
       <div class="card">
@@ -186,16 +187,18 @@
         <h2>Przypomnienia o treningu</h2>
         <label class="switchRow"><input id="reminderEnabled" type="checkbox"><span>Włącz przypomnienia</span></label>
         <div class="weekdayRow">
-          <label><input class="dayCheck" type="checkbox" value="2" checked><span>Pon</span></label>
-          <label><input class="dayCheck" type="checkbox" value="4" checked><span>Śr</span></label>
-          <label><input class="dayCheck" type="checkbox" value="6" checked><span>Pt</span></label>
+          <label><input class="dayCheck" type="checkbox" value="2"><span>Pon</span></label>
+          <label><input class="dayCheck" type="checkbox" value="3"><span>Wt</span></label>
+          <label><input class="dayCheck" type="checkbox" value="4"><span>Śr</span></label>
+          <label><input class="dayCheck" type="checkbox" value="5"><span>Czw</span></label>
+          <label><input class="dayCheck" type="checkbox" value="6"><span>Pt</span></label>
           <label><input class="dayCheck" type="checkbox" value="7"><span>Sob</span></label>
           <label><input class="dayCheck" type="checkbox" value="1"><span>Nd</span></label>
         </div>
         <label>Godzina przypomnienia</label>
         <input id="reminderTime" type="time" value="18:00">
         <button id="saveReminderBtn" class="primary">ZAPISZ POWIADOMIENIA</button>
-        <p id="reminderStatus" class="hint">Powiadomienia są wyłączone.</p>
+        <p id="reminderStatus" class="hint">Powiadomienia są wyłączone. Dni wybierasz sam.</p>
       </div>
 
       <div class="card">
@@ -220,5 +223,6 @@
 <div id="toast" class="toast"></div>
 <script src="app.js"></script>
 <script src="exercise-visuals.js"></script>
+<script src="v054-addon.js"></script>
 </body>
 </html>
