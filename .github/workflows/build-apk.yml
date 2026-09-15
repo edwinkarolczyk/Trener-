@@ -22,6 +22,7 @@ jobs:
           node --check app/src/main/assets/update-addon.js
           node --check app/src/main/assets/qr-addon.js
           node --check app/src/main/assets/progression-addon.js
+          node --check app/src/main/assets/v050-addon.js
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
