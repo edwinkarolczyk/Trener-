@@ -1,16 +1,14 @@
 {
-  "version": "0.5.1",
-  "versionCode": 12,
-  "title": "Trener 2 v0.5.1",
+  "version": "0.5.2",
+  "versionCode": 13,
+  "title": "Trener 2 v0.5.2",
   "notes": [
-    "Stały podpis release do przyszłych aktualizacji bez konfliktu pakietu",
-    "Naprawiony eksport danych przez systemowe okno Zapisz plik",
-    "Naprawiony import danych przez systemowe okno Wybierz plik",
-    "Kopia obejmuje historię, ustawienia, masę ciała, wiele planów własnych i plan tygodnia",
-    "Zdjęcia sylwetki pozostają lokalne i nie są dodawane do kopii JSON",
-    "Funkcje treningowe 0.5.0 pozostają bez zmian",
+    "Ilustracje START i KONIEC RUCHU dla ćwiczeń w bibliotece",
+    "Przycisk JAK WYKONAĆ dostępny bezpośrednio podczas treningu",
+    "Podgląd pokazuje dokładnie wybrane ćwiczenie wraz z ustawieniem, wykonaniem i typowym błędem",
+    "Ilustracje działają lokalnie bez internetu",
     "Pliki APK są publikowane z numerem wersji w nazwie"
   ],
   "pageUrl": "https://github.com/edwinkarolczyk/Trener-/releases/latest",
-  "apkUrl": "https://github.com/edwinkarolczyk/Trener-/releases/download/v0.5.1/Trener2-v0.5.1.apk"
+  "apkUrl": "https://github.com/edwinkarolczyk/Trener-/releases/download/v0.5.2/Trener2-v0.5.2.apk"
 }
