@@ -1,15 +1,13 @@
 {
-  "version": "0.5.3",
-  "versionCode": 14,
-  "title": "Trener 2 v0.5.3",
+  "version": "0.5.6",
+  "versionCode": 17,
+  "title": "Trener 2 v0.5.6",
   "notes": [
-    "Większy panel wspólnego treningu pokazuje na żywo stan obu osób",
-    "Przerwa kolegi ma duży licznik i delikatnie migający kafel",
-    "Widać aktualne ćwiczenie, serię, postęp i ostatni wynik kolegi",
-    "Po zakończeniu przerwy status zmienia się na ĆWICZY / GOTOWY",
-    "Status jest synchronizowany między telefonami przez Wi-Fi co około sekundę",
-    "Plik APK zawiera numer wersji w nazwie"
+    "Poprawiony ekran treningu dwóch osób: kto ćwiczy, kto odpoczywa i osobne czasy przerw",
+    "Jasna kolejność: wykonaj serię, wpisz wynik, zapisz serię",
+    "Lepszy podgląd ćwiczeń bezpośrednio podczas treningu",
+    "Rozszerzone grafiki i instrukcje ćwiczeń"
   ],
   "pageUrl": "https://github.com/edwinkarolczyk/Trener-/releases/latest",
-  "apkUrl": "https://github.com/edwinkarolczyk/Trener-/releases/download/v0.5.3/Trener2-v0.5.3.apk"
+  "apkUrl": "https://github.com/edwinkarolczyk/Trener-/releases/download/v0.5.6/Trener2-v0.5.6.apk"
 }
