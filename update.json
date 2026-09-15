@@ -1,11 +1,12 @@
 {
-  "version": "0.4.6",
-  "versionCode": 9,
-  "title": "Trener 2 v0.4.6",
+  "version": "0.4.7",
+  "versionCode": 10,
+  "title": "Trener 2 v0.4.7",
   "notes": [
-    "Automatyczne sprawdzanie aktualizacji przy uruchomieniu",
-    "Migający komunikat o nowej wersji w nagłówku",
-    "Nowa sekcja Ustawienia → Aktualizacje"
+    "Sugestia ciężaru na podstawie ostatniego treningu danego ćwiczenia",
+    "DOŁÓŻ pokazuje konkretny następny ciężar w kg",
+    "ODEJMIJ pokazuje konkretny ciężar po redukcji około 5%, zaokrąglony do ustawionego skoku",
+    "Przy kolejnym treningu sugerowany ciężar jest automatycznie wpisywany w pole kg"
   ],
   "pageUrl": "https://github.com/edwinkarolczyk/Trener-/releases/latest",
   "apkUrl": "https://github.com/edwinkarolczyk/Trener-/releases/latest/download/Trener2.apk"
