@@ -27,6 +27,7 @@ jobs:
           node --check app/src/main/assets/progression-addon.js
           node --check app/src/main/assets/v050-addon.js
           node --check app/src/main/assets/v054-addon.js
+          node --check app/src/main/assets/v055-workout-ui.js
           node --check app/src/main/assets/backup-addon.js
           node --check app/src/main/assets/exercise-visuals.js
           node --check app/src/main/assets/live-status.js
