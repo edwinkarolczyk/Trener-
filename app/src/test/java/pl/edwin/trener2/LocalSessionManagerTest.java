@@ -19,4 +19,19 @@ public class LocalSessionManagerTest {
         assertFalse(LocalSessionManager.isValidCode("1234567"));
         assertFalse(LocalSessionManager.isValidCode("abcdef"));
     }
+
+    @Test
+    public void recognizesWifiAndCellularInterfaces() {
+        assertTrue(LocalSessionManager.isWifiOrHotspotInterface("wlan0"));
+        assertTrue(LocalSessionManager.isWifiOrHotspotInterface("ap0"));
+        assertFalse(LocalSessionManager.isWifiOrHotspotInterface("rmnet_data0"));
+        assertTrue(LocalSessionManager.isCellularInterface("rmnet_data0"));
+    }
+
+    @Test
+    public void detectsClearlyDifferentPrivateNetworks() {
+        assertTrue(LocalSessionManager.definitelyDifferentPrivateNetworks("10.0.89.78", "192.168.0.42"));
+        assertFalse(LocalSessionManager.definitelyDifferentPrivateNetworks("192.168.0.18", "192.168.0.42"));
+        assertFalse(LocalSessionManager.definitelyDifferentPrivateNetworks("172.20.10.3", "172.20.10.1"));
+    }
 }
