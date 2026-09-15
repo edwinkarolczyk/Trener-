@@ -5,9 +5,11 @@ import android.app.Activity;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.VibrationEffect;
@@ -29,10 +31,17 @@ import com.google.zxing.common.BitMatrix;
 
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 
 public class MainActivity extends Activity {
     private static final int NOTIFICATION_PERMISSION_REQUEST = 101;
+    private static final String UPDATE_INFO_URL =
+            "https://raw.githubusercontent.com/edwinkarolczyk/Trener-/main/update.json";
 
     private WebView webView;
     private LocalSessionManager localSession;
@@ -53,9 +62,14 @@ public class MainActivity extends Activity {
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 view.evaluateJavascript(
-                        "(function(){if(document.getElementById('trener-qr-addon'))return;"
+                        "(function(){"
+                                + "if(!document.getElementById('trener-qr-addon')){"
                                 + "var s=document.createElement('script');s.id='trener-qr-addon';"
-                                + "s.src='qr-addon.js';document.body.appendChild(s);})();",
+                                + "s.src='qr-addon.js';document.body.appendChild(s);}"
+                                + "if(!document.getElementById('trener-update-addon')){"
+                                + "var u=document.createElement('script');u.id='trener-update-addon';"
+                                + "u.src='update-addon.js';document.body.appendChild(u);}"
+                                + "})();",
                         null
                 );
             }
@@ -140,6 +154,61 @@ public class MainActivity extends Activity {
         }
     }
 
+    private void checkForUpdateNative() {
+        new Thread(() -> {
+            HttpURLConnection connection = null;
+            try {
+                URL url = new URL(UPDATE_INFO_URL);
+                connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("GET");
+                connection.setConnectTimeout(6000);
+                connection.setReadTimeout(6000);
+                connection.setRequestProperty("Accept", "application/json");
+                connection.setRequestProperty("Cache-Control", "no-cache");
+
+                int code = connection.getResponseCode();
+                if (code != HttpURLConnection.HTTP_OK) {
+                    emitUpdateResult("error", "Serwer aktualizacji zwrócił błąd " + code + ".");
+                    return;
+                }
+
+                StringBuilder body = new StringBuilder();
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+                        connection.getInputStream(), StandardCharsets.UTF_8))) {
+                    String line;
+                    while ((line = reader.readLine()) != null && body.length() < 65536) {
+                        body.append(line);
+                    }
+                }
+                emitUpdateResult("ok", body.toString());
+            } catch (Exception e) {
+                emitUpdateResult("error", "Nie udało się sprawdzić aktualizacji. Sprawdź połączenie z internetem.");
+            } finally {
+                if (connection != null) connection.disconnect();
+            }
+        }, "Trener2-UpdateCheck").start();
+    }
+
+    private void openUpdateUrlNative(String rawUrl) {
+        try {
+            Uri uri = Uri.parse(rawUrl == null ? "" : rawUrl.trim());
+            String host = uri.getHost();
+            String path = uri.getPath();
+            boolean allowed = "https".equalsIgnoreCase(uri.getScheme())
+                    && "github.com".equalsIgnoreCase(host)
+                    && path != null
+                    && path.startsWith("/edwinkarolczyk/Trener-/releases/");
+            if (!allowed) {
+                Toast.makeText(this, "Nieprawidłowy adres aktualizacji.", Toast.LENGTH_LONG).show();
+                return;
+            }
+            Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+            startActivity(intent);
+        } catch (Exception e) {
+            Toast.makeText(this, "Nie udało się otworzyć aktualizacji.", Toast.LENGTH_LONG).show();
+        }
+    }
+
     private void emitWifiStatus(String status, String detail) {
         if (webView == null) return;
         final String js = "window.TrenerWifi&&window.TrenerWifi.nativeStatus("
@@ -158,6 +227,14 @@ public class MainActivity extends Activity {
     private void emitQrScan(String payload) {
         if (webView == null) return;
         final String js = "window.TrenerQr&&window.TrenerQr.nativeScan("
+                + JSONObject.quote(payload == null ? "" : payload) + ");";
+        runOnUiThread(() -> webView.evaluateJavascript(js, null));
+    }
+
+    private void emitUpdateResult(String status, String payload) {
+        if (webView == null) return;
+        final String js = "window.TrenerUpdate&&window.TrenerUpdate.nativeResult("
+                + JSONObject.quote(status == null ? "error" : status) + ","
                 + JSONObject.quote(payload == null ? "" : payload) + ");";
         runOnUiThread(() -> webView.evaluateJavascript(js, null));
     }
@@ -271,6 +348,21 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void scanWifiQr() {
             runOnUiThread(() -> startQrScanner());
+        }
+
+        @JavascriptInterface
+        public String getAppVersion() {
+            return BuildConfig.VERSION_NAME;
+        }
+
+        @JavascriptInterface
+        public void checkForUpdate() {
+            checkForUpdateNative();
+        }
+
+        @JavascriptInterface
+        public void openUpdateUrl(String url) {
+            runOnUiThread(() -> openUpdateUrlNative(url));
         }
     }
 }
