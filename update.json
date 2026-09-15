@@ -8,8 +8,9 @@
     "Naprawiony import danych przez systemowe okno Wybierz plik",
     "Kopia obejmuje historię, ustawienia, masę ciała, wiele planów własnych i plan tygodnia",
     "Zdjęcia sylwetki pozostają lokalne i nie są dodawane do kopii JSON",
-    "Funkcje treningowe 0.5.0 pozostają bez zmian"
+    "Funkcje treningowe 0.5.0 pozostają bez zmian",
+    "Pliki APK są publikowane z numerem wersji w nazwie"
   ],
   "pageUrl": "https://github.com/edwinkarolczyk/Trener-/releases/latest",
-  "apkUrl": "https://github.com/edwinkarolczyk/Trener-/releases/latest/download/Trener2.apk"
+  "apkUrl": "https://github.com/edwinkarolczyk/Trener-/releases/download/v0.5.1/Trener2-v0.5.1.apk"
 }
