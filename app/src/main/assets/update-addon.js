@@ -152,10 +152,19 @@
     }
   }
 
+  function loadProgressionAddon(){
+    if(document.getElementById('trener-progression-addon'))return;
+    const script=document.createElement('script');
+    script.id='trener-progression-addon';
+    script.src='progression-addon.js';
+    document.body.appendChild(script);
+  }
+
   window.TrenerUpdate={nativeResult:renderResult,check:()=>checkForUpdate(true)};
 
   function boot(){
     installUi();
+    loadProgressionAddon();
     const cfg=safeJson(localStorage.getItem(UPDATE_STORAGE),{});
     if(cfg.auto!==false)setTimeout(()=>checkForUpdate(false),900);
   }
