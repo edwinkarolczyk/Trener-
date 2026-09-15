@@ -53,6 +53,11 @@ public final class LocalSessionManager {
             return;
         }
         if (shuttingDown) return;
+        String localIp = getLocalIp();
+        if ("—".equals(localIp)) {
+            emitStatus("error", "Włącz Wi‑Fi albo hotspot. Sesja z Kumplem z siłowni działa tylko w sieci lokalnej.");
+            return;
+        }
         disconnectInternal(false);
         int gen = generation.incrementAndGet();
         hosting = true;
@@ -118,6 +123,16 @@ public final class LocalSessionManager {
             return;
         }
         if (shuttingDown) return;
+
+        String localIp = getLocalIp();
+        if ("—".equals(localIp)) {
+            emitStatus("error", "Połącz ten telefon z tym samym Wi‑Fi co gospodarz albo z jego hotspotem.");
+            return;
+        }
+        if (definitelyDifferentPrivateNetworks(localIp, ip)) {
+            emitStatus("error", "Telefony są w różnych sieciach: ten telefon ma " + localIp + ", a gospodarz " + ip + ". Połącz oba z tym samym Wi‑Fi lub hotspotem.");
+            return;
+        }
 
         disconnectInternal(false);
         int gen = generation.incrementAndGet();
@@ -243,6 +258,27 @@ public final class LocalSessionManager {
         String n = name.toLowerCase(Locale.ROOT);
         return n.startsWith("rmnet") || n.startsWith("ccmni") || n.startsWith("pdp")
                 || n.startsWith("wwan") || n.contains("cell");
+    }
+
+    static boolean definitelyDifferentPrivateNetworks(String localIp, String hostIp) {
+        int localFamily = privateNetworkFamily(localIp);
+        int hostFamily = privateNetworkFamily(hostIp);
+        return localFamily != 0 && hostFamily != 0 && localFamily != hostFamily;
+    }
+
+    static int privateNetworkFamily(String ip) {
+        if (ip == null) return 0;
+        String[] p = ip.trim().split("\\.");
+        if (p.length != 4) return 0;
+        try {
+            int a = Integer.parseInt(p[0]);
+            int b = Integer.parseInt(p[1]);
+            if (a == 10) return 10;
+            if (a == 192 && b == 168) return 192;
+            if (a == 172 && b >= 16 && b <= 31) return 172;
+        } catch (NumberFormatException ignored) {
+        }
+        return 0;
     }
 
     private boolean performHostHandshake(Socket socket, String expectedCode) {
