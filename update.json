@@ -1,15 +1,14 @@
 {
-  "version": "0.5.0",
-  "versionCode": 11,
-  "title": "Trener 2 v0.5.0",
+  "version": "0.5.1",
+  "versionCode": 12,
+  "title": "Trener 2 v0.5.1",
   "notes": [
-    "Większa biblioteka ćwiczeń dopasowana do sztangi, ławki i masy ciała",
-    "Podgląd techniki: ustawienie, wykonanie, wskazówki i typowe błędy",
-    "Możliwość zapisania wielu własnych treningów mieszanych",
-    "Plan tygodnia: dowolny trening przypisany do każdego dnia",
-    "Automatyczna podpowiedź dzisiejszego treningu",
-    "Widoczny numer wersji aplikacji",
-    "Sugestie ciężaru nadal korzystają z historii: dołóż, zostaw lub odejmij w kg"
+    "Stały podpis release do przyszłych aktualizacji bez konfliktu pakietu",
+    "Naprawiony eksport danych przez systemowe okno Zapisz plik",
+    "Naprawiony import danych przez systemowe okno Wybierz plik",
+    "Kopia obejmuje historię, ustawienia, masę ciała, wiele planów własnych i plan tygodnia",
+    "Zdjęcia sylwetki pozostają lokalne i nie są dodawane do kopii JSON",
+    "Funkcje treningowe 0.5.0 pozostają bez zmian"
   ],
   "pageUrl": "https://github.com/edwinkarolczyk/Trener-/releases/latest",
   "apkUrl": "https://github.com/edwinkarolczyk/Trener-/releases/latest/download/Trener2.apk"
