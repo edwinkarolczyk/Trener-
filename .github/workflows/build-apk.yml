@@ -106,21 +106,25 @@ jobs:
           fi
           echo "Signed APK certificate verified: $ACTUAL_SHA256" >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Prepare APK
+      - name: Prepare versioned APK
         if: steps.signing.outputs.ready == 'true'
-        run: cp app/build/outputs/apk/release/app-release.apk Trener2.apk
+        run: |
+          VERSION=$(grep -m1 "versionName" app/build.gradle | sed -E "s/.*versionName[[:space:]]+'([^']+)'.*/\1/")
+          APK_NAME="Trener2-v${VERSION}.apk"
+          cp app/build/outputs/apk/release/app-release.apk "$APK_NAME"
+          echo "APK_NAME=$APK_NAME" >> "$GITHUB_ENV"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
 
       - name: Publish version release
         if: steps.signing.outputs.ready == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          VERSION=$(grep -m1 "versionName" app/build.gradle | sed -E "s/.*versionName[[:space:]]+'([^']+)'.*/\1/")
           TAG="v${VERSION}"
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" Trener2.apk --clobber
+            gh release upload "$TAG" "$APK_NAME" --clobber
           else
-            gh release create "$TAG" Trener2.apk \
+            gh release create "$TAG" "$APK_NAME" \
               --target "$GITHUB_SHA" \
               --title "Trener 2 ${VERSION}" \
               --notes "Signed release build Trener 2 ${VERSION}. Future updates use the same release certificate."
@@ -130,8 +134,8 @@ jobs:
         if: steps.signing.outputs.ready == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: Trener2-APK
-          path: Trener2.apk
+          name: Trener2-v${{ env.VERSION }}-APK
+          path: ${{ env.APK_NAME }}
           if-no-files-found: error
           retention-days: 30
 
