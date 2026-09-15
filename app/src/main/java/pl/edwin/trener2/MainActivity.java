@@ -18,6 +18,7 @@ import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.Toast;
 
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.MultiFormatWriter;
@@ -31,9 +32,11 @@ import java.io.ByteArrayOutputStream;
 
 public class MainActivity extends Activity {
     private static final int NOTIFICATION_PERMISSION_REQUEST = 101;
+    private static final int CAMERA_PERMISSION_REQUEST = 102;
 
     private WebView webView;
     private LocalSessionManager localSession;
+    private boolean pendingQrScan = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -100,6 +103,44 @@ public class MainActivity extends Activity {
         }
     }
 
+    private void requestQrScan() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+                && checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            pendingQrScan = true;
+            requestPermissions(new String[]{Manifest.permission.CAMERA}, CAMERA_PERMISSION_REQUEST);
+            return;
+        }
+        startQrScanner();
+    }
+
+    private void startQrScanner() {
+        pendingQrScan = false;
+        try {
+            IntentIntegrator integrator = new IntentIntegrator(MainActivity.this);
+            integrator.setDesiredBarcodeFormats(IntentIntegrator.QR_CODE);
+            integrator.setPrompt("Zeskanuj kod QR Kumpla z siłowni");
+            integrator.setBeepEnabled(false);
+            integrator.setOrientationLocked(false);
+            integrator.initiateScan();
+        } catch (Exception e) {
+            Toast.makeText(this, "Nie udało się uruchomić aparatu do QR.", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == CAMERA_PERMISSION_REQUEST) {
+            boolean granted = grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED;
+            if (granted && pendingQrScan) {
+                startQrScanner();
+            } else {
+                pendingQrScan = false;
+                Toast.makeText(this, "Aby skanować QR, zezwól Trenerowi 2 na użycie aparatu.", Toast.LENGTH_LONG).show();
+            }
+        }
+    }
+
     private void emitWifiStatus(String status, String detail) {
         if (webView == null) return;
         final String js = "window.TrenerWifi&&window.TrenerWifi.nativeStatus("
@@ -134,7 +175,7 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
-        if (localSession != null) localSession.disconnect();
+        if (localSession != null) localSession.shutdown();
         if (webView != null) webView.destroy();
         super.onDestroy();
     }
@@ -240,14 +281,7 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void scanWifiQr() {
-            runOnUiThread(() -> {
-                IntentIntegrator integrator = new IntentIntegrator(MainActivity.this);
-                integrator.setDesiredBarcodeFormats(IntentIntegrator.QR_CODE);
-                integrator.setPrompt("Zeskanuj kod QR kumpla z siłowni");
-                integrator.setBeepEnabled(false);
-                integrator.setOrientationLocked(true);
-                integrator.initiateScan();
-            });
+            runOnUiThread(() -> requestQrScan());
         }
     }
 }
