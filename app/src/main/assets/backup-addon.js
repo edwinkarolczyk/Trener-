@@ -116,3 +116,11 @@
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});
   else install();
 })();
+
+(function(){
+  if(document.getElementById('trener-live-status'))return;
+  const s=document.createElement('script');
+  s.id='trener-live-status';
+  s.src='live-status.js';
+  document.body.appendChild(s);
+})();
