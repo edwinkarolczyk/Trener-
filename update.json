@@ -1,12 +1,15 @@
 {
-  "version": "0.4.7",
-  "versionCode": 10,
-  "title": "Trener 2 v0.4.7",
+  "version": "0.5.0",
+  "versionCode": 11,
+  "title": "Trener 2 v0.5.0",
   "notes": [
-    "Sugestia ciężaru na podstawie ostatniego treningu danego ćwiczenia",
-    "DOŁÓŻ pokazuje konkretny następny ciężar w kg",
-    "ODEJMIJ pokazuje konkretny ciężar po redukcji około 5%, zaokrąglony do ustawionego skoku",
-    "Przy kolejnym treningu sugerowany ciężar jest automatycznie wpisywany w pole kg"
+    "Większa biblioteka ćwiczeń dopasowana do sztangi, ławki i masy ciała",
+    "Podgląd techniki: ustawienie, wykonanie, wskazówki i typowe błędy",
+    "Możliwość zapisania wielu własnych treningów mieszanych",
+    "Plan tygodnia: dowolny trening przypisany do każdego dnia",
+    "Automatyczna podpowiedź dzisiejszego treningu",
+    "Widoczny numer wersji aplikacji",
+    "Sugestie ciężaru nadal korzystają z historii: dołóż, zostaw lub odejmij w kg"
   ],
   "pageUrl": "https://github.com/edwinkarolczyk/Trener-/releases/latest",
   "apkUrl": "https://github.com/edwinkarolczyk/Trener-/releases/latest/download/Trener2.apk"
