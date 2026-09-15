@@ -1,8 +1,6 @@
 name: Build Trener APK
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -11,7 +9,6 @@ permissions:
 env:
   TR2_EXPECTED_SHA256: 30:68:33:34:5C:88:E2:34:4A:5A:0C:BC:51:F6:01:97:69:31:E7:24:CF:95:67:FE:6B:70:D1:59:86:56:69:CB
 
-# This workflow intentionally blocks release publishing unless all durable signing secrets are present.
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -27,6 +24,7 @@ jobs:
           node --check app/src/main/assets/qr-addon.js
           node --check app/src/main/assets/progression-addon.js
           node --check app/src/main/assets/v050-addon.js
+          node --check app/src/main/assets/backup-addon.js
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
@@ -97,11 +95,14 @@ jobs:
         if: steps.signing.outputs.ready == 'true'
         run: |
           APK=app/build/outputs/apk/release/app-release.apk
-          ACTUAL_SHA256=$(apksigner verify --print-certs "$APK" | awk -F': ' '/Signer #1 certificate SHA-256 digest:/{print toupper($2); exit}' | sed 's/../&:/g;s/:$//' )
+          APKSIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
+          test -x "$APKSIGNER"
+          ACTUAL_SHA256=$("$APKSIGNER" verify --print-certs "$APK" | awk -F': ' '/Signer #1 certificate SHA-256 digest:/{print toupper($2); exit}' | sed 's/../&:/g;s/:$//')
           if [ "$ACTUAL_SHA256" != "$TR2_EXPECTED_SHA256" ]; then
             echo "APK certificate mismatch. Expected $TR2_EXPECTED_SHA256, got $ACTUAL_SHA256" >&2
             exit 1
           fi
+          echo "Signed APK certificate verified: $ACTUAL_SHA256" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Prepare APK
         if: steps.signing.outputs.ready == 'true'
@@ -120,7 +121,7 @@ jobs:
             gh release create "$TAG" Trener2.apk \
               --target "$GITHUB_SHA" \
               --title "Trener 2 ${VERSION}" \
-              --notes "Signed release build Trener 2 ${VERSION}. Future updates must use the same release certificate."
+              --notes "Signed release build Trener 2 ${VERSION}. Future updates use the same release certificate."
           fi
 
       - name: Upload signed APK
