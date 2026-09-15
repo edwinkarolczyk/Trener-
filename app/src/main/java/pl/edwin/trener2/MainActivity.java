@@ -5,7 +5,6 @@ import android.app.Activity;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -20,11 +19,13 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
 
+import com.google.mlkit.vision.barcode.common.Barcode;
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanner;
+import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions;
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanning;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.MultiFormatWriter;
 import com.google.zxing.common.BitMatrix;
-import com.google.zxing.integration.android.IntentIntegrator;
-import com.google.zxing.integration.android.IntentResult;
 
 import org.json.JSONObject;
 
@@ -32,11 +33,10 @@ import java.io.ByteArrayOutputStream;
 
 public class MainActivity extends Activity {
     private static final int NOTIFICATION_PERMISSION_REQUEST = 101;
-    private static final int CAMERA_PERMISSION_REQUEST = 102;
 
     private WebView webView;
     private LocalSessionManager localSession;
-    private boolean pendingQrScan = false;
+    private GmsBarcodeScanner qrScanner;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,6 +44,7 @@ public class MainActivity extends Activity {
         getWindow().setStatusBarColor(Color.rgb(9, 9, 9));
         getWindow().setNavigationBarColor(Color.rgb(9, 9, 9));
         createNotificationChannel();
+        createQrScanner();
 
         webView = new WebView(this);
         webView.setBackgroundColor(Color.rgb(9, 9, 9));
@@ -83,6 +84,42 @@ public class MainActivity extends Activity {
         setContentView(webView);
     }
 
+    private void createQrScanner() {
+        try {
+            GmsBarcodeScannerOptions options = new GmsBarcodeScannerOptions.Builder()
+                    .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
+                    .enableAutoZoom()
+                    .build();
+            qrScanner = GmsBarcodeScanning.getClient(this, options);
+        } catch (Throwable e) {
+            qrScanner = null;
+        }
+    }
+
+    private void startQrScanner() {
+        if (qrScanner == null) {
+            Toast.makeText(this, "Skaner QR nie jest dostępny na tym telefonie.", Toast.LENGTH_LONG).show();
+            return;
+        }
+        qrScanner.startScan()
+                .addOnSuccessListener(barcode -> {
+                    String raw = barcode.getRawValue();
+                    if (raw == null || raw.trim().isEmpty()) {
+                        Toast.makeText(this, "Kod QR jest pusty.", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    emitQrScan(raw);
+                })
+                .addOnCanceledListener(() -> {
+                    // Użytkownik po prostu zamknął skaner.
+                })
+                .addOnFailureListener(e -> Toast.makeText(
+                        this,
+                        "Nie udało się uruchomić skanera QR. Sprawdź Usługi Google Play.",
+                        Toast.LENGTH_LONG
+                ).show());
+    }
+
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationManager manager = getSystemService(NotificationManager.class);
@@ -100,44 +137,6 @@ public class MainActivity extends Activity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
                 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, NOTIFICATION_PERMISSION_REQUEST);
-        }
-    }
-
-    private void requestQrScan() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
-                && checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            pendingQrScan = true;
-            requestPermissions(new String[]{Manifest.permission.CAMERA}, CAMERA_PERMISSION_REQUEST);
-            return;
-        }
-        startQrScanner();
-    }
-
-    private void startQrScanner() {
-        pendingQrScan = false;
-        try {
-            IntentIntegrator integrator = new IntentIntegrator(MainActivity.this);
-            integrator.setDesiredBarcodeFormats(IntentIntegrator.QR_CODE);
-            integrator.setPrompt("Zeskanuj kod QR Kumpla z siłowni");
-            integrator.setBeepEnabled(false);
-            integrator.setOrientationLocked(false);
-            integrator.initiateScan();
-        } catch (Exception e) {
-            Toast.makeText(this, "Nie udało się uruchomić aparatu do QR.", Toast.LENGTH_LONG).show();
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == CAMERA_PERMISSION_REQUEST) {
-            boolean granted = grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED;
-            if (granted && pendingQrScan) {
-                startQrScanner();
-            } else {
-                pendingQrScan = false;
-                Toast.makeText(this, "Aby skanować QR, zezwól Trenerowi 2 na użycie aparatu.", Toast.LENGTH_LONG).show();
-            }
         }
     }
 
@@ -161,16 +160,6 @@ public class MainActivity extends Activity {
         final String js = "window.TrenerQr&&window.TrenerQr.nativeScan("
                 + JSONObject.quote(payload == null ? "" : payload) + ");";
         runOnUiThread(() -> webView.evaluateJavascript(js, null));
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        IntentResult result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
-        if (result != null) {
-            if (result.getContents() != null) emitQrScan(result.getContents());
-            return;
-        }
-        super.onActivityResult(requestCode, resultCode, data);
     }
 
     @Override
@@ -281,7 +270,7 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void scanWifiQr() {
-            runOnUiThread(() -> requestQrScan());
+            runOnUiThread(() -> startQrScanner());
         }
     }
 }
