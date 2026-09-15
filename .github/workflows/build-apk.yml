@@ -8,6 +8,9 @@ on:
 permissions:
   contents: write
 
+env:
+  TR2_EXPECTED_SHA256: 30:68:33:34:5C:88:E2:34:4A:5A:0C:BC:51:F6:01:97:69:31:E7:24:CF:95:67:FE:6B:70:D1:59:86:56:69:CB
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -30,12 +33,6 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Keep one signing key for future updates
-        uses: actions/cache@v4
-        with:
-          path: ~/.android/debug.keystore
-          key: trener2-debug-signing-v1
-
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
         with:
@@ -51,16 +48,66 @@ jobs:
         with:
           gradle-version: '8.9'
 
+      - name: Prepare durable release signing
+        id: signing
+        env:
+          TR2_KEYSTORE_B64: ${{ secrets.TR2_KEYSTORE_B64 }}
+          TR2_STORE_PASSWORD: ${{ secrets.TR2_STORE_PASSWORD }}
+          TR2_KEY_ALIAS: ${{ secrets.TR2_KEY_ALIAS }}
+          TR2_KEY_PASSWORD: ${{ secrets.TR2_KEY_PASSWORD }}
+        run: |
+          if [ -z "$TR2_KEYSTORE_B64" ] || [ -z "$TR2_STORE_PASSWORD" ] || [ -z "$TR2_KEY_ALIAS" ] || [ -z "$TR2_KEY_PASSWORD" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "Release signing secrets are not configured yet; no release will be published." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          SIGN_DIR="$RUNNER_TEMP/trener2-signing"
+          mkdir -p "$SIGN_DIR"
+          KEYSTORE="$SIGN_DIR/trener2-release.jks"
+          printf '%s' "$TR2_KEYSTORE_B64" | base64 --decode > "$KEYSTORE"
+          chmod 600 "$KEYSTORE"
+
+          ACTUAL_SHA256=$(keytool -list -v \
+            -keystore "$KEYSTORE" \
+            -storepass "$TR2_STORE_PASSWORD" \
+            -alias "$TR2_KEY_ALIAS" | awk '/SHA256:/{print $2; exit}')
+
+          if [ "$ACTUAL_SHA256" != "$TR2_EXPECTED_SHA256" ]; then
+            echo "Signing certificate mismatch. Expected $TR2_EXPECTED_SHA256, got $ACTUAL_SHA256" >&2
+            exit 1
+          fi
+
+          echo "TR2_KEYSTORE_PATH=$KEYSTORE" >> "$GITHUB_ENV"
+          echo "TR2_STORE_PASSWORD=$TR2_STORE_PASSWORD" >> "$GITHUB_ENV"
+          echo "TR2_KEY_ALIAS=$TR2_KEY_ALIAS" >> "$GITHUB_ENV"
+          echo "TR2_KEY_PASSWORD=$TR2_KEY_PASSWORD" >> "$GITHUB_ENV"
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+          echo "Release signing certificate verified: $ACTUAL_SHA256" >> "$GITHUB_STEP_SUMMARY"
+
       - name: Unit tests
         run: gradle testDebugUnitTest --stacktrace
 
-      - name: Build debug APK
-        run: gradle assembleDebug --stacktrace
+      - name: Build signed release APK
+        if: steps.signing.outputs.ready == 'true'
+        run: gradle assembleRelease --stacktrace
+
+      - name: Verify APK signing certificate
+        if: steps.signing.outputs.ready == 'true'
+        run: |
+          APK=app/build/outputs/apk/release/app-release.apk
+          ACTUAL_SHA256=$(apksigner verify --print-certs "$APK" | awk -F': ' '/Signer #1 certificate SHA-256 digest:/{print toupper($2); exit}' | sed 's/../&:/g;s/:$//' )
+          if [ "$ACTUAL_SHA256" != "$TR2_EXPECTED_SHA256" ]; then
+            echo "APK certificate mismatch. Expected $TR2_EXPECTED_SHA256, got $ACTUAL_SHA256" >&2
+            exit 1
+          fi
 
       - name: Prepare APK
-        run: cp app/build/outputs/apk/debug/app-debug.apk Trener2.apk
+        if: steps.signing.outputs.ready == 'true'
+        run: cp app/build/outputs/apk/release/app-release.apk Trener2.apk
 
       - name: Publish version release
+        if: steps.signing.outputs.ready == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -72,13 +119,19 @@ jobs:
             gh release create "$TAG" Trener2.apk \
               --target "$GITHUB_SHA" \
               --title "Trener 2 ${VERSION}" \
-              --notes "Automatyczny build Trener 2 ${VERSION}. Aktualizacje aplikacji korzystają z tego wydania."
+              --notes "Signed release build Trener 2 ${VERSION}. Future updates must use the same release certificate."
           fi
 
-      - name: Upload APK
+      - name: Upload signed APK
+        if: steps.signing.outputs.ready == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: Trener2-APK
           path: Trener2.apk
           if-no-files-found: error
           retention-days: 30
+
+      - name: Signing setup pending
+        if: steps.signing.outputs.ready != 'true'
+        run: |
+          echo "Tests passed, but release publishing is intentionally disabled until TR2 signing secrets are configured."
