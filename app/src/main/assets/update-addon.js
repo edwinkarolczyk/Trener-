@@ -2,6 +2,7 @@
   'use strict';
 
   const UPDATE_STORAGE='trainer3.updateSettings';
+  const WEEKLY_SCHEDULE_STORAGE='trainer3.schedule.v050';
   let updateInfo=null;
   let checking=false;
 
@@ -152,6 +153,11 @@
     }
   }
 
+  function ensureNeutralScheduleDefault(){
+    if(localStorage.getItem(WEEKLY_SCHEDULE_STORAGE)!==null)return;
+    localStorage.setItem(WEEKLY_SCHEDULE_STORAGE,JSON.stringify({'0':'','1':'','2':'','3':'','4':'','5':'','6':''}));
+  }
+
   function loadV050Addon(){
     if(document.getElementById('trener-v050-addon'))return;
     const script=document.createElement('script');
@@ -172,6 +178,7 @@
 
   function boot(){
     installUi();
+    ensureNeutralScheduleDefault();
     loadProgressionAddon();
     const cfg=safeJson(localStorage.getItem(UPDATE_STORAGE),{});
     if(cfg.auto!==false)setTimeout(()=>checkForUpdate(false),900);
