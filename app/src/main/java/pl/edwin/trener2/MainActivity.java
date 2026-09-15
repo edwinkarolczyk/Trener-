@@ -33,19 +33,25 @@ import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
 public class MainActivity extends Activity {
     private static final int NOTIFICATION_PERMISSION_REQUEST = 101;
+    private static final int BACKUP_EXPORT_REQUEST = 201;
+    private static final int BACKUP_IMPORT_REQUEST = 202;
+    private static final int MAX_BACKUP_BYTES = 5 * 1024 * 1024;
     private static final String UPDATE_INFO_URL =
             "https://raw.githubusercontent.com/edwinkarolczyk/Trener-/main/update.json";
 
     private WebView webView;
     private LocalSessionManager localSession;
     private GmsBarcodeScanner qrScanner;
+    private String pendingBackupJson;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,6 +75,9 @@ public class MainActivity extends Activity {
                                 + "if(!document.getElementById('trener-update-addon')){"
                                 + "var u=document.createElement('script');u.id='trener-update-addon';"
                                 + "u.src='update-addon.js';document.body.appendChild(u);}"
+                                + "if(!document.getElementById('trener-backup-addon')){"
+                                + "var b=document.createElement('script');b.id='trener-backup-addon';"
+                                + "b.src='backup-addon.js';document.body.appendChild(b);}"
                                 + "})();",
                         null
                 );
@@ -214,6 +223,88 @@ public class MainActivity extends Activity {
             return getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
         } catch (PackageManager.NameNotFoundException e) {
             return "0.0.0";
+        }
+    }
+
+    private void startBackupExport(String json, String suggestedName) {
+        if (json == null || json.trim().isEmpty()) {
+            Toast.makeText(this, "Brak danych do eksportu.", Toast.LENGTH_LONG).show();
+            return;
+        }
+        if (json.getBytes(StandardCharsets.UTF_8).length > MAX_BACKUP_BYTES) {
+            Toast.makeText(this, "Kopia danych jest zbyt duża.", Toast.LENGTH_LONG).show();
+            return;
+        }
+        pendingBackupJson = json;
+        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("application/json");
+        intent.putExtra(Intent.EXTRA_TITLE,
+                suggestedName == null || suggestedName.trim().isEmpty()
+                        ? "Trener2-kopia.json"
+                        : suggestedName.trim());
+        startActivityForResult(intent, BACKUP_EXPORT_REQUEST);
+    }
+
+    private void startBackupImport() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("application/json");
+        startActivityForResult(intent, BACKUP_IMPORT_REQUEST);
+    }
+
+    private String readBackup(Uri uri) throws Exception {
+        try (InputStream in = getContentResolver().openInputStream(uri);
+             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            if (in == null) throw new IllegalStateException("Brak dostępu do pliku");
+            byte[] buffer = new byte[8192];
+            int total = 0;
+            int read;
+            while ((read = in.read(buffer)) != -1) {
+                total += read;
+                if (total > MAX_BACKUP_BYTES) throw new IllegalArgumentException("Plik kopii jest zbyt duży");
+                out.write(buffer, 0, read);
+            }
+            return out.toString(StandardCharsets.UTF_8.name());
+        }
+    }
+
+    private void emitBackupImport(String payload) {
+        if (webView == null) return;
+        final String js = "window.TrenerBackup&&window.TrenerBackup.nativeImport("
+                + JSONObject.quote(payload == null ? "" : payload) + ");";
+        runOnUiThread(() -> webView.evaluateJavascript(js, null));
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == BACKUP_EXPORT_REQUEST) {
+            if (resultCode != RESULT_OK || data == null || data.getData() == null) {
+                pendingBackupJson = null;
+                return;
+            }
+            Uri uri = data.getData();
+            try (OutputStream out = getContentResolver().openOutputStream(uri, "wt")) {
+                if (out == null) throw new IllegalStateException("Brak dostępu do pliku");
+                out.write(pendingBackupJson.getBytes(StandardCharsets.UTF_8));
+                out.flush();
+                Toast.makeText(this, "Kopia Trener 2 zapisana.", Toast.LENGTH_SHORT).show();
+            } catch (Exception e) {
+                Toast.makeText(this, "Nie udało się zapisać kopii danych.", Toast.LENGTH_LONG).show();
+            } finally {
+                pendingBackupJson = null;
+            }
+            return;
+        }
+
+        if (requestCode == BACKUP_IMPORT_REQUEST) {
+            if (resultCode != RESULT_OK || data == null || data.getData() == null) return;
+            try {
+                emitBackupImport(readBackup(data.getData()));
+            } catch (Exception e) {
+                Toast.makeText(this, "Nie udało się odczytać kopii danych.", Toast.LENGTH_LONG).show();
+            }
         }
     }
 
@@ -371,6 +462,16 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void openUpdateUrl(String url) {
             runOnUiThread(() -> openUpdateUrlNative(url));
+        }
+
+        @JavascriptInterface
+        public void exportBackup(String json, String suggestedName) {
+            runOnUiThread(() -> startBackupExport(json, suggestedName));
+        }
+
+        @JavascriptInterface
+        public void importBackup() {
+            runOnUiThread(() -> startBackupImport());
         }
     }
 }
