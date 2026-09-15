@@ -115,10 +115,12 @@ jobs:
         if: steps.signing.outputs.ready == 'true'
         run: |
           VERSION=$(grep -m1 "versionName" app/build.gradle | sed -E "s/.*versionName[[:space:]]+'([^']+)'.*/\1/")
+          VERSION_CODE=$(grep -m1 "versionCode" app/build.gradle | awk '{print $2}')
           APK_NAME="Trener2-v${VERSION}.apk"
           cp app/build/outputs/apk/release/app-release.apk "$APK_NAME"
           echo "APK_NAME=$APK_NAME" >> "$GITHUB_ENV"
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "VERSION_CODE=$VERSION_CODE" >> "$GITHUB_ENV"
 
       - name: Publish version release
         if: steps.signing.outputs.ready == 'true'
@@ -147,6 +149,33 @@ jobs:
           done
           echo "GitHub release publishing failed after 3 attempts." >&2
           exit 1
+
+      - name: Update updater metadata
+        if: steps.signing.outputs.ready == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin main
+          cat > update.json <<EOF
+          {
+            "version": "${VERSION}",
+            "versionCode": ${VERSION_CODE},
+            "title": "Trener 2 v${VERSION}",
+            "notes": [
+              "Najnowsza stabilna wersja Trener 2",
+              "Metadane aktualizacji są synchronizowane automatycznie z każdym wydaniem"
+            ],
+            "pageUrl": "https://github.com/edwinkarolczyk/Trener-/releases/latest",
+            "apkUrl": "https://github.com/edwinkarolczyk/Trener-/releases/download/v${VERSION}/Trener2-v${VERSION}.apk"
+          }
+          EOF
+          if git diff --quiet -- update.json; then
+            echo "Updater metadata is already current."
+            exit 0
+          fi
+          git add update.json
+          git commit -m "Update updater metadata to v${VERSION} [skip ci]"
+          git push origin HEAD:main
 
       - name: Upload signed APK
         if: ${{ always() && steps.signing.outputs.ready == 'true' }}
