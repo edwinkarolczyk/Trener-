@@ -11,6 +11,7 @@ permissions:
 env:
   TR2_EXPECTED_SHA256: 30:68:33:34:5C:88:E2:34:4A:5A:0C:BC:51:F6:01:97:69:31:E7:24:CF:95:67:FE:6B:70:D1:59:86:56:69:CB
 
+# This workflow intentionally blocks release publishing unless all durable signing secrets are present.
 jobs:
   build:
     runs-on: ubuntu-latest
