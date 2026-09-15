@@ -1,0 +1,12 @@
+{
+  "version": "0.4.6",
+  "versionCode": 9,
+  "title": "Trener 2 v0.4.6",
+  "notes": [
+    "Automatyczne sprawdzanie aktualizacji przy uruchomieniu",
+    "Migający komunikat o nowej wersji w nagłówku",
+    "Nowa sekcja Ustawienia → Aktualizacje"
+  ],
+  "pageUrl": "https://github.com/edwinkarolczyk/Trener-/releases/latest",
+  "apkUrl": "https://github.com/edwinkarolczyk/Trener-/releases/latest/download/Trener2.apk"
+}
