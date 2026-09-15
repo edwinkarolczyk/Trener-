@@ -14,8 +14,10 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public final class LocalSessionManager {
@@ -38,6 +40,7 @@ public final class LocalSessionManager {
     private volatile DataOutputStream peerOut;
     private volatile String sessionCode = "";
     private volatile boolean hosting = false;
+    private volatile boolean shuttingDown = false;
 
     public LocalSessionManager(Listener listener) {
         this.listener = listener;
@@ -49,54 +52,58 @@ public final class LocalSessionManager {
             emitStatus("error", "Kod sesji musi mieć 6 cyfr.");
             return;
         }
+        if (shuttingDown) return;
         disconnectInternal(false);
         int gen = generation.incrementAndGet();
         hosting = true;
         sessionCode = normalized;
 
-        io.execute(() -> {
-            try {
-                ServerSocket server = new ServerSocket();
-                server.setReuseAddress(true);
-                server.bind(new InetSocketAddress(PORT));
-                if (gen != generation.get()) {
-                    closeQuietly(server);
-                    return;
-                }
-                serverSocket = server;
-                emitStatus("waiting", getLocalIp());
-
-                while (gen == generation.get() && !server.isClosed()) {
-                    Socket candidate = server.accept();
-                    candidate.setTcpNoDelay(true);
-                    candidate.setKeepAlive(true);
-                    if (!performHostHandshake(candidate, normalized)) {
-                        closeQuietly(candidate);
-                        continue;
+        try {
+            io.execute(() -> {
+                try {
+                    ServerSocket server = new ServerSocket();
+                    server.setReuseAddress(true);
+                    server.bind(new InetSocketAddress(PORT));
+                    if (gen != generation.get()) {
+                        closeQuietly(server);
+                        return;
                     }
+                    serverSocket = server;
+                    emitStatus("waiting", getLocalIp());
 
-                    synchronized (this) {
-                        if (peerSocket != null && !peerSocket.isClosed()) {
+                    while (gen == generation.get() && !server.isClosed()) {
+                        Socket candidate = server.accept();
+                        candidate.setTcpNoDelay(true);
+                        candidate.setKeepAlive(true);
+                        if (!performHostHandshake(candidate, normalized)) {
                             closeQuietly(candidate);
                             continue;
                         }
-                        attachPeer(candidate);
+
+                        synchronized (this) {
+                            if (peerSocket != null && !peerSocket.isClosed()) {
+                                closeQuietly(candidate);
+                                continue;
+                            }
+                            attachPeer(candidate);
+                        }
+                        emitStatus("connected", "host");
+                        readLoop(candidate, gen, true);
                     }
-                    emitStatus("connected", "host");
-                    readLoop(candidate, gen, true);
+                } catch (SocketException e) {
+                    if (gen == generation.get() && !shuttingDown) emitStatus("error", "Połączenie Wi‑Fi zostało przerwane.");
+                } catch (IOException e) {
+                    if (gen == generation.get() && !shuttingDown) emitStatus("error", safeMessage(e));
+                } finally {
+                    if (gen == generation.get()) {
+                        closePeerOnly();
+                        closeQuietly(serverSocket);
+                        serverSocket = null;
+                    }
                 }
-            } catch (SocketException e) {
-                if (gen == generation.get()) emitStatus("error", "Połączenie Wi‑Fi zostało przerwane.");
-            } catch (IOException e) {
-                if (gen == generation.get()) emitStatus("error", safeMessage(e));
-            } finally {
-                if (gen == generation.get()) {
-                    closePeerOnly();
-                    closeQuietly(serverSocket);
-                    serverSocket = null;
-                }
-            }
-        });
+            });
+        } catch (RejectedExecutionException ignored) {
+        }
     }
 
     public void join(String hostIp, String code) {
@@ -110,6 +117,7 @@ public final class LocalSessionManager {
             emitStatus("error", "Kod sesji musi mieć 6 cyfr.");
             return;
         }
+        if (shuttingDown) return;
 
         disconnectInternal(false);
         int gen = generation.incrementAndGet();
@@ -117,40 +125,43 @@ public final class LocalSessionManager {
         sessionCode = normalized;
         emitStatus("connecting", ip);
 
-        io.execute(() -> {
-            Socket socket = new Socket();
-            try {
-                socket.connect(new InetSocketAddress(ip, PORT), CONNECT_TIMEOUT_MS);
-                socket.setTcpNoDelay(true);
-                socket.setKeepAlive(true);
+        try {
+            io.execute(() -> {
+                Socket socket = new Socket();
+                try {
+                    socket.connect(new InetSocketAddress(ip, PORT), CONNECT_TIMEOUT_MS);
+                    socket.setTcpNoDelay(true);
+                    socket.setKeepAlive(true);
 
-                DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-                DataInputStream in = new DataInputStream(socket.getInputStream());
-                out.writeUTF("HELLO:" + normalized);
-                out.flush();
+                    DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+                    DataInputStream in = new DataInputStream(socket.getInputStream());
+                    out.writeUTF("HELLO:" + normalized);
+                    out.flush();
 
-                String reply = in.readUTF();
-                if (!"OK".equals(reply)) {
-                    emitStatus("denied", "Błędny kod sesji.");
-                    closeQuietly(socket);
-                    return;
-                }
-
-                synchronized (this) {
-                    if (gen != generation.get()) {
+                    String reply = in.readUTF();
+                    if (!"OK".equals(reply)) {
+                        emitStatus("denied", "Błędny kod sesji.");
                         closeQuietly(socket);
                         return;
                     }
-                    peerSocket = socket;
-                    peerOut = out;
+
+                    synchronized (this) {
+                        if (gen != generation.get()) {
+                            closeQuietly(socket);
+                            return;
+                        }
+                        peerSocket = socket;
+                        peerOut = out;
+                    }
+                    emitStatus("connected", "guest");
+                    readLoopWithInput(socket, in, gen, false);
+                } catch (IOException e) {
+                    if (gen == generation.get() && !shuttingDown) emitStatus("error", safeMessage(e));
+                    closeQuietly(socket);
                 }
-                emitStatus("connected", "guest");
-                readLoopWithInput(socket, in, gen, false);
-            } catch (IOException e) {
-                if (gen == generation.get()) emitStatus("error", safeMessage(e));
-                closeQuietly(socket);
-            }
-        });
+            });
+        } catch (RejectedExecutionException ignored) {
+        }
     }
 
     public boolean send(String message) {
@@ -165,7 +176,7 @@ public final class LocalSessionManager {
                 out.flush();
                 return true;
             } catch (IOException e) {
-                emitStatus("disconnected", "Partner rozłączony.");
+                emitStatus("disconnected", "Kumpel z siłowni został rozłączony.");
                 closePeerOnly();
                 return false;
             }
@@ -174,6 +185,12 @@ public final class LocalSessionManager {
 
     public void disconnect() {
         disconnectInternal(true);
+    }
+
+    public void shutdown() {
+        shuttingDown = true;
+        disconnectInternal(false);
+        io.shutdownNow();
     }
 
     public boolean isConnected() {
@@ -186,20 +203,23 @@ public final class LocalSessionManager {
     }
 
     public String getLocalIp() {
+        String fallback = null;
         try {
             for (NetworkInterface nif : Collections.list(NetworkInterface.getNetworkInterfaces())) {
                 if (!nif.isUp() || nif.isLoopback()) continue;
+                String interfaceName = nif.getName() == null ? "" : nif.getName().toLowerCase(Locale.ROOT);
                 Enumeration<InetAddress> addresses = nif.getInetAddresses();
                 while (addresses.hasMoreElements()) {
                     InetAddress address = addresses.nextElement();
-                    if (address instanceof Inet4Address && !address.isLoopbackAddress() && address.isSiteLocalAddress()) {
-                        return address.getHostAddress();
-                    }
+                    if (!(address instanceof Inet4Address) || address.isLoopbackAddress() || !address.isSiteLocalAddress()) continue;
+                    String ip = address.getHostAddress();
+                    if (isWifiOrHotspotInterface(interfaceName)) return ip;
+                    if (!isCellularInterface(interfaceName) && fallback == null) fallback = ip;
                 }
             }
         } catch (Exception ignored) {
         }
-        return "—";
+        return fallback == null ? "—" : fallback;
     }
 
     static String normalizeCode(String code) {
@@ -209,6 +229,20 @@ public final class LocalSessionManager {
 
     static boolean isValidCode(String code) {
         return code != null && code.matches("\\d{6}");
+    }
+
+    static boolean isWifiOrHotspotInterface(String name) {
+        if (name == null) return false;
+        String n = name.toLowerCase(Locale.ROOT);
+        return n.startsWith("wlan") || n.startsWith("wifi") || n.startsWith("swlan")
+                || n.startsWith("ap") || n.contains("softap") || n.startsWith("eth");
+    }
+
+    static boolean isCellularInterface(String name) {
+        if (name == null) return false;
+        String n = name.toLowerCase(Locale.ROOT);
+        return n.startsWith("rmnet") || n.startsWith("ccmni") || n.startsWith("pdp")
+                || n.startsWith("wwan") || n.contains("cell");
     }
 
     private boolean performHostHandshake(Socket socket, String expectedCode) {
@@ -249,7 +283,7 @@ public final class LocalSessionManager {
             }
         } catch (EOFException | SocketException ignored) {
         } catch (IOException e) {
-            if (gen == generation.get()) emitStatus("disconnected", safeMessage(e));
+            if (gen == generation.get() && !shuttingDown) emitStatus("disconnected", safeMessage(e));
         } finally {
             handlePeerEnd(socket, gen, hostSide);
         }
@@ -259,11 +293,11 @@ public final class LocalSessionManager {
         synchronized (this) {
             if (peerSocket == socket) closePeerOnly();
         }
-        if (gen != generation.get()) return;
+        if (gen != generation.get() || shuttingDown) return;
         if (hostSide && hosting && serverSocket != null && !serverSocket.isClosed()) {
             emitStatus("waiting", getLocalIp());
         } else {
-            emitStatus("disconnected", "Partner rozłączony.");
+            emitStatus("disconnected", "Kumpel z siłowni został rozłączony.");
         }
     }
 
@@ -281,7 +315,7 @@ public final class LocalSessionManager {
         serverSocket = null;
         hosting = false;
         sessionCode = "";
-        if (notify) emitStatus("disconnected", "Rozłączono.");
+        if (notify && !shuttingDown) emitStatus("disconnected", "Rozłączono.");
     }
 
     private void emitStatus(String status, String detail) {
