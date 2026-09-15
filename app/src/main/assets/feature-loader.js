@@ -8,7 +8,8 @@
     ['0.5.8','v058-smart-set.js'],
     ['0.5.9','v059-readiness.js'],
     ['0.6.0','v060-equipment.js'],
-    ['0.6.1','v061-progress-charts.js']
+    ['0.6.1','v061-progress-charts.js'],
+    ['0.6.2','v062-compact-workout.js']
   ];
   features.forEach(([min,src])=>{
     if(!gte(current,min))return;
