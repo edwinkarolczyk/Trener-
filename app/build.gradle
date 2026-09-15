@@ -2,6 +2,12 @@ plugins {
     id 'com.android.application'
 }
 
+def signingStorePath = System.getenv('TR2_KEYSTORE_PATH')
+def signingStorePassword = System.getenv('TR2_STORE_PASSWORD')
+def signingKeyAlias = System.getenv('TR2_KEY_ALIAS')
+def signingKeyPassword = System.getenv('TR2_KEY_PASSWORD')
+def hasReleaseSigning = signingStorePath && signingStorePassword && signingKeyAlias && signingKeyPassword
+
 android {
     namespace 'pl.edwin.trener2'
     compileSdk 35
@@ -16,8 +22,22 @@ android {
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
 
+    signingConfigs {
+        if (hasReleaseSigning) {
+            release {
+                storeFile file(signingStorePath)
+                storePassword signingStorePassword
+                keyAlias signingKeyAlias
+                keyPassword signingKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
+            if (hasReleaseSigning) {
+                signingConfig signingConfigs.release
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
