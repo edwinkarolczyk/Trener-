@@ -123,17 +123,28 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="v${VERSION}"
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" "$APK_NAME" --clobber
-          else
-            gh release create "$TAG" "$APK_NAME" \
-              --target "$GITHUB_SHA" \
-              --title "Trener 2 ${VERSION}" \
-              --notes "Signed release build Trener 2 ${VERSION}. Future updates use the same release certificate."
-          fi
+          publish_release() {
+            if gh release view "$TAG" >/dev/null 2>&1; then
+              gh release upload "$TAG" "$APK_NAME" --clobber
+            else
+              gh release create "$TAG" "$APK_NAME" \
+                --target "$GITHUB_SHA" \
+                --title "Trener 2 ${VERSION}" \
+                --notes "Signed release build Trener 2 ${VERSION}. Future updates use the same release certificate."
+            fi
+          }
+          for attempt in 1 2 3; do
+            if publish_release; then
+              exit 0
+            fi
+            echo "GitHub release attempt $attempt failed; retrying shortly..." >&2
+            sleep $((attempt * 4))
+          done
+          echo "GitHub release publishing failed after 3 attempts." >&2
+          exit 1
 
       - name: Upload signed APK
-        if: steps.signing.outputs.ready == 'true'
+        if: ${{ always() && steps.signing.outputs.ready == 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: Trener2-v${{ env.VERSION }}-APK
