@@ -29,6 +29,11 @@ jobs:
           node --check app/src/main/assets/v054-addon.js
           node --check app/src/main/assets/v055-workout-ui.js
           node --check app/src/main/assets/v056-visuals.js
+          node --check app/src/main/assets/feature-loader.js
+          node --check app/src/main/assets/v058-smart-set.js
+          node --check app/src/main/assets/v059-readiness.js
+          node --check app/src/main/assets/v060-equipment.js
+          node --check app/src/main/assets/v061-progress-charts.js
           node --check app/src/main/assets/backup-addon.js
           node --check app/src/main/assets/exercise-visuals.js
           node --check app/src/main/assets/live-status.js
