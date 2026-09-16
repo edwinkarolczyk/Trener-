@@ -5,6 +5,10 @@ on:
     branches: [main]
   workflow_dispatch:
 
+concurrency:
+  group: trener2-main-release
+  cancel-in-progress: true
+
 permissions:
   contents: write
 
@@ -72,23 +76,16 @@ jobs:
             echo "Release signing secrets are not configured yet; no release will be published." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
-
           SIGN_DIR="$RUNNER_TEMP/trener2-signing"
           mkdir -p "$SIGN_DIR"
           KEYSTORE="$SIGN_DIR/trener2-release.jks"
           printf '%s' "$TR2_KEYSTORE_B64" | base64 --decode > "$KEYSTORE"
           chmod 600 "$KEYSTORE"
-
-          ACTUAL_SHA256=$(keytool -list -v \
-            -keystore "$KEYSTORE" \
-            -storepass "$TR2_STORE_PASSWORD" \
-            -alias "$TR2_KEY_ALIAS" | awk '/SHA256:/{print $2; exit}')
-
+          ACTUAL_SHA256=$(keytool -list -v -keystore "$KEYSTORE" -storepass "$TR2_STORE_PASSWORD" -alias "$TR2_KEY_ALIAS" | awk '/SHA256:/{print $2; exit}')
           if [ "$ACTUAL_SHA256" != "$TR2_EXPECTED_SHA256" ]; then
             echo "Signing certificate mismatch. Expected $TR2_EXPECTED_SHA256, got $ACTUAL_SHA256" >&2
             exit 1
           fi
-
           echo "TR2_KEYSTORE_PATH=$KEYSTORE" >> "$GITHUB_ENV"
           echo "TR2_STORE_PASSWORD=$TR2_STORE_PASSWORD" >> "$GITHUB_ENV"
           echo "TR2_KEY_ALIAS=$TR2_KEY_ALIAS" >> "$GITHUB_ENV"
@@ -138,17 +135,11 @@ jobs:
               gh release upload "$TAG" "$APK_NAME" --clobber
               gh release edit "$TAG" --draft=false --latest
             else
-              gh release create "$TAG" "$APK_NAME" \
-                --target "$GITHUB_SHA" \
-                --title "Trener 2 ${VERSION}" \
-                --notes "Signed release build Trener 2 ${VERSION}. Future updates use the same release certificate." \
-                --latest
+              gh release create "$TAG" "$APK_NAME" --target "$GITHUB_SHA" --title "Trener 2 ${VERSION}" --notes "Signed release build Trener 2 ${VERSION}. Future updates use the same release certificate." --latest
             fi
           }
           for attempt in 1 2 3; do
-            if publish_release; then
-              exit 0
-            fi
+            if publish_release; then exit 0; fi
             echo "GitHub release attempt $attempt failed; retrying shortly..." >&2
             sleep $((attempt * 4))
           done
@@ -161,6 +152,11 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git pull --rebase origin main
+          CURRENT_CODE=$(python3 -c "import json; print(json.load(open('update.json')).get('versionCode',0))" 2>/dev/null || echo 0)
+          if [ "$CURRENT_CODE" -gt "$VERSION_CODE" ]; then
+            echo "Updater metadata already points to newer versionCode $CURRENT_CODE; refusing downgrade to $VERSION_CODE."
+            exit 0
+          fi
           cat > update.json <<EOF
           {
             "version": "${VERSION}",
@@ -170,7 +166,7 @@ jobs:
               "Najnowsza stabilna wersja Trener 2",
               "Metadane aktualizacji są synchronizowane automatycznie z każdym wydaniem"
             ],
-            "pageUrl": "https://github.com/edwinkarolczyk/Trener-/releases/latest",
+            "pageUrl": "https://github.com/edwinkarolczyk/Trener-/releases/tag/v${VERSION}",
             "apkUrl": "https://github.com/edwinkarolczyk/Trener-/releases/download/v${VERSION}/Trener2-v${VERSION}.apk"
           }
           EOF
