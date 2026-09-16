@@ -11,7 +11,8 @@
     ['0.6.1','v061-progress-charts.js'],
     ['0.6.2','v062-compact-workout.js'],
     ['0.6.3','v063-rest-focus.js'],
-    ['0.6.3.1','v0631-workout-scroll-ui.js']
+    ['0.6.3.1','v0631-workout-scroll-ui.js'],
+    ['0.6.3.2','v0632-duo-guard.js']
   ];
   features.forEach(([min,src])=>{
     if(!gte(current,min))return;
