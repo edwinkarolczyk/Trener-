@@ -45,6 +45,7 @@ jobs:
           node --check app/src/main/assets/v0634-ai-visuals.js
           node --check app/src/main/assets/v0635-duo-profile-finish.js
           node --check app/src/main/assets/v0636-feedback.js
+          node --check app/src/main/assets/v064-group-session.js
           node --check app/src/main/assets/backup-addon.js
           node --check app/src/main/assets/exercise-visuals.js
           node --check app/src/main/assets/live-status.js
