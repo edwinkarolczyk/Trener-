@@ -1,5 +1,21 @@
 # Zmiany
 
+## 0.7.0 Beta
+- nowy wspólny trening 2–4 osoby na jednym wspólnym stanowisku: w danej chwili ćwiczy tylko jedna osoba,
+- host jest źródłem prawdy dla kolejki, ćwiczenia i numeru serii,
+- zapis serii gościa działa jako żądanie → potwierdzenie hosta → przejście kolejki dalej,
+- każdy uczestnik zachowuje własny ciężar, liczbę serii, wynik i historię,
+- wszyscy pozostają na tym samym ćwiczeniu do czasu zakończenia wymaganych serii przez całą grupę,
+- różna liczba serii i dodatkowe serie są obsługiwane per osoba,
+- indywidualny odpoczynek jest respektowany przez kolejkę,
+- bezpieczny STOP hosta kończy sesję lokalnie również przy problemie z drugim telefonem,
+- opuszczenie sesji przez gościa usuwa go z kolejki bez blokowania pozostałych,
+- pełny stan kolejki jest zapisywany lokalnie i odzyskiwany po restarcie,
+- zachowany crash-safe checkpoint i historia z 0.6.4.3,
+- dodany plan tygodnia: każdy dzień można układać partiami mięśniowymi albo konkretnymi ćwiczeniami,
+- zapisane plany dni pojawiają się na ekranie Start,
+- osobny workflow beta buduje podpisane APK bez publikowania go jako stabilnej aktualizacji.
+
 ## 0.6.4.3
 - zapis awaryjny aktywnego treningu po każdej serii i okresowo podczas sesji,
 - odzyskiwanie niedokończonego treningu po restarcie aplikacji lub telefonu,
