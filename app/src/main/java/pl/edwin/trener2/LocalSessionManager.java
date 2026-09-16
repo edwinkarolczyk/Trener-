@@ -12,8 +12,10 @@ import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -24,16 +26,29 @@ public final class LocalSessionManager {
     public static final int PORT = 48721;
     private static final int CONNECT_TIMEOUT_MS = 6000;
     private static final int MAX_MESSAGE_CHARS = 60000;
+    private static final int MAX_HOST_PEERS = 3; // gospodarz + maks. 3 osoby = 4 osoby
 
     public interface Listener {
         void onStatus(String status, String detail);
         void onMessage(String message);
     }
 
+    private static final class HostPeer {
+        final Socket socket;
+        final DataOutputStream out;
+
+        HostPeer(Socket socket) throws IOException {
+            this.socket = socket;
+            this.out = new DataOutputStream(socket.getOutputStream());
+        }
+    }
+
     private final Listener listener;
     private final ExecutorService io = Executors.newCachedThreadPool();
     private final Object writeLock = new Object();
+    private final Object hostPeersLock = new Object();
     private final AtomicInteger generation = new AtomicInteger(0);
+    private final List<HostPeer> hostPeers = new ArrayList<>();
 
     private volatile ServerSocket serverSocket;
     private volatile Socket peerSocket;
@@ -55,7 +70,7 @@ public final class LocalSessionManager {
         if (shuttingDown) return;
         String localIp = getLocalIp();
         if ("—".equals(localIp)) {
-            emitStatus("error", "Włącz Wi‑Fi albo hotspot. Sesja z Kumplem z siłowni działa tylko w sieci lokalnej.");
+            emitStatus("error", "Włącz Wi‑Fi albo hotspot. Wspólna sesja działa tylko w sieci lokalnej.");
             return;
         }
         disconnectInternal(false);
@@ -85,23 +100,36 @@ public final class LocalSessionManager {
                             continue;
                         }
 
-                        synchronized (this) {
-                            if (peerSocket != null && !peerSocket.isClosed()) {
-                                closeQuietly(candidate);
+                        final HostPeer peer;
+                        try {
+                            peer = new HostPeer(candidate);
+                        } catch (IOException e) {
+                            closeQuietly(candidate);
+                            continue;
+                        }
+                        synchronized (hostPeersLock) {
+                            if (hostPeers.size() >= MAX_HOST_PEERS) {
+                                closeHostPeer(peer);
                                 continue;
                             }
-                            attachPeer(candidate);
+                            hostPeers.add(peer);
                         }
                         emitStatus("connected", "host");
-                        readLoop(candidate, gen, true);
+                        try {
+                            io.execute(() -> readHostPeerLoop(peer, gen));
+                        } catch (RejectedExecutionException e) {
+                            removeHostPeer(peer);
+                        }
                     }
                 } catch (SocketException e) {
-                    if (gen == generation.get() && !shuttingDown) emitStatus("error", "Połączenie Wi‑Fi zostało przerwane.");
+                    if (gen == generation.get() && !shuttingDown) {
+                        emitStatus("error", "Połączenie Wi‑Fi zostało przerwane.");
+                    }
                 } catch (IOException e) {
                     if (gen == generation.get() && !shuttingDown) emitStatus("error", safeMessage(e));
                 } finally {
                     if (gen == generation.get()) {
-                        closePeerOnly();
+                        closeAllHostPeers();
                         closeQuietly(serverSocket);
                         serverSocket = null;
                     }
@@ -154,6 +182,11 @@ public final class LocalSessionManager {
                     out.flush();
 
                     String reply = in.readUTF();
+                    if ("FULL".equals(reply)) {
+                        emitStatus("error", "Sesja jest pełna. Maksymalnie mogą ćwiczyć 4 osoby razem z gospodarzem.");
+                        closeQuietly(socket);
+                        return;
+                    }
                     if (!"OK".equals(reply)) {
                         emitStatus("denied", "Błędny kod sesji.");
                         closeQuietly(socket);
@@ -169,7 +202,7 @@ public final class LocalSessionManager {
                         peerOut = out;
                     }
                     emitStatus("connected", "guest");
-                    readLoopWithInput(socket, in, gen, false);
+                    readGuestLoop(socket, in, gen);
                 } catch (IOException e) {
                     if (gen == generation.get() && !shuttingDown) emitStatus("error", safeMessage(e));
                     closeQuietly(socket);
@@ -181,21 +214,48 @@ public final class LocalSessionManager {
 
     public boolean send(String message) {
         if (message == null || message.length() > MAX_MESSAGE_CHARS) return false;
+        if (hosting) return broadcastFromHost(message);
+
         DataOutputStream out = peerOut;
         Socket socket = peerSocket;
         if (out == null || socket == null || socket.isClosed()) return false;
-
         synchronized (writeLock) {
             try {
                 out.writeUTF(message);
                 out.flush();
                 return true;
             } catch (IOException e) {
-                emitStatus("disconnected", "Kumpel z siłowni został rozłączony.");
-                closePeerOnly();
+                emitStatus("disconnected", "Połączenie z gospodarzem zostało przerwane.");
+                closeGuestPeerOnly();
                 return false;
             }
         }
+    }
+
+    private boolean broadcastFromHost(String message) {
+        List<HostPeer> peers;
+        synchronized (hostPeersLock) {
+            peers = new ArrayList<>(hostPeers);
+        }
+        if (peers.isEmpty()) return false;
+
+        boolean sent = false;
+        synchronized (writeLock) {
+            for (HostPeer peer : peers) {
+                if (peer.socket.isClosed()) {
+                    removeHostPeer(peer);
+                    continue;
+                }
+                try {
+                    peer.out.writeUTF(message);
+                    peer.out.flush();
+                    sent = true;
+                } catch (IOException e) {
+                    removeHostPeer(peer);
+                }
+            }
+        }
+        return sent;
     }
 
     public void disconnect() {
@@ -209,12 +269,21 @@ public final class LocalSessionManager {
     }
 
     public boolean isConnected() {
+        if (hosting) {
+            synchronized (hostPeersLock) {
+                return !hostPeers.isEmpty();
+            }
+        }
         Socket socket = peerSocket;
         return socket != null && socket.isConnected() && !socket.isClosed();
     }
 
     public boolean isHosting() {
         return hosting;
+    }
+
+    static int maxHostPeers() {
+        return MAX_HOST_PEERS;
     }
 
     public String getLocalIp() {
@@ -287,31 +356,47 @@ public final class LocalSessionManager {
             DataInputStream in = new DataInputStream(socket.getInputStream());
             DataOutputStream out = new DataOutputStream(socket.getOutputStream());
             String hello = in.readUTF();
-            boolean ok = ("HELLO:" + expectedCode).equals(hello);
-            out.writeUTF(ok ? "OK" : "DENY");
+            if (!("HELLO:" + expectedCode).equals(hello)) {
+                out.writeUTF("DENY");
+                out.flush();
+                return false;
+            }
+            synchronized (hostPeersLock) {
+                if (hostPeers.size() >= MAX_HOST_PEERS) {
+                    out.writeUTF("FULL");
+                    out.flush();
+                    return false;
+                }
+            }
+            out.writeUTF("OK");
             out.flush();
             socket.setSoTimeout(0);
-            return ok;
+            return true;
         } catch (IOException e) {
             return false;
         }
     }
 
-    private synchronized void attachPeer(Socket socket) throws IOException {
-        peerSocket = socket;
-        peerOut = new DataOutputStream(socket.getOutputStream());
-    }
-
-    private void readLoop(Socket socket, int gen, boolean hostSide) {
+    private void readHostPeerLoop(HostPeer peer, int gen) {
         try {
-            DataInputStream in = new DataInputStream(socket.getInputStream());
-            readLoopWithInput(socket, in, gen, hostSide);
+            DataInputStream in = new DataInputStream(peer.socket.getInputStream());
+            while (gen == generation.get() && !peer.socket.isClosed()) {
+                String message = in.readUTF();
+                if (message != null && !message.isEmpty()) emitMessage(message);
+            }
+        } catch (EOFException | SocketException ignored) {
         } catch (IOException e) {
-            handlePeerEnd(socket, gen, hostSide);
+            if (gen == generation.get() && !shuttingDown) emitStatus("disconnected_peer", safeMessage(e));
+        } finally {
+            removeHostPeer(peer);
+            if (gen == generation.get() && !shuttingDown && hosting) {
+                if (hostPeerCount() == 0) emitStatus("waiting", getLocalIp());
+                else emitStatus("connected", "host");
+            }
         }
     }
 
-    private void readLoopWithInput(Socket socket, DataInputStream in, int gen, boolean hostSide) {
+    private void readGuestLoop(Socket socket, DataInputStream in, int gen) {
         try {
             while (gen == generation.get() && !socket.isClosed()) {
                 String message = in.readUTF();
@@ -321,23 +406,45 @@ public final class LocalSessionManager {
         } catch (IOException e) {
             if (gen == generation.get() && !shuttingDown) emitStatus("disconnected", safeMessage(e));
         } finally {
-            handlePeerEnd(socket, gen, hostSide);
+            synchronized (this) {
+                if (peerSocket == socket) closeGuestPeerOnly();
+            }
+            if (gen == generation.get() && !shuttingDown) {
+                emitStatus("disconnected", "Połączenie z gospodarzem zostało przerwane.");
+            }
         }
     }
 
-    private void handlePeerEnd(Socket socket, int gen, boolean hostSide) {
-        synchronized (this) {
-            if (peerSocket == socket) closePeerOnly();
-        }
-        if (gen != generation.get() || shuttingDown) return;
-        if (hostSide && hosting && serverSocket != null && !serverSocket.isClosed()) {
-            emitStatus("waiting", getLocalIp());
-        } else {
-            emitStatus("disconnected", "Kumpel z siłowni został rozłączony.");
+    private int hostPeerCount() {
+        synchronized (hostPeersLock) {
+            return hostPeers.size();
         }
     }
 
-    private synchronized void closePeerOnly() {
+    private void removeHostPeer(HostPeer peer) {
+        boolean removed;
+        synchronized (hostPeersLock) {
+            removed = hostPeers.remove(peer);
+        }
+        if (removed) closeHostPeer(peer);
+    }
+
+    private void closeHostPeer(HostPeer peer) {
+        if (peer == null) return;
+        closeQuietly(peer.out);
+        closeQuietly(peer.socket);
+    }
+
+    private void closeAllHostPeers() {
+        List<HostPeer> peers;
+        synchronized (hostPeersLock) {
+            peers = new ArrayList<>(hostPeers);
+            hostPeers.clear();
+        }
+        for (HostPeer peer : peers) closeHostPeer(peer);
+    }
+
+    private synchronized void closeGuestPeerOnly() {
         closeQuietly(peerOut);
         closeQuietly(peerSocket);
         peerOut = null;
@@ -346,7 +453,8 @@ public final class LocalSessionManager {
 
     private synchronized void disconnectInternal(boolean notify) {
         generation.incrementAndGet();
-        closePeerOnly();
+        closeGuestPeerOnly();
+        closeAllHostPeers();
         closeQuietly(serverSocket);
         serverSocket = null;
         hosting = false;
