@@ -17,7 +17,8 @@
     ['0.6.3.5','v0635-duo-profile-finish.js'],
     ['0.6.3.6','v0636-feedback.js'],
     ['0.6.4','v064-group-session.js'],
-    ['0.6.4','v064-group-guard.js']
+    ['0.6.4','v064-group-guard.js'],
+    ['0.6.4.2','v0642-adaptive-volume.js']
   ];
   features.forEach(([min,src])=>{
     if(!gte(current,min))return;
