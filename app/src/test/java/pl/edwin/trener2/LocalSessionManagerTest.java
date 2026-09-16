@@ -34,4 +34,9 @@ public class LocalSessionManagerTest {
         assertFalse(LocalSessionManager.definitelyDifferentPrivateNetworks("192.168.0.18", "192.168.0.42"));
         assertFalse(LocalSessionManager.definitelyDifferentPrivateNetworks("172.20.10.3", "172.20.10.1"));
     }
+
+    @Test
+    public void hostAllowsThreeGuestsForFourPersonSession() {
+        assertEquals(3, LocalSessionManager.maxHostPeers());
+    }
 }
