@@ -1,11 +1,11 @@
 {
-  "version": "0.6.3.2",
-  "versionCode": 26,
-  "title": "Trener 2 v0.6.3.2",
+  "version": "0.6.3.3",
+  "versionCode": 27,
+  "title": "Trener 2 v0.6.3.3",
   "notes": [
     "Najnowsza stabilna wersja Trener 2",
     "Metadane aktualizacji są synchronizowane automatycznie z każdym wydaniem"
   ],
-  "pageUrl": "https://github.com/edwinkarolczyk/Trener-/releases/tag/v0.6.3.2",
-  "apkUrl": "https://github.com/edwinkarolczyk/Trener-/releases/download/v0.6.3.2/Trener2-v0.6.3.2.apk"
+  "pageUrl": "https://github.com/edwinkarolczyk/Trener-/releases/tag/v0.6.3.3",
+  "apkUrl": "https://github.com/edwinkarolczyk/Trener-/releases/download/v0.6.3.3/Trener2-v0.6.3.3.apk"
 }
