@@ -1,0 +1,65 @@
+name: Record app feedback
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: trener2-feedback-file
+  cancel-in-progress: false
+
+jobs:
+  append-feedback:
+    if: github.event.issue.user.login == 'edwinkarolczyk' && contains(github.event.issue.body, '<!-- trener2-app-feedback -->')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Append feedback to file
+        env:
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_URL: ${{ github.event.issue.html_url }}
+          ISSUE_USER: ${{ github.event.issue.user.login }}
+          ISSUE_CREATED_AT: ${{ github.event.issue.created_at }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          marker = '<!-- trener2-app-feedback -->'
+          body = os.environ.get('ISSUE_BODY', '').replace(marker, '', 1).strip()
+          number = os.environ.get('ISSUE_NUMBER', '?')
+          url = os.environ.get('ISSUE_URL', '')
+          user = os.environ.get('ISSUE_USER', '')
+          created = os.environ.get('ISSUE_CREATED_AT', '')
+
+          path = Path('UWAGI_DO_PROGRAMU.md')
+          if not path.exists():
+              path.write_text('# Uwagi do programu — Trener 2\n\n---\n', encoding='utf-8')
+
+          with path.open('a', encoding='utf-8') as f:
+              f.write(f'\n## Uwaga #{number} — {created}\n\n')
+              f.write(f'Źródło: [GitHub Issue #{number}]({url}) • autor: `@{user}`\n\n')
+              f.write(body)
+              f.write('\n\n---\n')
+          PY
+
+      - name: Commit feedback
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin main
+          git add UWAGI_DO_PROGRAMU.md
+          if git diff --cached --quiet; then
+            echo "No feedback changes to commit."
+            exit 0
+          fi
+          git commit -m "Record app feedback #${{ github.event.issue.number }} [skip ci]"
+          git push origin HEAD:main

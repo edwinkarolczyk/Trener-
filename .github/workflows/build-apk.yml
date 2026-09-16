@@ -38,6 +38,13 @@ jobs:
           node --check app/src/main/assets/v059-readiness.js
           node --check app/src/main/assets/v060-equipment.js
           node --check app/src/main/assets/v061-progress-charts.js
+          node --check app/src/main/assets/v062-compact-workout.js
+          node --check app/src/main/assets/v063-rest-focus.js
+          node --check app/src/main/assets/v0631-workout-scroll-ui.js
+          node --check app/src/main/assets/v0632-duo-guard.js
+          node --check app/src/main/assets/v0634-ai-visuals.js
+          node --check app/src/main/assets/v0635-duo-profile-finish.js
+          node --check app/src/main/assets/v0636-feedback.js
           node --check app/src/main/assets/backup-addon.js
           node --check app/src/main/assets/exercise-visuals.js
           node --check app/src/main/assets/live-status.js
@@ -179,15 +186,13 @@ jobs:
           git push origin HEAD:main
 
       - name: Upload signed APK
-        if: ${{ always() && steps.signing.outputs.ready == 'true' }}
+        if: steps.signing.outputs.ready == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: Trener2-v${{ env.VERSION }}-APK
+          name: Trener2-v${{ env.VERSION }}
           path: ${{ env.APK_NAME }}
-          if-no-files-found: error
           retention-days: 30
 
       - name: Signing setup pending
         if: steps.signing.outputs.ready != 'true'
-        run: |
-          echo "Tests passed, but release publishing is intentionally disabled until TR2 signing secrets are configured."
+        run: echo "Configure TR2_KEYSTORE_B64, TR2_STORE_PASSWORD, TR2_KEY_ALIAS and TR2_KEY_PASSWORD to publish signed updates."
