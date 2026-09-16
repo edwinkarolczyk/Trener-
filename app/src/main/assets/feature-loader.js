@@ -18,7 +18,8 @@
     ['0.6.3.6','v0636-feedback.js'],
     ['0.6.4','v064-group-session.js'],
     ['0.6.4','v064-group-guard.js'],
-    ['0.6.4.2','v0642-adaptive-volume.js']
+    ['0.6.4.2','v0642-adaptive-volume.js'],
+    ['0.6.4.3','v0643-resilient-sync.js']
   ];
   features.forEach(([min,src])=>{
     if(!gte(current,min))return;
