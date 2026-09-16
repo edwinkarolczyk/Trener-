@@ -1,5 +1,6 @@
 (function(){
   'use strict';
+  // Stabilizacja 0.6.3.1: ekran startuje przy polach serii, ale pozostaje swobodnie przewijalny.
 
   function installCss(){
     if(document.getElementById('v0631-workout-scroll-style'))return;
