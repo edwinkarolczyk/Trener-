@@ -26,7 +26,8 @@
     ['0.7.0','v070-beta-recovery.js'],
     ['0.7.0','v070-beta-data.js'],
     ['0.7.0','v070-beta-sync-hardening.js'],
-    ['0.7.1','v071-shared-ui-authority.js']
+    ['0.7.1','v071-shared-ui-authority.js'],
+    ['0.7.4','v074-safe-finish.js']
   ];
   features.forEach(([min,src])=>{
     if(!gte(current,min))return;
