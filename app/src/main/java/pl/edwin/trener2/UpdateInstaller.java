@@ -2,7 +2,6 @@ package pl.edwin.trener2;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.Settings;
@@ -14,11 +13,13 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Locale;
 
@@ -30,6 +31,7 @@ public final class UpdateInstaller {
     private static final String BETA_RELEASES_URL =
             "https://api.github.com/repos/edwinkarolczyk/Trener-/releases?per_page=30";
     private static final int MAX_APK_BYTES = 100 * 1024 * 1024;
+    private static final int MAX_JSON_BYTES = 1024 * 1024;
 
     private final Activity activity;
     private final Listener listener;
@@ -51,7 +53,7 @@ public final class UpdateInstaller {
 
             String raw;
             try (InputStream in = connection.getInputStream()) {
-                raw = new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+                raw = readUtf8(in, MAX_JSON_BYTES);
             }
 
             JSONArray releases = new JSONArray(raw);
@@ -230,6 +232,19 @@ public final class UpdateInstaller {
         connection.setRequestProperty("User-Agent", "Trener2-Android-Updater");
         connection.setRequestProperty("Cache-Control", "no-cache");
         return connection;
+    }
+
+    private static String readUtf8(InputStream in, int maxBytes) throws Exception {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        byte[] buffer = new byte[8192];
+        int total = 0;
+        int read;
+        while ((read = in.read(buffer)) != -1) {
+            total += read;
+            if (total > maxBytes) throw new IllegalStateException("Odpowiedź serwera aktualizacji jest zbyt duża.");
+            out.write(buffer, 0, read);
+        }
+        return new String(out.toByteArray(), StandardCharsets.UTF_8);
     }
 
     private static boolean isAllowedReleaseUrl(String rawUrl) {
