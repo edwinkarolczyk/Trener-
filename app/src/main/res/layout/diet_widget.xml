@@ -19,18 +19,18 @@
         android:id="@+id/widgetKcal"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="7dp"
         android:text="0 / — kcal"
         android:textColor="#FFFFFF"
-        android:textSize="20sp"
+        android:textSize="18sp"
         android:textStyle="bold" />
 
     <ProgressBar
         android:id="@+id/widgetKcalProgress"
         style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="match_parent"
-        android:layout_height="7dp"
-        android:layout_marginTop="6dp"
+        android:layout_height="6dp"
+        android:layout_marginTop="5dp"
         android:max="100"
         android:progress="0"
         android:progressTint="#39D27D"
@@ -40,32 +40,74 @@
         android:id="@+id/widgetProtein"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="6dp"
         android:text="Białko 0 / — g"
         android:textColor="#D0D0D0"
-        android:textSize="12sp" />
+        android:textSize="11sp" />
 
     <ProgressBar
         android:id="@+id/widgetProteinProgress"
         style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="match_parent"
-        android:layout_height="5dp"
-        android:layout_marginTop="4dp"
+        android:layout_height="4dp"
+        android:layout_marginTop="3dp"
         android:max="100"
         android:progress="0"
         android:progressTint="#E74C4C"
+        android:progressBackgroundTint="#2A2A2A" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="7dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/widgetWater"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Woda 0 / 2500 ml"
+            android:textColor="#D0D0D0"
+            android:textSize="11sp" />
+
+        <TextView
+            android:id="@+id/widgetWaterAdd"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingLeft="9dp"
+            android:paddingTop="5dp"
+            android:paddingRight="9dp"
+            android:paddingBottom="5dp"
+            android:text="+250 ml"
+            android:textColor="#FFFFFF"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:background="@drawable/diet_widget_button" />
+    </LinearLayout>
+
+    <ProgressBar
+        android:id="@+id/widgetWaterProgress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="4dp"
+        android:layout_marginTop="3dp"
+        android:max="100"
+        android:progress="0"
+        android:progressTint="#4FC3F7"
         android:progressBackgroundTint="#2A2A2A" />
 
     <TextView
         android:id="@+id/widgetOpen"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
+        android:layout_marginTop="8dp"
         android:gravity="center"
-        android:padding="7dp"
+        android:padding="6dp"
         android:text="OTWÓRZ DIETĘ"
         android:textColor="#FFFFFF"
-        android:textSize="11sp"
+        android:textSize="10sp"
         android:textStyle="bold"
         android:background="@drawable/diet_widget_button" />
 </LinearLayout>
