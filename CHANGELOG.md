@@ -1,5 +1,22 @@
 # Zmiany
 
+## 0.7.4 Beta
+- STOP działa przez nową warstwę `safe finish` i nie może zostać zablokowany przez błąd Wi‑Fi ani starszy handler ekranu treningu,
+- ręczne zakończenie zawsze próbuje najpierw zachować checkpoint i własne wykonane serie, a potem kończy lokalnie niezależnie od odpowiedzi drugiego telefonu,
+- po STOP aplikacja wraca do głównego widoku `Start`, a po `PLAN / WYJDŹ` kończy trening i otwiera `Plan`,
+- podczas aktywnego treningu stały dolny pasek ma dodatkowy przycisk `PLAN / WYJDŹ`, więc użytkownik nie może zostać uwięziony na ekranie treningu,
+- normalne zakończenie ostatniej serii również wymusza posprzątanie stanu treningu i powrót do `Start`,
+- dodany awaryjny zapis historii, gdy starsza funkcja kończenia rzuci wyjątek po drodze,
+- statusy są porządkowane do kolejności `Użytkownik — status`, np. `Edwin — odpoczywa`,
+- wersja podniesiona do `0.7.4-beta`, `versionCode 41`.
+
+## 0.7.3 Beta
+- dodany osobny automatyczny kanał aktualizacji dla wersji beta,
+- beta sprawdza najnowszy prerelease, pobiera podpisane APK i weryfikuje SHA-256,
+- po pobraniu aplikacja otwiera systemowy instalator Androida,
+- workflow publikuje każdą kolejną betę jako prerelease bez ruszania stabilnego `main`,
+- wersja podniesiona do `0.7.3-beta`, `versionCode 40`.
+
 ## 0.7.2 Beta
 - nowy planer tygodnia jest jedynym widokiem planowania; stary blok `TWÓJ TYDZIEŃ` jest ukryty,
 - przy pierwszym uruchomieniu 0.7.2 dotychczasowy tygodniowy rozkład z `trainer3.schedule.v050` jest migrowany do `trainer3.weekPlan.v070`,
@@ -86,7 +103,7 @@
 - dodane skanowanie QR aparatem w Androidzie.
 
 ## 0.4.0
-- wspólna sesja dwóch telefonów po lokalnym Wi-Fi / hotspocie,
+- wspólna sesja dwóch telefonów po lokalnym Wi‑Fi / hotspocie,
 - osobne ciężary, serie, przerwy i progresja każdej osoby,
 - synchronizacja bieżącego postępu i brakujących serii po ponownym połączeniu.
 
