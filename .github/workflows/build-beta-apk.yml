@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: read
+  contents: write
 
 env:
   TR2_EXPECTED_SHA256: 30:68:33:34:5C:88:E2:34:4A:5A:0C:BC:51:F6:01:97:69:31:E7:24:CF:95:67:FE:6B:70:D1:59:86:56:69:CB
@@ -92,8 +92,13 @@ jobs:
       - name: Prepare beta artifact
         run: |
           VERSION=$(grep -m1 "versionName" app/build.gradle | sed -E "s/.*versionName[[:space:]]+'([^']+)'.*/\1/")
+          case "$VERSION" in
+            *beta*) ;;
+            *) echo "Beta workflow requires a beta versionName" >&2; exit 1 ;;
+          esac
           APK_NAME="Trener2-v${VERSION}.apk"
           cp app/build/outputs/apk/release/app-release.apk "$APK_NAME"
+          sha256sum "$APK_NAME" | awk '{print $1}' > "$APK_NAME.sha256"
           echo "APK_NAME=$APK_NAME" >> "$GITHUB_ENV"
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
 
@@ -101,5 +106,31 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Trener2-v${{ env.VERSION }}
-          path: ${{ env.APK_NAME }}
+          path: |
+            ${{ env.APK_NAME }}
+            ${{ env.APK_NAME }}.sha256
           retention-days: 30
+
+      - name: Publish beta prerelease for automatic updater
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          TAG="v${VERSION}"
+          TITLE="Trener 2 ${VERSION}"
+          NOTES=$(cat <<'EOF'
+          - Automatyczny kanał testowy Trener 2 Beta.
+          - APK jest podpisane tym samym certyfikatem co poprzednie wersje.
+          - Aplikacja beta może wykryć to wydanie, pobrać je i otworzyć instalator Androida.
+          EOF
+          )
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$APK_NAME" "$APK_NAME.sha256" --clobber
+            gh release edit "$TAG" --title "$TITLE" --notes "$NOTES" --prerelease
+          else
+            gh release create "$TAG" "$APK_NAME" "$APK_NAME.sha256" \
+              --target "$GITHUB_SHA" \
+              --title "$TITLE" \
+              --notes "$NOTES" \
+              --prerelease
+          fi
