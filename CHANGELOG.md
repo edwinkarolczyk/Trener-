@@ -1,5 +1,16 @@
 # Zmiany
 
+## 0.7.0 Beta.3
+- wspólny trening ma dodatkową kontrolę jakości synchronizacji: `SYNC OK`, `SYNC OPÓŹNIONY`, `BRAK SYNC` i `OFFLINE`,
+- gość blokuje zapis nowej serii, gdy nie ma świeżego stanu od hosta, zamiast dalej rozjeżdżać trening,
+- po odzyskaniu połączenia gość automatycznie prosi hosta o pełny stan sesji,
+- host odpowiada pełnym snapshotem kolejki, rekordów, serii dodatkowych i uczestników,
+- jeśli telefon gościa odzyska starszy lub wyższy lokalny `rev`, stan hosta nadal ma pierwszeństwo jako źródło prawdy,
+- niepotwierdzona seria jest ponawiana po problemie z Wi‑Fi bez tworzenia duplikatu,
+- checkpoint kolejki zapisuje również serię oczekującą na ACK; po restarcie aplikacji taka seria wraca i może zostać dosynchronizowana,
+- STOP działa lokalnie nawet wtedy, gdy wysłanie komunikatu przez Wi‑Fi rzuci błąd,
+- naturalne zakończenie wspólnego treningu również ma lokalny fallback, jeśli sieć zawiedzie podczas FINISH.
+
 ## 0.7.0 Beta.2
 - uproszczony ekran Plan: TYDZIEŃ / MOJE TRENINGI / ĆWICZENIA, bez pokazywania wszystkich kreatorów naraz,
 - edycja dnia otwiera tylko potrzebne opcje: Wolne, Gotowy trening, Partie albo Ćwiczenia,
