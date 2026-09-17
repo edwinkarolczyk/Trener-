@@ -1,5 +1,17 @@
 # Zmiany
 
+## 0.7.6 Beta
+- zakładka `Dieta` przestała być makietą i działa jako lokalny dziennik kalorii oraz makro,
+- można ustawić własny cel: redukcja / utrzymanie / masa oraz dzienne kcal, białko, węglowodany i tłuszcze,
+- dodawanie posiłku zapisuje nazwę, typ, kalorie i makro dla wybranego dnia,
+- jeśli kalorie nie są wpisane, aplikacja potrafi policzyć je z makro według 4/4/9,
+- bilans dnia pokazuje zjedzone wartości, cel, ile zostało oraz przekroczenie celu,
+- dodane przechodzenie między dniami, lista posiłków i usuwanie błędnego wpisu,
+- dodana historia ostatnich 7 dni z kcal, białkiem i liczbą posiłków,
+- dodana prosta lista zakupów z oznaczaniem produktów jako kupione i czyszczeniem kupionych,
+- dane diety zapisują się pod `trainer3.diet.v076`, więc są obejmowane istniejącym eksportem/importem kopii `trainer3.*`,
+- wersja podniesiona do `0.7.6-beta`, `versionCode 43`.
+
 ## 0.7.5 Beta
 - naprawiony wybór zdjęć sylwetki w Androidowym WebView: `Dodaj zdjęcie` otwiera teraz natywny wybór pliku/galerii i zwraca wybrane zdjęcie do aplikacji,
 - włączony dostęp WebView do `content://`, dzięki czemu wybrane zdjęcie może zostać odczytane i zapisane lokalnie,
