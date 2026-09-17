@@ -22,7 +22,8 @@
     ['0.6.4.3','v0643-resilient-sync.js'],
     ['0.7.0','v070-beta-queue.js'],
     ['0.7.0','v070-beta-planner.js'],
-    ['0.7.0','v070-beta-recovery.js']
+    ['0.7.0','v070-beta-recovery.js'],
+    ['0.7.0','v070-beta-data.js']
   ];
   features.forEach(([min,src])=>{
     if(!gte(current,min))return;
