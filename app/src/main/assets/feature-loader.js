@@ -29,7 +29,10 @@
     ['0.7.1','v071-shared-ui-authority.js'],
     ['0.7.4','v074-safe-finish.js'],
     ['0.7.5','v075-ui-photo-fixes.js'],
-    ['0.7.6','v076-diet.js']
+    ['0.7.6','v076-diet.js'],
+    ['0.7.7','v077-diet-quick.js'],
+    ['0.7.7','v077-widget-sync.js'],
+    ['0.7.7','v077-sound-haptics.js']
   ];
   features.forEach(([min,src])=>{
     if(!gte(current,min))return;
