@@ -26,24 +26,34 @@ public class MainActivityV077 extends MainActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        openDietIfRequested();
+        openWidgetTargetIfRequested();
     }
 
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
-        openDietIfRequested();
+        openWidgetTargetIfRequested();
     }
 
-    private void openDietIfRequested() {
+    private void openWidgetTargetIfRequested() {
         Intent intent = getIntent();
-        if (betaWebView == null || intent == null || !intent.getBooleanExtra("open_diet", false)) return;
-        intent.removeExtra("open_diet");
-        betaWebView.postDelayed(() -> betaWebView.evaluateJavascript(
-                "(function(){if(typeof showTab==='function'){showTab('diet');}else{var b=document.querySelector('.tab[data-tab=\"diet\"]');if(b)b.click();}})();",
-                null
-        ), 350);
+        if (betaWebView == null || intent == null) return;
+        if (intent.getBooleanExtra("open_workout", false)) {
+            intent.removeExtra("open_workout");
+            betaWebView.postDelayed(() -> betaWebView.evaluateJavascript(
+                    "(function(){if(typeof showTab==='function'){showTab('start');}else{var b=document.querySelector('.tab[data-tab=\"start\"]');if(b)b.click();}})();",
+                    null
+            ), 350);
+            return;
+        }
+        if (intent.getBooleanExtra("open_diet", false)) {
+            intent.removeExtra("open_diet");
+            betaWebView.postDelayed(() -> betaWebView.evaluateJavascript(
+                    "(function(){if(typeof showTab==='function'){showTab('diet');}else{var b=document.querySelector('.tab[data-tab=\"diet\"]');if(b)b.click();}})();",
+                    null
+            ), 350);
+        }
     }
 
     private void requestHydrationNotificationPermissionIfNeeded() {
@@ -66,6 +76,11 @@ public class MainActivityV077 extends MainActivity {
         @JavascriptInterface
         public void syncDietWidget(String json) {
             DietWidgetProvider.sync(context, json);
+        }
+
+        @JavascriptInterface
+        public void syncWorkoutWidget(String json) {
+            WorkoutWidgetProvider.sync(context, json);
         }
     }
 
