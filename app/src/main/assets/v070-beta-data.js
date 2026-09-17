@@ -1,0 +1,48 @@
+(function(){
+  'use strict';
+  const HISTORY_KEY='trainer3.history';
+  const PID_KEY='trainer3.participantId.v070';
+  const SCHEMA_KEY='trainer3.schemaVersion';
+  const ADAPTIVE_KEY='trainer3.adaptiveVolume.v0642';
+  const SCHEMA_VERSION=2;
+  const $=id=>document.getElementById(id);
+  const state={pid:'',baseSaveHistory:null,baseRenderHistory:null,undo:null,undoTimer:null};
+  const clone=(v,f=null)=>{try{return JSON.parse(JSON.stringify(v));}catch(e){return f;}};
+  function randomId(){try{if(window.crypto&&crypto.randomUUID)return crypto.randomUUID();}catch(e){}return 'p'+Date.now().toString(36)+Math.random().toString(36).slice(2,10);}
+  function participantId(){
+    if(state.pid)return state.pid;let id='';try{id=localStorage.getItem(PID_KEY)||'';}catch(e){}
+    if(!id){try{id=String(window.TrenerGroup?.deviceId||localStorage.getItem('trainer3.deviceId.v064')||'');}catch(e){}}
+    if(!id)id=randomId();state.pid=id;try{localStorage.setItem(PID_KEY,id);localStorage.setItem(SCHEMA_KEY,String(SCHEMA_VERSION));}catch(e){}return id;
+  }
+  function history(){try{return typeof getHistory==='function'?getHistory():JSON.parse(localStorage.getItem(HISTORY_KEY)||'[]');}catch(e){return [];}}
+  function saveHistoryList(list){localStorage.setItem(HISTORY_KEY,JSON.stringify((list||[]).slice(0,100)));}
+  function recordPid(h,r){
+    if(r?.participantId)return r.participantId;const parts=h?.group?.participants||[];const p=parts.find(x=>Number(x.index)===Number(r?.athlete));if(p?.deviceId)return String(p.deviceId);const local=Number(h?.localAthlete??0);if(Number(r?.athlete||0)===local)return String(h?.participantId||h?.group?.deviceId||participantId());return '';
+  }
+  function migrateHistory(){const pid=participantId(),list=history();let changed=false;for(const h of list){if(!h.schemaVersion){h.schemaVersion=SCHEMA_VERSION;changed=true;}if(!h.participantId){h.participantId=String(h.group?.deviceId||pid);changed=true;}for(const r of h.records||[]){if(!r.participantId){const id=recordPid(h,r);if(id){r.participantId=id;changed=true;}}}}if(changed)saveHistoryList(list);return list;}
+  function annotateLatest(){const list=history();if(!list.length)return;const h=list[0];h.schemaVersion=SCHEMA_VERSION;h.participantId=String(h.group?.deviceId||participantId());for(const r of h.records||[]){if(!r.participantId){const id=recordPid(h,r);if(id)r.participantId=id;}}saveHistoryList(list);}
+  function wrapSave(){if(state.baseSaveHistory||typeof saveHistory!=='function')return;state.baseSaveHistory=saveHistory;saveHistory=function(){const out=state.baseSaveHistory.apply(this,arguments);try{annotateLatest();}catch(e){}return out;};}
+  function ownRows(h,exId){const pid=String(h?.participantId||participantId()),local=Number(h?.localAthlete??0);return (h?.records||[]).filter(r=>(r.id===exId)&&((r.participantId&&String(r.participantId)===pid)||(!r.participantId&&Number(r.athlete||0)===local)));}
+  function historyExtra(h,exId){const pid=String(h?.participantId||h?.group?.deviceId||participantId());return Math.max(0,Math.min(3,Number(h?.group?.extraSets?.[pid]?.[exId]||0)));}
+  function readinessOk(h){const r=h?.group?.readiness||h?.readiness||null;if(!r)return true;if(Number.isFinite(Number(r.score))&&Number(r.score)<3)return false;if(Number(r.soreness)>=5)return false;return true;}
+  function qualityOk(h,ex,extra){if(!h||h.interrupted)return false;const rows=ownRows(h,ex.id);if(rows.length<Math.max(1,Number(ex.sets)||1)+extra)return false;if(!readinessOk(h))return false;for(const r of rows){if(r.pain&&r.pain!=='none')return false;if(r.technique&&r.technique!=='good')return false;}const rirs=rows.map(r=>Number(r.rir)).filter(Number.isFinite);if(rirs.length){const avg=rirs.reduce((a,b)=>a+b,0)/rirs.length;if(avg<1.5||Math.min(...rirs)<1||rirs[rirs.length-1]<Math.max(1,rirs[0]-1))return false;}return true;}
+  function rebuildDerived(){
+    const list=migrateHistory(),learned={};let lib=[];try{lib=exerciseLibrary||[];}catch(e){}
+    for(const ex of lib){const recent=[];for(const h of list){if(!ownRows(h,ex.id).length)continue;recent.push(h);if(recent.length>=3)break;}if(recent.length<3)continue;const extras=recent.map(h=>historyExtra(h,ex.id)),target=Math.min(3,...extras);if(target>0&&recent.every((h,i)=>qualityOk(h,ex,extras[i])))learned[ex.id]=target;}
+    localStorage.setItem(ADAPTIVE_KEY,JSON.stringify({learned,dismissed:{}}));return learned;
+  }
+  function ensureUndo(){const hc=$('historyContent');if(!hc||$('v070UndoBar'))return;const b=document.createElement('div');b.id='v070UndoBar';b.className='v070UndoBar hidden';b.innerHTML='<span id="v070UndoText">Usunięto trening.</span><button id="v070UndoBtn" class="secondary">COFNIJ</button>';hc.parentNode.insertBefore(b,hc);$('v070UndoBtn').onclick=undoDelete;}
+  function installCss(){if($('v070DataStyle'))return;const s=document.createElement('style');s.id='v070DataStyle';s.textContent=`.v070HistoryMenu{margin-left:auto;position:relative;display:inline-flex}.v070HistoryDots{min-width:36px!important;width:36px!important;min-height:32px!important;padding:0!important}.v070HistoryPopup{position:absolute;right:0;top:34px;z-index:20;background:#111;border:1px solid #444;border-radius:9px;padding:5px;min-width:150px}.v070HistoryPopup.hidden,.v070UndoBar.hidden{display:none!important}.v070HistoryPopup button{width:100%;color:#ff8587}.v070UndoBar{display:flex;justify-content:space-between;align-items:center;gap:8px;border:1px solid #535353;border-radius:10px;padding:8px 10px;margin:8px 0;background:#111;font-size:11px}.v070DataCard .danger{margin-top:8px}.historyItem summary{position:relative}`;document.head.appendChild(s);}
+  function injectHistoryMenus(){ensureUndo();const list=history(),items=[...document.querySelectorAll('#historyContent .historyItem')];items.forEach((item,i)=>{if(item.querySelector('.v070HistoryMenu'))return;const h=list[i];if(!h)return;const sum=item.querySelector('summary');if(!sum)return;const wrap=document.createElement('span');wrap.className='v070HistoryMenu';wrap.innerHTML='<button class="secondary v070HistoryDots" type="button">⋮</button><span class="v070HistoryPopup hidden"><button class="secondary" type="button">USUŃ TRENING</button></span>';const dots=wrap.querySelector('.v070HistoryDots'),pop=wrap.querySelector('.v070HistoryPopup'),del=pop.querySelector('button');dots.onclick=e=>{e.preventDefault();e.stopPropagation();document.querySelectorAll('.v070HistoryPopup').forEach(x=>{if(x!==pop)x.classList.add('hidden');});pop.classList.toggle('hidden');};del.onclick=e=>{e.preventDefault();e.stopPropagation();deleteOne(h.id,i);};sum.appendChild(wrap);});}
+  function wrapRender(){if(state.baseRenderHistory||typeof renderHistory!=='function')return;state.baseRenderHistory=renderHistory;renderHistory=function(){const out=state.baseRenderHistory.apply(this,arguments);try{injectHistoryMenus();}catch(e){}return out;};try{renderHistory();}catch(e){}}
+  function scheduleReload(ms=6500){clearTimeout(state.undoTimer);state.undoTimer=setTimeout(()=>location.reload(),ms);}
+  function showUndo(text){ensureUndo();const b=$('v070UndoBar');if(!b)return;$('v070UndoText').textContent=text;b.classList.remove('hidden');scheduleReload();}
+  function deleteOne(id,index){const list=history(),idx=id?list.findIndex(h=>h.id===id):index;if(idx<0)return;const item=list[idx];if(!confirm(`Usunąć trening „${item.plan||'Trening'}”?`))return;state.undo={item:clone(item),index:idx};list.splice(idx,1);saveHistoryList(list);rebuildDerived();try{renderHistory();renderProgress();}catch(e){}showUndo('Usunięto trening. Możesz cofnąć tę operację.');}
+  function undoDelete(){if(!state.undo)return;const list=history();list.splice(Math.min(state.undo.index,list.length),0,state.undo.item);saveHistoryList(list);state.undo=null;clearTimeout(state.undoTimer);rebuildDerived();const b=$('v070UndoBar');if(b)b.classList.add('hidden');try{renderHistory();renderProgress();toast('Przywrócono trening.');}catch(e){}setTimeout(()=>location.reload(),500);}
+  function clearAll(){if(!confirm('Usunąć całą historię treningów? Profil, plany, ustawienia i masa ciała pozostaną.'))return;saveHistoryList([]);rebuildDerived();try{renderHistory();renderProgress();toast('Historia treningów została usunięta.');}catch(e){}setTimeout(()=>location.reload(),500);}
+  function resetCoach(){if(!confirm('Zresetować rekomendacje Trenera bez usuwania historii?'))return;localStorage.setItem(ADAPTIVE_KEY,JSON.stringify({learned:{},dismissed:{}}));try{toast('Rekomendacje Trenera zresetowane.');}catch(e){}setTimeout(()=>location.reload(),500);}
+  function installSettings(){const settings=$('settings');if(!settings||$('v070DataCard'))return;const card=document.createElement('div');card.id='v070DataCard';card.className='card v070DataCard';card.innerHTML='<div class="eyebrow">DANE • 0.7.0 BETA</div><h2>Historia i rekomendacje</h2><p class="hint">Historia jest źródłem prawdy. Usunięcie treningu przelicza dane pochodne; profil, plany i masa ciała zostają.</p><button id="v070ResetCoach" class="secondary">RESET REKOMENDACJI TRENERA</button><button id="v070ClearHistory" class="danger">USUŃ CAŁĄ HISTORIĘ TRENINGÓW</button>';settings.appendChild(card);$('v070ResetCoach').onclick=resetCoach;$('v070ClearHistory').onclick=clearAll;}
+  function boot(){participantId();migrateHistory();installCss();wrapSave();wrapRender();installSettings();setInterval(()=>{wrapSave();wrapRender();installSettings();},1500);}
+  window.TrenerData070={schemaVersion:SCHEMA_VERSION,participantId,rebuildDerived,migrateHistory};
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
+})();
