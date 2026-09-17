@@ -16,6 +16,8 @@ import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.util.Base64;
 import android.webkit.JavascriptInterface;
+import android.webkit.ValueCallback;
+import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -44,6 +46,7 @@ public class MainActivity extends Activity {
     private static final int NOTIFICATION_PERMISSION_REQUEST = 101;
     private static final int BACKUP_EXPORT_REQUEST = 201;
     private static final int BACKUP_IMPORT_REQUEST = 202;
+    private static final int FILE_CHOOSER_REQUEST = 203;
     private static final int MAX_BACKUP_BYTES = 5 * 1024 * 1024;
     private static final String UPDATE_INFO_URL =
             "https://raw.githubusercontent.com/edwinkarolczyk/Trener-/main/update.json";
@@ -53,6 +56,7 @@ public class MainActivity extends Activity {
     private GmsBarcodeScanner qrScanner;
     private UpdateInstaller updateInstaller;
     private String pendingBackupJson;
+    private ValueCallback<Uri[]> fileChooserCallback;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,11 +89,59 @@ public class MainActivity extends Activity {
                 );
             }
         });
+        webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public boolean onShowFileChooser(
+                    WebView view,
+                    ValueCallback<Uri[]> filePathCallback,
+                    FileChooserParams fileChooserParams
+            ) {
+                if (fileChooserCallback != null) {
+                    fileChooserCallback.onReceiveValue(null);
+                }
+                fileChooserCallback = filePathCallback;
+
+                String mimeType = "*/*";
+                try {
+                    String[] acceptTypes = fileChooserParams == null ? null : fileChooserParams.getAcceptTypes();
+                    if (acceptTypes != null) {
+                        for (String accept : acceptTypes) {
+                            if (accept != null && !accept.trim().isEmpty()) {
+                                mimeType = accept.trim();
+                                break;
+                            }
+                        }
+                    }
+                } catch (Throwable ignored) {
+                    mimeType = "*/*";
+                }
+
+                Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
+                intent.setType(mimeType);
+                intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, false);
+                try {
+                    startActivityForResult(
+                            Intent.createChooser(intent, mimeType.startsWith("image/") ? "Wybierz zdjęcie" : "Wybierz plik"),
+                            FILE_CHOOSER_REQUEST
+                    );
+                    return true;
+                } catch (Exception e) {
+                    if (fileChooserCallback != null) {
+                        fileChooserCallback.onReceiveValue(null);
+                        fileChooserCallback = null;
+                    }
+                    Toast.makeText(MainActivity.this, "Nie udało się otworzyć wyboru pliku.", Toast.LENGTH_LONG).show();
+                    return false;
+                }
+            }
+        });
 
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setAllowFileAccess(true);
+        settings.setAllowContentAccess(true);
         settings.setDefaultTextEncodingName("UTF-8");
 
         localSession = new LocalSessionManager(new LocalSessionManager.Listener() {
@@ -286,6 +338,23 @@ public class MainActivity extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == FILE_CHOOSER_REQUEST) {
+            Uri[] result = null;
+            if (resultCode == RESULT_OK && data != null) {
+                if (data.getData() != null) {
+                    result = new Uri[]{data.getData()};
+                } else if (data.getClipData() != null && data.getClipData().getItemCount() > 0) {
+                    result = new Uri[]{data.getClipData().getItemAt(0).getUri()};
+                }
+            }
+            if (fileChooserCallback != null) {
+                fileChooserCallback.onReceiveValue(result);
+                fileChooserCallback = null;
+            }
+            return;
+        }
+
         if (requestCode == BACKUP_EXPORT_REQUEST) {
             if (resultCode != RESULT_OK || data == null || data.getData() == null) {
                 pendingBackupJson = null;
@@ -361,6 +430,10 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        if (fileChooserCallback != null) {
+            fileChooserCallback.onReceiveValue(null);
+            fileChooserCallback = null;
+        }
         if (localSession != null) localSession.shutdown();
         if (webView != null) webView.destroy();
         super.onDestroy();
