@@ -31,8 +31,9 @@
         </provider>
 
         <activity
-            android:name=".MainActivity"
+            android:name=".MainActivityV077"
             android:screenOrientation="portrait"
+            android:launchMode="singleTop"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
