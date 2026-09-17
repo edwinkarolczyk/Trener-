@@ -66,7 +66,7 @@
   function monitor(){
     const nowRun=readRunning(),rest=readRest(),count=recordCount();
     if(rest>Date.now()+150)hadRest=true;
-    if(hadRest&&nowRun&&rest<=0){hadRest=false;feedback('rest');}
+    if(hadRest&&nowRun&&rest<=0){hadRest=false;const c=cfg();if(c.rest){tone(740,0.09);tone(980,0.12,0.11);}}
     if(count>prevRecords&&nowRun)feedback('set');
     if(prevRunning&&!nowRun)feedback('finish');
     prevRunning=nowRun;prevRecords=count;
