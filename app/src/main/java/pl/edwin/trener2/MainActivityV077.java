@@ -1,13 +1,16 @@
 package pl.edwin.trener2;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Bundle;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.view.View;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 
 public class MainActivityV077 extends MainActivity {
+    private static final int HYDRATION_NOTIFICATION_PERMISSION_REQUEST = 178;
     private WebView betaWebView;
 
     @Override
@@ -15,6 +18,7 @@ public class MainActivityV077 extends MainActivity {
         if (view instanceof WebView) {
             betaWebView = (WebView) view;
             betaWebView.addJavascriptInterface(new DietWidgetBridge(this), "TrenerWidget");
+            betaWebView.addJavascriptInterface(new HydrationBridge(), "TrenerHydration");
         }
         super.setContentView(view);
     }
@@ -42,6 +46,16 @@ public class MainActivityV077 extends MainActivity {
         ), 350);
     }
 
+    private void requestHydrationNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(
+                    new String[]{Manifest.permission.POST_NOTIFICATIONS},
+                    HYDRATION_NOTIFICATION_PERMISSION_REQUEST
+            );
+        }
+    }
+
     public static class DietWidgetBridge {
         private final Context context;
 
@@ -52,6 +66,45 @@ public class MainActivityV077 extends MainActivity {
         @JavascriptInterface
         public void syncDietWidget(String json) {
             DietWidgetProvider.sync(context, json);
+        }
+    }
+
+    public class HydrationBridge {
+        @JavascriptInterface
+        public String getState() {
+            return HydrationStore.stateJson(getApplicationContext());
+        }
+
+        @JavascriptInterface
+        public int addWater(int ml) {
+            return HydrationStore.addWater(getApplicationContext(), ml);
+        }
+
+        @JavascriptInterface
+        public void saveConfig(
+                int targetMl,
+                boolean remindersEnabled,
+                int intervalMinutes,
+                int quietStartMinutes,
+                int quietEndMinutes,
+                boolean workoutEnabled,
+                String workoutFrequency
+        ) {
+            Context app = getApplicationContext();
+            HydrationStore.saveConfig(
+                    app,
+                    targetMl,
+                    remindersEnabled,
+                    intervalMinutes,
+                    quietStartMinutes,
+                    quietEndMinutes,
+                    workoutEnabled,
+                    workoutFrequency
+            );
+            HydrationScheduler.apply(app);
+            if (remindersEnabled) {
+                runOnUiThread(MainActivityV077.this::requestHydrationNotificationPermissionIfNeeded);
+            }
         }
     }
 }
