@@ -57,6 +57,10 @@ public final class UpdateInstaller {
             }
 
             JSONArray releases = new JSONArray(raw);
+            JSONObject bestRelease = null;
+            JSONObject bestApkAsset = null;
+            String bestVersion = "";
+
             for (int i = 0; i < releases.length(); i++) {
                 JSONObject release = releases.optJSONObject(i);
                 if (release == null || release.optBoolean("draft") || !release.optBoolean("prerelease")) continue;
@@ -82,33 +86,89 @@ public final class UpdateInstaller {
                 String apkUrl = apkAsset.optString("browser_download_url", "");
                 if (!isAllowedReleaseUrl(apkUrl)) continue;
 
-                JSONObject out = new JSONObject();
-                out.put("version", version);
-                out.put("apkUrl", apkUrl);
-                out.put("pageUrl", release.optString("html_url", ""));
-                out.put("channel", "beta");
-
-                String digest = apkAsset.optString("digest", "");
-                if (digest.toLowerCase(Locale.ROOT).startsWith("sha256:")) {
-                    out.put("sha256", digest.substring("sha256:".length()));
+                if (bestRelease == null || compareBetaVersions(version, bestVersion) > 0) {
+                    bestRelease = release;
+                    bestApkAsset = apkAsset;
+                    bestVersion = version;
                 }
-
-                JSONArray notes = new JSONArray();
-                String body = release.optString("body", "");
-                for (String line : body.split("\\r?\\n")) {
-                    String s = line.trim();
-                    if (s.startsWith("- ")) s = s.substring(2).trim();
-                    if (s.startsWith("* ")) s = s.substring(2).trim();
-                    if (s.isEmpty() || s.startsWith("#")) continue;
-                    notes.put(s);
-                    if (notes.length() >= 6) break;
-                }
-                out.put("notes", notes);
-                return out.toString();
             }
-            throw new IllegalStateException("Brak opublikowanej wersji beta.");
+
+            if (bestRelease == null || bestApkAsset == null || bestVersion.isEmpty()) {
+                throw new IllegalStateException("Brak opublikowanej wersji beta.");
+            }
+
+            JSONObject out = new JSONObject();
+            out.put("version", bestVersion);
+            out.put("apkUrl", bestApkAsset.optString("browser_download_url", ""));
+            out.put("pageUrl", bestRelease.optString("html_url", ""));
+            out.put("channel", "beta");
+
+            String digest = bestApkAsset.optString("digest", "");
+            if (digest.toLowerCase(Locale.ROOT).startsWith("sha256:")) {
+                out.put("sha256", digest.substring("sha256:".length()));
+            }
+
+            JSONArray notes = new JSONArray();
+            String body = bestRelease.optString("body", "");
+            for (String line : body.split("\\r?\\n")) {
+                String s = line.trim();
+                if (s.startsWith("- ")) s = s.substring(2).trim();
+                if (s.startsWith("* ")) s = s.substring(2).trim();
+                if (s.isEmpty() || s.startsWith("#")) continue;
+                notes.put(s);
+                if (notes.length() >= 6) break;
+            }
+            out.put("notes", notes);
+            return out.toString();
         } finally {
             if (connection != null) connection.disconnect();
+        }
+    }
+
+    static int compareBetaVersions(String left, String right) {
+        int[] a = coreVersion(left);
+        int[] b = coreVersion(right);
+        for (int i = 0; i < 3; i++) {
+            if (a[i] != b[i]) return Integer.compare(a[i], b[i]);
+        }
+        return Integer.compare(betaBuild(left), betaBuild(right));
+    }
+
+    private static int[] coreVersion(String raw) {
+        String v = raw == null ? "" : raw.trim().toLowerCase(Locale.ROOT);
+        if (v.startsWith("v")) v = v.substring(1);
+        int dash = v.indexOf('-');
+        String core = dash >= 0 ? v.substring(0, dash) : v;
+        String[] parts = core.split("\\.");
+        int[] out = new int[]{0, 0, 0};
+        for (int i = 0; i < out.length && i < parts.length; i++) {
+            try {
+                out[i] = Math.max(0, Integer.parseInt(parts[i].replaceAll("[^0-9]", "")));
+            } catch (Exception ignored) {
+                out[i] = 0;
+            }
+        }
+        return out;
+    }
+
+    private static int betaBuild(String raw) {
+        String v = raw == null ? "" : raw.trim().toLowerCase(Locale.ROOT);
+        int beta = v.indexOf("-beta");
+        if (beta < 0) return 0;
+        String tail = v.substring(beta + 5);
+        while (tail.startsWith(".") || tail.startsWith("-")) tail = tail.substring(1);
+        if (tail.isEmpty()) return 0;
+        StringBuilder digits = new StringBuilder();
+        for (int i = 0; i < tail.length(); i++) {
+            char c = tail.charAt(i);
+            if (!Character.isDigit(c)) break;
+            digits.append(c);
+        }
+        if (digits.length() == 0) return 0;
+        try {
+            return Math.max(0, Integer.parseInt(digits.toString()));
+        } catch (Exception ignored) {
+            return 0;
         }
     }
 
