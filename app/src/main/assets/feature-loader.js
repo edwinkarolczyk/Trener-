@@ -33,7 +33,8 @@
     ['0.7.7','v077-diet-quick.js'],
     ['0.7.7','v077-widget-sync.js'],
     ['0.7.7','v077-sound-haptics.js'],
-    ['0.7.8','v078-hydration.js']
+    ['0.7.8','v078-hydration.js'],
+    ['0.7.9','v079-test-session-ux.js']
   ];
   features.forEach(([min,src])=>{
     if(!gte(current,min))return;
