@@ -1,5 +1,18 @@
 # Zmiany
 
+## 0.7.0 Beta.2
+- uproszczony ekran Plan: TYDZIEŃ / MOJE TRENINGI / ĆWICZENIA, bez pokazywania wszystkich kreatorów naraz,
+- edycja dnia otwiera tylko potrzebne opcje: Wolne, Gotowy trening, Partie albo Ćwiczenia,
+- nazwy gotowych treningów nie są już przywiązane do konkretnego dnia tygodnia,
+- stary rozbudowany widok planu jest ukryty za nowym prostym interfejsem,
+- dodany trwały `participantId` oparty na dotychczasowym `deviceId`, niezależny od roboczego numeru osoby w sesji,
+- nowe i istniejące wpisy historii są oznaczane `schemaVersion` i trwałą tożsamością uczestnika,
+- pojedynczy trening można usunąć przez menu `⋮`, z krótkim `Cofnij`,
+- usunięcie historii przelicza dane pochodne Trenera z pozostałych treningów zamiast zostawiać stare wyuczone serie,
+- osobne akcje: `Usuń całą historię treningów` oraz `Reset rekomendacji Trenera`, bez kasowania profilu, planów i masy ciała,
+- backup nadal używa formatu `trener2-backup` i neutralnego magazynu `trainer3.*`; dodane są tylko `schemaVersion`, `participantId` i metadane zgodności,
+- importer nadal przyjmuje starsze kopie i zachowuje nieznane klucze `trainer2.*` / `trainer3.*`.
+
 ## 0.7.0 Beta
 - nowy wspólny trening 2–4 osoby na jednym wspólnym stanowisku: w danej chwili ćwiczy tylko jedna osoba,
 - host jest źródłem prawdy dla kolejki, ćwiczenia i numeru serii,
