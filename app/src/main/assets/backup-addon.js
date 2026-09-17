@@ -9,6 +9,14 @@
     try{return window.Android&&Android.getAppVersion?String(Android.getAppVersion()):'—'}catch(e){return '—'}
   }
 
+  function schemaVersion(){
+    try{return Math.max(1,Number(localStorage.getItem('trainer3.schemaVersion')||1)||1)}catch(e){return 1}
+  }
+
+  function participantId(){
+    try{return String(window.TrenerData070?.participantId?.()||localStorage.getItem('trainer3.participantId.v070')||localStorage.getItem('trainer3.deviceId.v064')||'')}catch(e){return ''}
+  }
+
   function collectStorage(){
     const storage={};
     for(let i=0;i<localStorage.length;i++){
@@ -26,8 +34,11 @@
     return {
       format:'trener2-backup',
       version:5,
+      schemaVersion:schemaVersion(),
       appVersion:appVersion(),
+      participantId:participantId(),
       exportedAt:new Date().toISOString(),
+      metadata:{forwardCompatibleStorage:true,preserveUnknownKeys:true},
       storage:collectStorage(),
       excludes:['trainer3.photos']
     };
@@ -79,6 +90,8 @@
           if(key==='trainer3.photos')continue;
           if(typeof value==='string')localStorage.setItem(key,value);
         }
+        if(data.schemaVersion&&!localStorage.getItem('trainer3.schemaVersion'))localStorage.setItem('trainer3.schemaVersion',String(data.schemaVersion));
+        if(data.participantId&&!localStorage.getItem('trainer3.participantId.v070'))localStorage.setItem('trainer3.participantId.v070',String(data.participantId));
       }else if(data&&typeof data==='object'){
         applyLegacy(data);
       }else{
@@ -111,7 +124,7 @@
     }
   }
 
-  window.TrenerBackup={nativeImport:applyBackup,exportNow:exportNative,importNow:importNative};
+  window.TrenerBackup={nativeImport:applyBackup,exportNow:exportNative,importNow:importNative,buildBackup};
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});
   else install();
