@@ -49,8 +49,9 @@ public class DietWidgetProvider extends AppWidgetProvider {
         float protein = p.getFloat("protein", 0f);
         float targetProtein = p.getFloat("targetProtein", 0f);
 
-        Intent open = new Intent(context, MainActivity.class);
-        open.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        Intent open = new Intent(context, MainActivityV077.class);
+        open.putExtra("open_diet", true);
+        open.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         PendingIntent pending = PendingIntent.getActivity(
                 context,
                 770,
