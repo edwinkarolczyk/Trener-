@@ -28,7 +28,8 @@
     ['0.7.0','v070-beta-sync-hardening.js'],
     ['0.7.1','v071-shared-ui-authority.js'],
     ['0.7.4','v074-safe-finish.js'],
-    ['0.7.5','v075-ui-photo-fixes.js']
+    ['0.7.5','v075-ui-photo-fixes.js'],
+    ['0.7.6','v076-diet.js']
   ];
   features.forEach(([min,src])=>{
     if(!gte(current,min))return;
