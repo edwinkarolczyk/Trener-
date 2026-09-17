@@ -3,10 +3,10 @@
 
   const HISTORY_KEY='trainer3.history';
   const DRAFT_KEY='trainer3.workoutDraft.v079';
-  const BLOCKED_LEGACY_TYPES=new Set([
-    'GROUP_RESYNC','GROUP_SNAPSHOT','GROUP_POSITION',
-    'SET','SNAPSHOT','RESYNC','START','FINISH'
-  ]);
+  // W aktywnej kolejce BETA070 blokujemy wyłącznie stare ścieżki,
+  // które mogą samodzielnie zmienić rekordy/pozycję treningu.
+  // GROUP_SNAPSHOT zostaje dozwolony: uruchamia i podtrzymuje warstwę sesji 2–4.
+  const BLOCKED_LEGACY_TYPES=new Set(['SET','SNAPSHOT','RESYNC']);
   const state={
     baseWifiSend:null,
     baseSaveHistory:null,
@@ -16,7 +16,13 @@
   };
 
   function betaActive(){
-    try{return !!(window.TrenerBeta070?.active&&running&&net?.active&&net.sessionId);}catch(e){return false;}
+    try{
+      const q=window.TrenerBeta070;
+      return !!(
+        q?.active&&running&&net?.active&&net.sessionId&&q.sessionId&&
+        String(q.sessionId)===String(net.sessionId)
+      );
+    }catch(e){return false;}
   }
   function isRunning(){try{return !!running;}catch(e){return false;}}
   function currentContext(){
@@ -80,6 +86,19 @@
   }
   function shouldBlockLegacy(type){return BLOCKED_LEGACY_TYPES.has(String(type||''));}
 
+  // GROUP_RESYNC jest nadal potrzebny jako impuls do odesłania GROUP_SNAPSHOT,
+  // ale podczas BETA070 nie wolno mu wnosić rekordów/done/pozycji do hosta.
+  function sanitizedGroupResync(payload){
+    let obj=null;
+    try{obj=typeof payload==='object'?Object.assign({},payload):JSON.parse(String(payload));}catch(e){return payload;}
+    if(!obj||obj.type!=='GROUP_RESYNC')return payload;
+    obj.records=[];
+    obj.done=false;
+    obj.position=null;
+    delete obj.extraSets;
+    return typeof payload==='object'?obj:JSON.stringify(obj);
+  }
+
   function wrapWifiSend(){
     if(state.baseWifiSend||typeof wifiSend!=='function')return false;
     state.baseWifiSend=wifiSend;
@@ -88,6 +107,11 @@
       if(betaActive()&&shouldBlockLegacy(type)){
         try{console.debug('0.7.10 blocked legacy outgoing',type);}catch(e){}
         return false;
+      }
+      if(betaActive()&&type==='GROUP_RESYNC'){
+        const args=[...arguments];
+        args[0]=sanitizedGroupResync(payload);
+        return state.baseWifiSend.apply(this,args);
       }
       return state.baseWifiSend.apply(this,arguments);
     };
@@ -106,6 +130,7 @@
         try{console.debug('0.7.10 blocked legacy incoming',type);}catch(e){}
         return;
       }
+      if(betaActive()&&type==='GROUP_RESYNC')return base(sanitizedGroupResync(raw));
       return base(raw);
     };
     wrapped.__v0710Stability=true;
@@ -162,6 +187,8 @@
     maintain,
     status:()=>({
       betaActive:betaActive(),
+      betaSession:String(window.TrenerBeta070?.sessionId||''),
+      netSession:String(net?.sessionId||''),
       historyCount:readHistory().length,
       draftPresent:localStorage.getItem(DRAFT_KEY)!==null,
       safeFinish:!!window.Trener074?.askFinish
