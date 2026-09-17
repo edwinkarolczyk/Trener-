@@ -1,5 +1,28 @@
 # Zmiany
 
+## 0.7.9 Beta
+- dodane gesty lewo/prawo między głównymi zakładkami poza aktywnym treningiem,
+- gest rozpoczęty na polu, przycisku, menu lub innym elemencie interaktywnym jest ignorowany, żeby nie przeszkadzać w wpisywaniu i klikaniu,
+- podczas aktywnego treningu gesty nie zmieniają stanu treningu; przewijają tylko bezpieczne karty pomocnicze `Seria`, `Ostatnie serie`, `Jak wykonać`, `Nawodnienie`,
+- pola `kg` i `powtórzenia/sekundy` mają lokalny autosave przypięty do bieżącego ćwiczenia, serii i uczestnika; po zgaszeniu ekranu lub przejściu aplikacji w tło wpisane wartości nie powinny znikać,
+- dodany lokalny raport sesji beta z chronologią: start, zapis serii, początek/koniec przerwy, pauza/wznowienie, zmiana ćwiczenia/serii, stan sieci, nawodnienie, przejście aplikacji w tło i zakończenie,
+- raport rejestruje również błędy JavaScript i nieobsłużone błędy asynchroniczne podczas aktywnego treningu,
+- w ekranie treningu jest `⚑ PROBLEM`, który zapisuje dokładny punkt czasu wraz z ekranem, ćwiczeniem, serią, wpisanymi polami i stanem synchronizacji,
+- ostatni raport jest widoczny w Historii i można go skopiować jako JSON do analizy po treningu,
+- aplikacja przechowuje lokalnie maksymalnie 20 ostatnich raportów testowych, bez wysyłania ich do chmury,
+- wersja podniesiona do `0.7.9-beta`, `versionCode 46`.
+
+## 0.7.8 Beta
+- dodany moduł `Nawodnienie` w Diecie z własnym celem dziennym i paskiem postępu,
+- szybkie porcje wody: `+250 ml`, `+330 ml`, `+500 ml` oraz cofnięcie `−250 ml`,
+- historia nawodnienia pokazuje ostatnie 7 dni,
+- przypomnienia o wodzie można ustawić co 60 / 90 / 120 minut z ciszą nocną,
+- powiadomienie Androida ma akcję `+250 ml`, która dopisuje wodę bez otwierania aplikacji,
+- podczas treningu pojawia się `ŁYK WODY` według wybranej częstotliwości, z szybkim `+150 ml` i `+250 ml`,
+- widget Androida pokazuje nawodnienie i ma szybkie `+250 ml`,
+- ustawienia oraz alarmy nawodnienia wracają po restarcie telefonu,
+- wersja podniesiona do `0.7.8-beta`, `versionCode 45`.
+
 ## 0.7.7 Beta
 - Dieta ma sekcję `Ostatnie` z maksymalnie 10 ostatnio używanymi pozycjami bez duplikatów,
 - dodane `Ulubione` z szybkim ponownym dodaniem posiłku jednym przyciskiem,
