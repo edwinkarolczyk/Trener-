@@ -1,5 +1,17 @@
 # Zmiany
 
+## 0.7.1 Beta
+- wspólny trening ma jedno źródło prawdy dla interfejsu: kolejkę hosta z `TrenerBeta070`,
+- stare lokalne komunikaty typu `TRENUJE NA 2. TELEFONIE` nie sterują już statusem podczas aktywnej sesji wspólnej,
+- oba telefony pokazują ten sam stan uczestników: `ĆWICZY TERAZ`, `CZEKA`, `ODPOCZYWA`, `ĆWICZENIE ZAKOŃCZONE — CZEKA`,
+- karty uczestników pokazują jawnie `Wykonano X/Y`, żeby nie mylić wykonanych serii z numerem następnej serii,
+- panel kolejki został zmniejszony i nie dubluje pełnej listy uczestników,
+- duży dolny komunikat oczekiwania został usunięty; dolny panel pokazuje tylko własny odpoczynek, gdy faktycznie trwa,
+- przycisk zapisu serii wynika z kolejki hosta i nie może jednocześnie mówić `ĆWICZY TERAZ` oraz `CZEKAJ NA SWOJĄ KOLEJ`,
+- po zapisie serii pole powtórzeń jest czyszczone, a ciężar może pozostać do następnej serii,
+- etykieta `ZOSTAŁO` została doprecyzowana do `DO KOŃCA`,
+- wersja podniesiona do `0.7.1-beta`, `versionCode 38`.
+
 ## 0.7.0 Beta.3
 - wspólny trening ma dodatkową kontrolę jakości synchronizacji: `SYNC OK`, `SYNC OPÓŹNIONY`, `BRAK SYNC` i `OFFLINE`,
 - gość blokuje zapis nowej serii, gdy nie ma świeżego stanu od hosta, zamiast dalej rozjeżdżać trening,
