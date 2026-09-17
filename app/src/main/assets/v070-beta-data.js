@@ -15,7 +15,7 @@
     if(!id)id=randomId();state.pid=id;try{localStorage.setItem(PID_KEY,id);localStorage.setItem(SCHEMA_KEY,String(SCHEMA_VERSION));}catch(e){}return id;
   }
   function history(){try{return typeof getHistory==='function'?getHistory():JSON.parse(localStorage.getItem(HISTORY_KEY)||'[]');}catch(e){return [];}}
-  function saveHistoryList(list){localStorage.setItem(HISTORY_KEY,JSON.stringify((list||[]).slice(0,100)));}
+  function saveHistoryList(list){localStorage.setItem(HISTORY_KEY,JSON.stringify(list||[]));}
   function recordPid(h,r){
     if(r?.participantId)return r.participantId;const parts=h?.group?.participants||[];const p=parts.find(x=>Number(x.index)===Number(r?.athlete));if(p?.deviceId)return String(p.deviceId);const local=Number(h?.localAthlete??0);if(Number(r?.athlete||0)===local)return String(h?.participantId||h?.group?.deviceId||participantId());return '';
   }
