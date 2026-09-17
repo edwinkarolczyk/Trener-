@@ -58,6 +58,10 @@
         </receiver>
 
         <receiver
+            android:name=".HydrationReceiver"
+            android:exported="false" />
+
+        <receiver
             android:name=".NotificationReceiver"
             android:exported="false" />
 
