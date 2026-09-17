@@ -1,5 +1,15 @@
 # Zmiany
 
+## 0.7.5 Beta
+- naprawiony wybór zdjęć sylwetki w Androidowym WebView: `Dodaj zdjęcie` otwiera teraz natywny wybór pliku/galerii i zwraca wybrane zdjęcie do aplikacji,
+- włączony dostęp WebView do `content://`, dzięki czemu wybrane zdjęcie może zostać odczytane i zapisane lokalnie,
+- usunięty duplikat czasu treningu u góry ekranu; podczas treningu obowiązuje stały dolny pasek `CZAS TRENINGU` + `TWÓJ ODPOCZYNEK`,
+- menu `⋮` w Historii jest ustawione po prawej stronie karty i nie wychodzi już poza lewą krawędź ekranu,
+- kliknięcie poza menu Historii automatycznie je zamyka,
+- przycisk `STOP` został doprecyzowany do `ZAKOŃCZ`; pozostaje osobną akcją od `PLAN / WYJDŹ`,
+- `ZAKOŃCZ` zapisuje wykonane serie i wraca do `Start`, natomiast `PLAN / WYJDŹ` zapisuje i przechodzi do `Plan`,
+- wersja podniesiona do `0.7.5-beta`, `versionCode 42`.
+
 ## 0.7.4 Beta
 - STOP działa przez nową warstwę `safe finish` i nie może zostać zablokowany przez błąd Wi‑Fi ani starszy handler ekranu treningu,
 - ręczne zakończenie zawsze próbuje najpierw zachować checkpoint i własne wykonane serie, a potem kończy lokalnie niezależnie od odpowiedzi drugiego telefonu,
@@ -103,7 +113,7 @@
 - dodane skanowanie QR aparatem w Androidzie.
 
 ## 0.4.0
-- wspólna sesja dwóch telefonów po lokalnym Wi‑Fi / hotspocie,
+- wspólna sesja dwóch telefonów po lokalnym Wi-Fi / hotspocie,
 - osobne ciężary, serie, przerwy i progresja każdej osoby,
 - synchronizacja bieżącego postępu i brakujących serii po ponownym połączeniu.
 
