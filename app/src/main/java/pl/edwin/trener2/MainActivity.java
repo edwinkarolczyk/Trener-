@@ -51,6 +51,7 @@ public class MainActivity extends Activity {
     private WebView webView;
     private LocalSessionManager localSession;
     private GmsBarcodeScanner qrScanner;
+    private UpdateInstaller updateInstaller;
     private String pendingBackupJson;
 
     @Override
@@ -60,6 +61,7 @@ public class MainActivity extends Activity {
         getWindow().setNavigationBarColor(Color.rgb(9, 9, 9));
         createNotificationChannel();
         createQrScanner();
+        updateInstaller = new UpdateInstaller(this, this::emitUpdateDownloadStatus);
 
         webView = new WebView(this);
         webView.setBackgroundColor(Color.rgb(9, 9, 9));
@@ -167,6 +169,11 @@ public class MainActivity extends Activity {
         new Thread(() -> {
             HttpURLConnection connection = null;
             try {
+                if (appVersionName().contains("-beta")) {
+                    emitUpdateResult("ok", UpdateInstaller.fetchLatestBetaUpdateJson());
+                    return;
+                }
+
                 URL url = new URL(UPDATE_INFO_URL);
                 connection = (HttpURLConnection) url.openConnection();
                 connection.setRequestMethod("GET");
@@ -338,6 +345,20 @@ public class MainActivity extends Activity {
         runOnUiThread(() -> webView.evaluateJavascript(js, null));
     }
 
+    private void emitUpdateDownloadStatus(String status, String payload) {
+        if (webView == null) return;
+        final String js = "window.TrenerUpdate&&window.TrenerUpdate.nativeDownloadStatus("
+                + JSONObject.quote(status == null ? "error" : status) + ","
+                + JSONObject.quote(payload == null ? "" : payload) + ");";
+        runOnUiThread(() -> webView.evaluateJavascript(js, null));
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (updateInstaller != null) updateInstaller.resumePendingInstall();
+    }
+
     @Override
     protected void onDestroy() {
         if (localSession != null) localSession.shutdown();
@@ -457,6 +478,11 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void checkForUpdate() {
             checkForUpdateNative();
+        }
+
+        @JavascriptInterface
+        public void downloadAndInstallUpdate(String url, String sha256) {
+            if (updateInstaller != null) updateInstaller.downloadAndInstall(url, sha256);
         }
 
         @JavascriptInterface
