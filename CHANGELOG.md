@@ -1,5 +1,16 @@
 # Zmiany
 
+## 0.7.2 Beta
+- nowy planer tygodnia jest jedynym widokiem planowania; stary blok `TWÓJ TYDZIEŃ` jest ukryty,
+- przy pierwszym uruchomieniu 0.7.2 dotychczasowy tygodniowy rozkład z `trainer3.schedule.v050` jest migrowany do `trainer3.weekPlan.v070`,
+- po migracji nowy planer jest źródłem prawdy, a stary klucz jest utrzymywany tylko jako zgodnościowe lustro dla starszych modułów,
+- ekran Start dostaje dzisiejszy plan z nowego planera, więc komunikat `DZIŚ` i wybór treningu nie rozjeżdżają się z kalendarzem,
+- stare nazwy planów z nazwą dnia nie są używane w nowym planerze,
+- nagłówkowy licznik `00:00` nie jest już pokazywany poza aktywnym treningiem,
+- podczas treningu na dole ekranu jest stały pasek `CZAS TRENINGU` + `TWÓJ ODPOCZYNEK`, a reszta ekranu pozostaje przewijalna,
+- stały pasek pokazuje `GOTOWY`, `PAUZA` albo bieżące odliczanie przerwy i zachowuje możliwość `POMIŃ`,
+- wersja podniesiona do `0.7.2-beta`, `versionCode 39`.
+
 ## 0.7.1 Beta
 - wspólny trening ma jedno źródło prawdy dla interfejsu: kolejkę hosta z `TrenerBeta070`,
 - stare lokalne komunikaty typu `TRENUJE NA 2. TELEFONIE` nie sterują już statusem podczas aktywnej sesji wspólnej,
