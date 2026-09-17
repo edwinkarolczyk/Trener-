@@ -5,10 +5,13 @@
   const WEEKLY_SCHEDULE_STORAGE='trainer3.schedule.v050';
   let updateInfo=null;
   let checking=false;
+  let downloadStartedFor='';
 
   function el(id){return document.getElementById(id)}
   function safeJson(raw,fallback){try{return raw?JSON.parse(raw):fallback}catch(e){return fallback}}
   function esc(s){return String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+  function config(){return Object.assign({auto:true,autoInstall:true},safeJson(localStorage.getItem(UPDATE_STORAGE),{}))}
+  function saveConfig(patch){localStorage.setItem(UPDATE_STORAGE,JSON.stringify(Object.assign(config(),patch||{})))}
 
   function versionParts(v){
     return String(v||'0').replace(/^v/i,'').split('.').map(x=>parseInt(x,10)||0);
@@ -61,23 +64,26 @@
           <div><span>Najnowsza</span><b id="updateLatest">—</b></div>
         </div>
         <label class="switchRow updateSwitch"><input id="autoUpdateCheck" type="checkbox"><span>Sprawdzaj automatycznie przy uruchomieniu</span></label>
+        <label class="switchRow updateSwitch"><input id="autoInstallCheck" type="checkbox"><span>Pobieraj aktualizację automatycznie i otwieraj instalator</span></label>
         <p id="updateStatus" class="hint">Jeszcze nie sprawdzano aktualizacji.</p>
         <div id="updateNotes" class="updateNotes hidden"></div>
         <div class="updateActions">
           <button id="checkUpdateBtn" class="secondary">SPRAWDŹ TERAZ</button>
-          <button id="downloadUpdateBtn" class="primary hidden">POBIERZ AKTUALIZACJĘ</button>
+          <button id="downloadUpdateBtn" class="primary hidden">ZAINSTALUJ AKTUALIZACJĘ</button>
         </div>
-        <p class="hint updateFoot">Aplikacja może sama wykryć i pobrać nową wersję. Android pokaże własne potwierdzenie instalacji aktualizacji.</p>`;
+        <p class="hint updateFoot">Trener 2 pobiera podpisane APK z wydań GitHub i sprawdza SHA-256, jeśli serwer je udostępnia. Android nadal wymaga systemowego potwierdzenia instalacji.</p>`;
       settings.insertBefore(card,settings.firstChild);
 
-      const cfg=safeJson(localStorage.getItem(UPDATE_STORAGE),{});
+      const cfg=config();
       el('autoUpdateCheck').checked=cfg.auto!==false;
+      el('autoInstallCheck').checked=cfg.autoInstall!==false;
       el('autoUpdateCheck').addEventListener('change',()=>{
-        localStorage.setItem(UPDATE_STORAGE,JSON.stringify({auto:el('autoUpdateCheck').checked}));
+        saveConfig({auto:el('autoUpdateCheck').checked});
         if(el('autoUpdateCheck').checked)checkForUpdate(false);
       });
+      el('autoInstallCheck').addEventListener('change',()=>saveConfig({autoInstall:el('autoInstallCheck').checked}));
       el('checkUpdateBtn').addEventListener('click',()=>checkForUpdate(true));
-      el('downloadUpdateBtn').addEventListener('click',downloadUpdate);
+      el('downloadUpdateBtn').addEventListener('click',()=>downloadUpdate(false));
     }
   }
 
@@ -106,6 +112,11 @@
     if(manual&&typeof window.toast==='function')window.toast('Sprawdzam aktualizacje…');
   }
 
+  function canAutoInstallNow(){
+    try{if(typeof running!=='undefined'&&running)return false}catch(e){}
+    return true;
+  }
+
   function renderResult(status,raw){
     installUi();setChecking(false);
     const current=currentVersion();
@@ -125,31 +136,71 @@
     el('updateHeader')?.classList.toggle('hidden',!newer);
     el('downloadUpdateBtn')?.classList.toggle('hidden',!newer);
     if(newer){
-      el('updateStatus').innerHTML='<b>Dostępna nowa wersja '+esc(info.version)+'.</b> Dotknij migającego komunikatu w nagłówku albo pobierz ją tutaj.';
+      el('updateStatus').innerHTML='<b>Dostępna nowa wersja '+esc(info.version)+'.</b> '+(config().autoInstall!==false?'Pobieram ją automatycznie…':'Możesz zainstalować ją tutaj.');
       const notes=Array.isArray(info.notes)?info.notes:[];
       if(notes.length){
         el('updateNotes').classList.remove('hidden');
         el('updateNotes').innerHTML='<strong>Co nowego:</strong><ul>'+notes.map(n=>'<li>'+esc(n)+'</li>').join('')+'</ul>';
-      }
+      }else el('updateNotes').classList.add('hidden');
       try{if(window.Android&&Android.vibrate)Android.vibrate(100)}catch(e){}
+      if(config().autoInstall!==false&&canAutoInstallNow())setTimeout(()=>downloadUpdate(true),500);
     }else{
       el('updateStatus').textContent='Masz najnowszą wersję Trener 2.';
       el('updateNotes').classList.add('hidden');
     }
   }
 
-  function downloadUpdate(){
-    if(!updateInfo){checkForUpdate(true);return;}
+  function downloadUpdate(auto){
+    if(!updateInfo){checkForUpdate(!auto);return;}
     const url=String(updateInfo.apkUrl||updateInfo.pageUrl||'');
     if(!url){
       if(typeof window.toast==='function')window.toast('Brak adresu aktualizacji.');
       return;
     }
+    const version=String(updateInfo.version||'');
+    if(auto&&downloadStartedFor===version)return;
+    downloadStartedFor=version;
+    const b=el('downloadUpdateBtn');if(b){b.disabled=true;b.textContent='POBIERAM…';}
+    if(el('updateStatus'))el('updateStatus').textContent='Pobieram Trener 2 '+version+'…';
     try{
-      if(window.Android&&Android.openUpdateUrl)Android.openUpdateUrl(url);
-      else window.location.href=url;
+      if(window.Android&&Android.downloadAndInstallUpdate){
+        Android.downloadAndInstallUpdate(url,String(updateInfo.sha256||''));
+      }else if(window.Android&&Android.openUpdateUrl){
+        Android.openUpdateUrl(url);
+      }else window.location.href=url;
     }catch(e){
-      if(typeof window.toast==='function')window.toast('Nie udało się otworzyć aktualizacji.');
+      downloadStartedFor='';
+      if(b){b.disabled=false;b.textContent='ZAINSTALUJ AKTUALIZACJĘ';}
+      if(typeof window.toast==='function')window.toast('Nie udało się rozpocząć aktualizacji.');
+    }
+  }
+
+  function nativeDownloadStatus(status,message){
+    installUi();
+    const text=String(message||'');
+    const b=el('downloadUpdateBtn');
+    if(el('updateStatus'))el('updateStatus').textContent=text||'Aktualizacja…';
+    if(status==='downloading'){
+      if(b){b.disabled=true;b.textContent='POBIERAM…';}
+      return;
+    }
+    if(status==='ready'){
+      if(b){b.disabled=true;b.textContent='OTWIERAM INSTALATOR…';}
+      return;
+    }
+    if(status==='permission'){
+      if(b){b.disabled=true;b.textContent='ZEZWÓL W ANDROIDZIE';}
+      if(typeof window.toast==='function')window.toast('Zezwól na instalację z Trener 2 i wróć do aplikacji.');
+      return;
+    }
+    if(status==='installer'){
+      if(b){b.disabled=true;b.textContent='POTWIERDŹ INSTALACJĘ';}
+      return;
+    }
+    if(status==='error'){
+      downloadStartedFor='';
+      if(b){b.disabled=false;b.textContent='SPRÓBUJ PONOWNIE';}
+      if(typeof window.toast==='function')window.toast(text||'Aktualizacja nie powiodła się.');
     }
   }
 
@@ -174,13 +225,17 @@
     document.body.appendChild(script);
   }
 
-  window.TrenerUpdate={nativeResult:renderResult,check:()=>checkForUpdate(true)};
+  window.TrenerUpdate={
+    nativeResult:renderResult,
+    nativeDownloadStatus,
+    check:()=>checkForUpdate(true)
+  };
 
   function boot(){
     installUi();
     ensureNeutralScheduleDefault();
     loadProgressionAddon();
-    const cfg=safeJson(localStorage.getItem(UPDATE_STORAGE),{});
+    const cfg=config();
     if(cfg.auto!==false)setTimeout(()=>checkForUpdate(false),900);
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});
