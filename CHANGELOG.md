@@ -1,5 +1,17 @@
 # Zmiany
 
+## 0.7.7 Beta
+- Dieta ma sekcję `Ostatnie` z maksymalnie 10 ostatnio używanymi pozycjami bez duplikatów,
+- dodane `Ulubione` z szybkim ponownym dodaniem posiłku jednym przyciskiem,
+- ręczny wpis może zapamiętać porcję / ilość, np. `150 g`, `2 szt.` albo `1 porcja`,
+- szybkie dodanie zachowuje ostatnią nazwę, typ, kcal, makro i porcję,
+- dodany natywny widget Androida 4×2 pokazujący dzisiejsze kcal i białko względem celu,
+- widget odświeża się po zmianach Diety i po dotknięciu otwiera bezpośrednio zakładkę `Dieta`,
+- dodany wspólny system dźwięków i wibracji: zapis serii, koniec przerwy i zakończenie treningu,
+- w Ustawieniach można osobno wyłączyć dźwięk, wibracje i wybrane typy sygnałów oraz ustawić głośność,
+- istniejąca wibracja końca przerwy respektuje teraz ustawienie użytkownika i nie jest dublowana,
+- wersja podniesiona do `0.7.7-beta`, `versionCode 44`.
+
 ## 0.7.6 Beta
 - zakładka `Dieta` przestała być makietą i działa jako lokalny dziennik kalorii oraz makro,
 - można ustawić własny cel: redukcja / utrzymanie / masa oraz dzienne kcal, białko, węglowodany i tłuszcze,
