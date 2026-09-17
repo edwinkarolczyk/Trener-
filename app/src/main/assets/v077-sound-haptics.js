@@ -29,6 +29,7 @@
     if(type==='set'&&c.sets){tone(620,0.07);nativeVibrate(45);}
     if(type==='rest'&&c.rest){tone(740,0.09);tone(980,0.12,0.11);nativeVibrate(180);}
     if(type==='finish'&&c.finish){tone(620,0.10);tone(780,0.11,0.12);tone(1040,0.18,0.25);nativeVibrate(260);}
+    if(type==='water'){tone(520,0.08,0,0.7);tone(660,0.10,0.10,0.75);nativeVibrate(70);}
   }
 
   function installVibrateGuard(){
@@ -48,7 +49,7 @@
         <label class="switchRow"><input id="v077RestSignal" type="checkbox"><span>Po zakończeniu przerwy</span></label>
         <label class="switchRow"><input id="v077FinishSignal" type="checkbox"><span>Po zakończeniu treningu</span></label>
       </div>
-      <p class="hint">Sygnał nie blokuje treningu. Ustawienia dźwięku i wibracji są niezależne.</p>`;
+      <p class="hint">Sygnał nie blokuje treningu. Ustawienia dźwięku i wibracji są niezależne. Nawodnienie korzysta z tych samych ustawień.</p>`;
     const feedback=$('v0636FeedbackCard');
     if(feedback&&feedback.parentNode===settings)settings.insertBefore(card,feedback);else settings.appendChild(card);
     const c=cfg();
