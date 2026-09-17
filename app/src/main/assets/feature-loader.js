@@ -21,6 +21,7 @@
     ['0.6.4.2','v0642-adaptive-volume.js'],
     ['0.6.4.3','v0643-resilient-sync.js'],
     ['0.7.0','v070-beta-queue.js'],
+    ['0.7.2','v072-beta-plan-timers.js'],
     ['0.7.0','v070-beta-planner.js'],
     ['0.7.0','v070-beta-recovery.js'],
     ['0.7.0','v070-beta-data.js'],
