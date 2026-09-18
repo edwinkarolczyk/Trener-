@@ -1,5 +1,19 @@
 # Zmiany
 
+## 0.8.2.9
+- HOST utrzymuje natywny high-performance `WifiLock` oraz częściowy CPU `WakeLock` przez cały czas hostowania sesji; blokady są zwalniane po rozłączeniu, przejściu do roli GOŚCIA i zamknięciu aplikacji,
+- black box dopisuje stan blokad HOSTA do diagnostyki natywnej, aby było widać czy `WifiLock` i `WakeLock` były faktycznie aktywne,
+- po `NETWORK_RESTORED` HOST czeka 2 sekundy na stabilny lokalny IP przed ponownym postawieniem serwera,
+- jeśli po recovery HOST nadal nie ma żadnego partnera, watchdog po 12 sekundach ponownie stawia serwer na tym samym kodzie; kolejne oczekiwanie jest ponownie kontrolowane,
+- black box zapisuje `HOST_IP_STABILITY_WAIT`, `HOST_IP_STABLE`, `HOST_IP_STABILITY_ABORT` i `HOST_NO_PEER_RESTART`,
+- GOŚĆ nie może już sam zakończyć wspólnego treningu wszystkim: `ZAKOŃCZ` pyta `Wysłać prośbę do HOSTA o zakończenie wspólnego treningu?`,
+- HOST dostaje duży modal `<imię> chce zakończyć wspólny trening.` z akcjami `ZAKOŃCZ DLA WSZYSTKICH` i `ODRZUĆ`,
+- po odrzuceniu GOŚĆ dostaje komunikat `HOST odrzucił prośbę — ćwiczymy dalej 😄`,
+- po akceptacji tylko HOST uruchamia autorytatywne zakończenie wspólnej sesji; GOŚĆ ma awaryjny lokalny fallback dopiero po otrzymaniu akceptacji HOSTA,
+- GOŚĆ ma osobny przycisk `OPUŚĆ WSPÓLNY TRENING`; opuszczenie zapisuje jego wykonane serie lokalnie, usuwa go z kolejki i nie kończy treningu pozostałym osobom,
+- przy 2–4 osobach komunikat `LEAVE` oznacza uczestnika jako `opuścił trening` i kolejka HOSTA przechodzi dalej bez blokowania sesji,
+- wersja podniesiona do `0.8.2.9`, `versionCode 63`.
+
 ## 0.8.2.8
 - w Historii przy diagnostyce wspólnej sesji przycisk `KOPIUJ WSPÓLNĄ SESJĘ` został zastąpiony przez `WYŚLIJ WSPÓLNY LOG MAILEM`,
 - jednym kliknięciem aplikacja przygotowuje wiadomość mailową i dołącza pełny black box jako plik JSON,
