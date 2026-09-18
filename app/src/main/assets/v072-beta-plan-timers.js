@@ -90,7 +90,7 @@
     bar.innerHTML=`
       <div class="v072TimerCell"><span>CZAS TRENINGU</span><b id="v072WorkoutTime">00:00</b></div>
       <div id="v072RestCell" class="v072TimerCell ready"><span>TWÓJ ODPOCZYNEK</span><b id="v072RestTime">GOTOWY</b></div>
-      <button id="v072Skip" class="secondary" type="button">POMIŃ</button>`;
+      <button id="v072Skip" class="secondary" type="button">POMIŃ PRZERWĘ</button>`;
     document.body.appendChild(bar);
     document.getElementById('v072Skip')?.addEventListener('click',()=>{
       try{document.getElementById('skipRestBtn')?.click();}catch(e){}
