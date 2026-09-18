@@ -54,6 +54,7 @@ public class MainActivity extends Activity {
     private WebView webView;
     private LocalSessionManager localSession;
     private GmsBarcodeScanner qrScanner;
+    private GmsBarcodeScanner foodScanner;
     private UpdateInstaller updateInstaller;
     private String pendingBackupJson;
     private ValueCallback<Uri[]> fileChooserCallback;
@@ -65,6 +66,7 @@ public class MainActivity extends Activity {
         getWindow().setNavigationBarColor(Color.rgb(9, 9, 9));
         createNotificationChannel();
         createQrScanner();
+        createFoodScanner();
         updateInstaller = new UpdateInstaller(this, this::emitUpdateDownloadStatus);
 
         webView = new WebView(this);
@@ -195,6 +197,105 @@ public class MainActivity extends Activity {
                         "Nie udało się uruchomić skanera QR. Sprawdź Usługi Google Play.",
                         Toast.LENGTH_LONG
                 ).show());
+    }
+
+
+    private void createFoodScanner() {
+        try {
+            GmsBarcodeScannerOptions options = new GmsBarcodeScannerOptions.Builder()
+                    .setBarcodeFormats(
+                            Barcode.FORMAT_EAN_13,
+                            Barcode.FORMAT_EAN_8,
+                            Barcode.FORMAT_UPC_A,
+                            Barcode.FORMAT_UPC_E
+                    )
+                    .enableAutoZoom()
+                    .build();
+            foodScanner = GmsBarcodeScanning.getClient(this, options);
+        } catch (Throwable e) {
+            foodScanner = null;
+        }
+    }
+
+    private void startFoodScanner() {
+        if (foodScanner == null) {
+            Toast.makeText(this, "Skaner kodów produktów nie jest dostępny na tym telefonie.", Toast.LENGTH_LONG).show();
+            return;
+        }
+        foodScanner.startScan()
+                .addOnSuccessListener(barcode -> {
+                    String raw = barcode.getRawValue();
+                    if (raw == null || raw.trim().isEmpty()) {
+                        Toast.makeText(this, "Kod produktu jest pusty.", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    emitFoodBarcode(raw);
+                })
+                .addOnCanceledListener(() -> {
+                    // Użytkownik zamknął skaner.
+                })
+                .addOnFailureListener(e -> Toast.makeText(
+                        this,
+                        "Nie udało się uruchomić skanera produktu. Sprawdź Usługi Google Play.",
+                        Toast.LENGTH_LONG
+                ).show());
+    }
+
+    private String normalizeFoodBarcode(String raw) {
+        if (raw == null) return "";
+        return raw.replaceAll("[^0-9]", "");
+    }
+
+    private void lookupOpenFoodFactsNative(String rawBarcode) {
+        final String barcode = normalizeFoodBarcode(rawBarcode);
+        if (!barcode.matches("\\d{8,14}")) {
+            emitFoodLookup("error", "Nieprawidłowy kod kreskowy.");
+            return;
+        }
+
+        new Thread(() -> {
+            HttpURLConnection connection = null;
+            try {
+                String endpoint = "https://world.openfoodfacts.org/api/v2/product/"
+                        + barcode
+                        + ".json?fields=code,product_name,product_name_pl,brands,quantity,serving_size,serving_quantity,nutriments";
+                connection = (HttpURLConnection) new URL(endpoint).openConnection();
+                connection.setRequestMethod("GET");
+                connection.setConnectTimeout(8000);
+                connection.setReadTimeout(10000);
+                connection.setRequestProperty("Accept", "application/json");
+                connection.setRequestProperty("Accept-Language", "pl,en;q=0.8");
+                connection.setRequestProperty("User-Agent", "Trener2/0.8-beta.2 Android OpenFoodFacts");
+                connection.setRequestProperty("Cache-Control", "no-cache");
+
+                int code = connection.getResponseCode();
+                if (code == HttpURLConnection.HTTP_NOT_FOUND) {
+                    emitFoodLookup("not_found", barcode);
+                    return;
+                }
+                if (code != HttpURLConnection.HTTP_OK) {
+                    emitFoodLookup("error", "Open Food Facts: błąd " + code + ".");
+                    return;
+                }
+
+                StringBuilder body = new StringBuilder();
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+                        connection.getInputStream(), StandardCharsets.UTF_8))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        if (body.length() + line.length() > 524288) {
+                            throw new IllegalStateException("Odpowiedź Open Food Facts jest zbyt duża.");
+                        }
+                        body.append(line);
+                    }
+                }
+                emitFoodLookup("ok", body.toString());
+            } catch (Exception e) {
+                emitFoodLookup("error", "Nie udało się pobrać produktu. Sprawdź internet.");
+            } finally {
+                if (connection != null) connection.disconnect();
+            }
+        }, "Trener2-OpenFoodFacts").start();
     }
 
     private void createNotificationChannel() {
@@ -406,6 +507,22 @@ public class MainActivity extends Activity {
         runOnUiThread(() -> webView.evaluateJavascript(js, null));
     }
 
+
+    private void emitFoodBarcode(String payload) {
+        if (webView == null) return;
+        final String js = "window.TrenerOpenFoodFacts&&window.TrenerOpenFoodFacts.nativeBarcode("
+                + JSONObject.quote(payload == null ? "" : payload) + ");";
+        runOnUiThread(() -> webView.evaluateJavascript(js, null));
+    }
+
+    private void emitFoodLookup(String status, String payload) {
+        if (webView == null) return;
+        final String js = "window.TrenerOpenFoodFacts&&window.TrenerOpenFoodFacts.nativeLookup("
+                + JSONObject.quote(status == null ? "error" : status) + ","
+                + JSONObject.quote(payload == null ? "" : payload) + ");";
+        runOnUiThread(() -> webView.evaluateJavascript(js, null));
+    }
+
     private void emitUpdateResult(String status, String payload) {
         if (webView == null) return;
         final String js = "window.TrenerUpdate&&window.TrenerUpdate.nativeResult("
@@ -541,6 +658,16 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void scanWifiQr() {
             runOnUiThread(() -> startQrScanner());
+        }
+
+        @JavascriptInterface
+        public void scanFoodBarcode() {
+            runOnUiThread(() -> startFoodScanner());
+        }
+
+        @JavascriptInterface
+        public void lookupOpenFoodFacts(String barcode) {
+            lookupOpenFoodFactsNative(barcode);
         }
 
         @JavascriptInterface

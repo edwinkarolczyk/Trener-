@@ -36,7 +36,8 @@
     ['0.7.8','v078-hydration.js'],
     ['0.7.9','v079-test-session-ux.js'],
     ['0.7.10','v0710-stability.js'],
-    ['0.8','v080-workout-widget.js']
+    ['0.8','v080-workout-widget.js'],
+    ['0.8','v0802-openfoodfacts.js']
   ];
   features.forEach(([min,src])=>{
     if(!gte(current,min))return;
