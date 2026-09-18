@@ -110,7 +110,7 @@
       const small=rest.querySelector('.small');if(small)small.textContent='TWÓJ ODPOCZYNEK';
       if($('restTime'))$('restTime').textContent=myRest>0?fmt(myRest):'';
       const targetEl=$('v062RestTarget');if(targetEl)targetEl.textContent='';
-      if($('skipRestBtn'))$('skipRestBtn').classList.add('hidden');
+      if($('skipRestBtn'))$('skipRestBtn').classList.toggle('hidden',myRest<=0);
     }
   }
 

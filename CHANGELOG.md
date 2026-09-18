@@ -1,5 +1,15 @@
 # Zmiany
 
+## 0.8.2.10
+- przycisk `POMIŃ PRZERWĘ` działa również podczas wspólnego treningu,
+- pominięcie przerwy w trybie wspólnym jest autorytatywne: GOŚĆ wysyła żądanie do HOSTA, a HOST aktualizuje `readyAt` uczestnika i rozsyła nowy stan kolejki,
+- HOST weryfikuje `deviceId` uczestnika przed zaakceptowaniem żądania pominięcia przerwy,
+- można pominąć własną przerwę także wtedy, gdy aktualnie ćwiczy inna osoba; uczestnik staje się wcześniej gotowy do następnego wyboru przez kolejkę,
+- stały pasek `TWÓJ ODPOCZYNEK` pokazuje rzeczywisty czas własnej przerwy z kolejki HOSTA zamiast lokalnego `restEnd`,
+- gdy własna przerwa nie trwa, cały kafelek `TWÓJ ODPOCZYNEK` znika zamiast stale pokazywać `GOTOWY`,
+- dolny układ automatycznie zwija pustą kolumnę po ukryciu kafelka odpoczynku,
+- wersja podniesiona do `0.8.2.10`, `versionCode 64`.
+
 ## 0.8.2.9
 - HOST utrzymuje natywny high-performance `WifiLock` oraz częściowy CPU `WakeLock` przez cały czas hostowania sesji; blokady są zwalniane po rozłączeniu, przejściu do roli GOŚCIA i zamknięciu aplikacji,
 - black box dopisuje stan blokad HOSTA do diagnostyki natywnej, aby było widać czy `WifiLock` i `WakeLock` były faktycznie aktywne,
