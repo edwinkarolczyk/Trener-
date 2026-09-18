@@ -39,7 +39,8 @@
     ['0.8','v080-workout-widget.js'],
     ['0.8','v0802-openfoodfacts.js'],
     ['0.8.2','v082-shared-guard-progress.js'],
-    ['0.8.2.1','v0821-workout-ux.js']
+    ['0.8.2.1','v0821-workout-ux.js'],
+    ['0.8.2.3','v0823-diagnostics.js']
   ];
   features.forEach(([min,src])=>{
     if(!gte(current,min))return;

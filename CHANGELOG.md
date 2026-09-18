@@ -1,5 +1,15 @@
 # Zmiany
 
+## 0.8.2.3
+- poprawiono możliwe zawieszanie WebView po wejściu w pola `Ciężar [kg]` / `Powtórzenia` podczas wspólnego treningu,
+- usunięto sprzężenie zwrotne `MutationObserver → patch UI → MutationObserver` z warstwy wspólnego treningu,
+- podczas wpisywania wartości pola `kg/powt.` warstwy wspólnego i kompaktowego UI nie przebudowują ekranu w tle,
+- usunięto zbędne odświeżanie kompaktowego widoku bezpośrednio na każdy `resize` wywołany klawiaturą ekranową,
+- w zakładce `Historia` dodano kartę `Logi aplikacji` z przyciskami `KOPIUJ LOGI` i `WYCZYŚĆ LOGI`,
+- logi zapisują błędy JS, nieobsłużone Promise, statusy Wi‑Fi, focus pól kg/powt., zmiany viewportu oraz wykryte zatrzymania pętli UI (`UI_STALL`),
+- kopiowanie logów korzysta z natywnego schowka Androida,
+- wersja podniesiona do `0.8.2.3`, `versionCode 57`.
+
 ## 0.8.2.2
 - po utworzeniu sesji jako gospodarz panel dołączania jest ukrywany; gospodarz widzi tylko własną sesję i przycisk rozłączenia,
 - przy nagłówku `TRENER 2` pojawia się zielony status `HOST` oraz stan `CZEKA NA PARTNERA` / `POŁĄCZONO`,
