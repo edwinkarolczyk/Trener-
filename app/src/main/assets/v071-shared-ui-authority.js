@@ -115,11 +115,15 @@
   }
 
   function patch(){
-    if(patching)return;patching=true;
+    if(patching)return;
+    const focused=document.activeElement;
+    const editing=!!(focused&&focused.matches&&focused.matches('#weight,#reps'));
+    patching=true;
     try{
       installCss();
       const on=active();document.body?.classList.toggle('v071Group',on);
       if(!on)return;
+      if(editing)return;
       patchPeople();patchMain();
     }finally{patching=false;}
   }
@@ -132,9 +136,11 @@
 
   function boot(){
     installCss();
-    const obs=new MutationObserver(()=>{if(!patching)queueMicrotask(patch);});
-    const root=$('training');if(root)obs.observe(root,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['class','disabled']});
-    setInterval(patch,120);patch();
+    setInterval(patch,250);
+    document.addEventListener('focusout',ev=>{
+      if(ev.target?.matches?.('#weight,#reps'))setTimeout(patch,0);
+    },true);
+    patch();
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
