@@ -674,6 +674,16 @@
       captureCreds();
       ensureSession('wifi-status');
       log('WIFI_STATUS',{status:String(status||''),detail:String(detail||''),native:nativeDiag()},true);
+      if(status==='connecting'&&roleNow()==='guest'&&!runtime.manualDisconnect){
+        runtime.initialJoinArmed=true;
+        runtime.creds.role='guest';
+        if(/^(\d{1,3}\.){3}\d{1,3}$/.test(String(detail||'').trim()))runtime.creds.hostIp=String(detail).trim();
+        log('INITIAL_JOIN_ARMED',{
+          source:'native-connecting',
+          hostIp:runtime.creds.hostIp,
+          native:nativeDiag()
+        },true);
+      }
       if(status==='connected'){
         afterConnected();
       }else if(status==='waiting'){
@@ -737,12 +747,18 @@
       if(top)top.insertAdjacentElement('afterend',b);else training.prepend(b);
     }
     const card=$('v0823DiagCard');
-    if(card&&!$('v0825CopyShared')){
+    const oldCopy=$('v0825CopyShared');
+    if(oldCopy)oldCopy.remove();
+    if(card&&!$('v0828EmailShared')){
       const buttons=card.querySelector('.v0823DiagButtons');
       if(buttons){
-        const b=document.createElement('button');b.id='v0825CopyShared';b.className='secondary';b.type='button';b.textContent='KOPIUJ WSPÓLNĄ SESJĘ';
+        const b=document.createElement('button');
+        b.id='v0828EmailShared';
+        b.className='primary';
+        b.type='button';
+        b.textContent='WYŚLIJ WSPÓLNY LOG MAILEM';
         buttons.insertBefore(b,buttons.firstChild);
-        b.addEventListener('click',copyLatest);
+        b.addEventListener('click',emailLatest);
       }
     }
   }
@@ -757,6 +773,100 @@
     if(!s)return '';
     return JSON.stringify(s,null,2);
   }
+  function localPhoneMeta(){
+    const dev=localDeviceId();
+    const participants=participantVersions();
+    let participant=participants.find(p=>p.deviceId&&p.deviceId===dev)||null;
+    let athlete=0;
+    try{athlete=Number(net?.localAthlete)||0}catch(e){}
+    if(participant&&Number.isFinite(Number(participant.index)))athlete=Number(participant.index);
+
+    let name='';
+    if(participant?.name)name=String(participant.name);
+    if(!name){
+      try{name=String($('nameA')?.value||'').trim()}catch(e){}
+    }
+    if(!name)name='Użytkownik';
+
+    const role=roleNow()==='host'?'HOST':(roleNow()==='guest'?'GOŚĆ':'NIEUSTALONA');
+    const diag=nativeDiag();
+    let deviceModel='Android';
+    try{
+      if(window.Android&&typeof Android.getDeviceLabel==='function'){
+        deviceModel=String(Android.getDeviceLabel()||'Android');
+      }
+    }catch(e){}
+
+    return {
+      phoneNumber:athlete+1,
+      role,
+      name,
+      deviceModel,
+      deviceId:dev,
+      localIp:String(diag.localIp||runtime.lastLocalIp||'—'),
+      appVersion:appVersion(),
+      sessionId:sessionId(),
+      exportedAt:iso(now())
+    };
+  }
+
+  function exportLatestForEmail(){
+    const s=latestSession();
+    if(!s)return null;
+    const payload=clone(s,{});
+    payload.exportedFrom=localPhoneMeta();
+    return payload;
+  }
+
+  function emailLatest(){
+    flush(true);
+    const payload=exportLatestForEmail();
+    if(!payload){
+      try{toast('Brak wspólnego logu do wysłania.')}catch(e){}
+      return;
+    }
+    const meta=payload.exportedFrom||localPhoneMeta();
+    const subject='Trener 2 '+meta.appVersion+' — Telefon '+meta.phoneNumber+' — '+meta.role+' — '+meta.name;
+    const body=[
+      'Wspólny log diagnostyczny Trener 2',
+      '',
+      'Telefon: '+meta.phoneNumber,
+      'Rola: '+meta.role,
+      'Użytkownik: '+meta.name,
+      'Urządzenie: '+meta.deviceModel,
+      'Wersja aplikacji: '+meta.appVersion,
+      'IP lokalne: '+meta.localIp,
+      'Device ID: '+meta.deviceId,
+      'Session ID: '+(meta.sessionId||'—'),
+      'Eksport: '+meta.exportedAt,
+      '',
+      'Pełny black box znajduje się w załączniku JSON.'
+    ].join('\n');
+
+    const stamp=String(meta.exportedAt||'').replace(/[:.]/g,'-');
+    const fileName='Trener2-'+meta.appVersion+'-Telefon-'+meta.phoneNumber+'-'+meta.role+'-'+stamp+'.json';
+
+    if(!(window.Android&&typeof Android.emailSharedLog==='function')){
+      try{toast('Ta wersja Androida nie ma jeszcze wysyłki logu mailem.')}catch(e){}
+      return;
+    }
+
+    log('SHARED_LOG_EMAIL_OPENED',{
+      phoneNumber:meta.phoneNumber,
+      role:meta.role,
+      name:meta.name,
+      deviceModel:meta.deviceModel,
+      localIp:meta.localIp
+    },true);
+
+    try{
+      Android.emailSharedLog(JSON.stringify(payload,null,2),subject,body,fileName);
+    }catch(e){
+      log('SHARED_LOG_EMAIL_ERROR',{message:String(e?.message||e)},true);
+      try{toast('Nie udało się przygotować maila z logiem.')}catch(x){}
+    }
+  }
+
   async function copyLatest(){
     flush(true);
     const txt=exportLatest();
@@ -929,6 +1039,7 @@
   window.TrenerSharedBlackbox0825={
     log,
     exportLatest,
+    emailLatest,
     latest:()=>clone(latestSession(),null),
     sessions:()=>clone(db.sessions,[]),
     clear,

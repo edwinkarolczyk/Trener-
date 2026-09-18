@@ -1,5 +1,15 @@
 # Zmiany
 
+## 0.8.2.8
+- w Historii przy diagnostyce wspólnej sesji przycisk `KOPIUJ WSPÓLNĄ SESJĘ` został zastąpiony przez `WYŚLIJ WSPÓLNY LOG MAILEM`,
+- jednym kliknięciem aplikacja przygotowuje wiadomość mailową i dołącza pełny black box jako plik JSON,
+- temat i treść maila identyfikują źródło logu: `Telefon 1/2/3/4`, rolę HOST/GOŚĆ, nazwę uczestnika, model telefonu, wersję aplikacji, lokalny IP, deviceId i sessionId,
+- te same metadane są zapisywane w załączniku pod polem `exportedFrom`, więc log pozostaje jednoznaczny także po zapisaniu poza aplikacją,
+- załącznik jest udostępniany bez nowych uprawnień do pamięci i bez odczytywania numeru SIM,
+- retry pierwszego dołączania jest teraz uzbrajane również na natywnym statusie `connecting`, niezależnie od tego, czy wejście uruchomiono przyciskiem, QR czy inną ścieżką UI,
+- black box zapisuje `INITIAL_JOIN_ARMED` oraz `SHARED_LOG_EMAIL_OPENED`,
+- wersja podniesiona do `0.8.2.8`, `versionCode 62`.
+
 ## 0.8.2.7
 - pierwsze dołączanie GOŚCIA ponawia połączenie również wtedy, gdy nigdy wcześniej nie było stanu `CONNECTED`,
 - błędy chwilowe takie jak `EHOSTUNREACH`, timeout lub chwilowy brak trasy uruchamiają automatyczne próby 1 s → 2 s → 5 s → 10 s,
