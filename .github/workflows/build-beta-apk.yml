@@ -140,27 +140,3 @@ jobs:
           fi
 
 
-      - name: Publish legacy updater bridge
-        if: github.event_name != 'pull_request' && startsWith(github.ref, 'refs/heads/beta/') && env.VERSION == '0.8.2'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -e
-          TAG="v0.8.2-legacy-beta"
-          TITLE="Trener 2 0.8.2"
-          NOTES=$(cat <<'EOF'
-          - Techniczny most aktualizacji wyłącznie dla starszych wersji 0.8-beta.x.
-          - Instalowane APK ma właściwą wersję 0.8.2 i versionCode 54.
-          - Po przejściu na 0.8.2 dalsze aktualizacje używają czystej numeracji.
-          EOF
-          )
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" "$APK_NAME" "$APK_NAME.sha256" --clobber
-            gh release edit "$TAG" --title "$TITLE" --notes "$NOTES" --prerelease
-          else
-            gh release create "$TAG" "$APK_NAME" "$APK_NAME.sha256" \
-              --target "$GITHUB_SHA" \
-              --title "$TITLE" \
-              --notes "$NOTES" \
-              --prerelease
-          fi
