@@ -401,7 +401,7 @@
 
       if(roleNow()==='host'&&runtime.hostRestartPending&&!connectedNow()){
         setTimeout(()=>restartHostAfterNetworkReturn('network-restored'),250);
-      }else if(roleNow()==='guest'&&runtime.everConnected&&!connectedNow()&&!runtime.manualDisconnect){
+      }else if(roleNow()==='guest'&&(runtime.everConnected||runtime.initialJoinArmed)&&!connectedNow()&&!runtime.manualDisconnect){
         beginReconnect('network-restored',false);
       }
       paintReconnect();
@@ -459,7 +459,12 @@
     if(!runtime.reconnecting){
       runtime.reconnecting=true;
       runtime.reconnectAttempt=0;
-      log(roleNow()==='host'?'HOST_RESTART_BEGIN':'RECONNECT_BEGIN',{reason:runtime.reconnectReason,native:nativeDiag()},true);
+      const initialGuest=roleNow()==='guest'&&!runtime.everConnected&&runtime.initialJoinArmed;
+      log(roleNow()==='host'?'HOST_RESTART_BEGIN':(initialGuest?'INITIAL_JOIN_RETRY_BEGIN':'RECONNECT_BEGIN'),{
+        reason:runtime.reconnectReason,
+        hostIp:initialGuest?runtime.creds.hostIp:'',
+        native:nativeDiag()
+      },true);
     }
     setReconnectUi();
     if(forceClose){
@@ -468,7 +473,12 @@
     if(runtime.reconnectTimer)return;
     runtime.reconnectAttempt++;
     const delay=retryDelay();
-    log('RECONNECT_SCHEDULED',{attempt:runtime.reconnectAttempt,delayMs:delay,reason:runtime.reconnectReason},true);
+    log(runtime.everConnected?'RECONNECT_SCHEDULED':'INITIAL_JOIN_RETRY_SCHEDULED',{
+      attempt:runtime.reconnectAttempt,
+      delayMs:delay,
+      reason:runtime.reconnectReason,
+      hostIp:roleNow()==='guest'?runtime.creds.hostIp:''
+    },true);
     runtime.reconnectTimer=setTimeout(()=>{
       runtime.reconnectTimer=0;
       attemptReconnect();
