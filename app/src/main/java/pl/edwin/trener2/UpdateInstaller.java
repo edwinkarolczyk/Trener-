@@ -67,7 +67,7 @@ public final class UpdateInstaller {
 
                 String tag = release.optString("tag_name", "").trim();
                 String version = tag.startsWith("v") ? tag.substring(1) : tag;
-                if (!version.toLowerCase(Locale.ROOT).contains("beta")) continue;
+                if (!isSupportedTestVersion(version)) continue;
 
                 JSONArray assets = release.optJSONArray("assets");
                 if (assets == null) continue;
@@ -128,7 +128,7 @@ public final class UpdateInstaller {
     static int compareBetaVersions(String left, String right) {
         int[] a = coreVersion(left);
         int[] b = coreVersion(right);
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 4; i++) {
             if (a[i] != b[i]) return Integer.compare(a[i], b[i]);
         }
         return Integer.compare(betaBuild(left), betaBuild(right));
@@ -140,7 +140,7 @@ public final class UpdateInstaller {
         int dash = v.indexOf('-');
         String core = dash >= 0 ? v.substring(0, dash) : v;
         String[] parts = core.split("\\.");
-        int[] out = new int[]{0, 0, 0};
+        int[] out = new int[]{0, 0, 0, 0};
         for (int i = 0; i < out.length && i < parts.length; i++) {
             try {
                 out[i] = Math.max(0, Integer.parseInt(parts[i].replaceAll("[^0-9]", "")));
@@ -149,6 +149,11 @@ public final class UpdateInstaller {
             }
         }
         return out;
+    }
+
+    private static boolean isSupportedTestVersion(String raw) {
+        String v = raw == null ? "" : raw.trim().toLowerCase(Locale.ROOT);
+        return v.matches("\\d+(?:\\.\\d+){1,3}(?:-beta(?:[.-]?\\d+)?)?");
     }
 
     private static int betaBuild(String raw) {

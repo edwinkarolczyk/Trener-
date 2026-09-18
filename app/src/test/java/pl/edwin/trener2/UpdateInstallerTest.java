@@ -18,6 +18,12 @@ public class UpdateInstallerTest {
 
     @Test
     public void nextPatchBeatsBetaBuildSuffix() {
-        assertTrue(UpdateInstaller.compareBetaVersions("0.8.1-beta", "0.8-beta.9") > 0);
+        assertTrue(UpdateInstaller.compareBetaVersions("0.8.1", "0.8-beta.9") > 0);
+    }
+
+    @Test
+    public void fourthSegmentIsARealHotfixIncrement() {
+        assertTrue(UpdateInstaller.compareBetaVersions("0.8.1.1", "0.8.1") > 0);
+        assertTrue(UpdateInstaller.compareBetaVersions("0.8.2", "0.8.1.9") > 0);
     }
 }

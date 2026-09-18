@@ -322,7 +322,7 @@ public class MainActivity extends Activity {
         new Thread(() -> {
             HttpURLConnection connection = null;
             try {
-                if (appVersionName().contains("-beta")) {
+                if ("beta".equals(BuildConfig.UPDATE_CHANNEL)) {
                     emitUpdateResult("ok", UpdateInstaller.fetchLatestBetaUpdateJson());
                     return;
                 }
@@ -678,6 +678,50 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void checkForUpdate() {
             checkForUpdateNative();
+        }
+
+        @JavascriptInterface
+        public boolean savePreUpdateBackup(String json, String targetVersion) {
+            return PreUpdateBackupStore.save(
+                    context,
+                    json,
+                    appVersionName(),
+                    targetVersion == null ? "" : targetVersion
+            );
+        }
+
+        @JavascriptInterface
+        public boolean hasPreUpdateBackup() {
+            return PreUpdateBackupStore.hasBackup(context);
+        }
+
+        @JavascriptInterface
+        public void importLatestPreUpdateBackup() {
+            String json = PreUpdateBackupStore.latestJson(context);
+            if (json == null || json.trim().isEmpty()) {
+                runOnUiThread(() -> Toast.makeText(
+                        MainActivity.this,
+                        "Brak kopii sprzed aktualizacji.",
+                        Toast.LENGTH_SHORT
+                ).show());
+                return;
+            }
+            emitBackupImport(json);
+        }
+
+        @JavascriptInterface
+        public void exportLatestPreUpdateBackup() {
+            String json = PreUpdateBackupStore.latestJson(context);
+            if (json == null || json.trim().isEmpty()) {
+                runOnUiThread(() -> Toast.makeText(
+                        MainActivity.this,
+                        "Brak kopii sprzed aktualizacji.",
+                        Toast.LENGTH_SHORT
+                ).show());
+                return;
+            }
+            String name = PreUpdateBackupStore.latestExportName(context);
+            runOnUiThread(() -> startBackupExport(json, name));
         }
 
         @JavascriptInterface

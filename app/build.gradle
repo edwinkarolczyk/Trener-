@@ -21,8 +21,9 @@ android {
         applicationId 'pl.edwin.trener2'
         minSdk 26
         targetSdk 35
-        versionCode 52
-        versionName '0.8-beta.2'
+        versionCode 53
+        versionName '0.8.1'
+        buildConfigField "String", "UPDATE_CHANNEL", '"beta"'
 
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
@@ -46,6 +47,10 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
+    }
+
+    buildFeatures {
+        buildConfig true
     }
 
     compileOptions {

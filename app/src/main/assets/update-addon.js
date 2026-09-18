@@ -6,6 +6,7 @@
   let updateInfo=null;
   let checking=false;
   let downloadStartedFor='';
+  let backupPreparedFor='';
 
   function el(id){return document.getElementById(id)}
   function safeJson(raw,fallback){try{return raw?JSON.parse(raw):fallback}catch(e){return fallback}}
@@ -14,7 +15,8 @@
   function saveConfig(patch){localStorage.setItem(UPDATE_STORAGE,JSON.stringify(Object.assign(config(),patch||{})))}
 
   function versionParts(v){
-    return String(v||'0').replace(/^v/i,'').split('.').map(x=>parseInt(x,10)||0);
+    const core=String(v||'0').replace(/^v/i,'').split('-')[0];
+    return core.split('.').slice(0,4).map(x=>parseInt(x,10)||0);
   }
   function isNewer(remote,current){
     const a=versionParts(remote),b=versionParts(current),n=Math.max(a.length,b.length);
@@ -71,7 +73,11 @@
           <button id="checkUpdateBtn" class="secondary">SPRAWDŹ TERAZ</button>
           <button id="downloadUpdateBtn" class="primary hidden">ZAINSTALUJ AKTUALIZACJĘ</button>
         </div>
-        <p class="hint updateFoot">Trener 2 pobiera podpisane APK z wydań GitHub i sprawdza SHA-256, jeśli serwer je udostępnia. Android nadal wymaga systemowego potwierdzenia instalacji.</p>`;
+        <div id="preUpdateBackupActions" class="updateActions hidden">
+          <button id="restorePreUpdateBtn" class="secondary">PRZYWRÓĆ KOPIĘ SPRZED AKTUALIZACJI</button>
+          <button id="exportPreUpdateBtn" class="secondary">EKSPORTUJ TĘ KOPIĘ</button>
+        </div>
+        <p class="hint updateFoot">Przed pobraniem nowej wersji Trener 2 zapisuje automatyczną kopię danych. APK jest podpisane i sprawdzane przez SHA-256, jeśli serwer udostępnia sumę.</p>`;
       settings.insertBefore(card,settings.firstChild);
 
       const cfg=config();
@@ -84,7 +90,59 @@
       el('autoInstallCheck').addEventListener('change',()=>saveConfig({autoInstall:el('autoInstallCheck').checked}));
       el('checkUpdateBtn').addEventListener('click',()=>checkForUpdate(true));
       el('downloadUpdateBtn').addEventListener('click',()=>downloadUpdate(false));
+      el('restorePreUpdateBtn').addEventListener('click',()=>{
+        if(!confirm('Przywrócić ostatnią kopię sprzed aktualizacji? Bieżące dane o tych samych kluczach zostaną zastąpione.'))return;
+        try{if(window.Android&&Android.importLatestPreUpdateBackup)Android.importLatestPreUpdateBackup();}catch(e){}
+      });
+      el('exportPreUpdateBtn').addEventListener('click',()=>{
+        try{if(window.Android&&Android.exportLatestPreUpdateBackup)Android.exportLatestPreUpdateBackup();}catch(e){}
+      });
+      refreshPreUpdateBackupUi();
+    }else{
+      refreshPreUpdateBackupUi();
     }
+  }
+
+  function refreshPreUpdateBackupUi(){
+    const row=el('preUpdateBackupActions');if(!row)return;
+    let has=false;
+    try{has=!!(window.Android&&Android.hasPreUpdateBackup&&Android.hasPreUpdateBackup())}catch(e){}
+    row.classList.toggle('hidden',!has);
+  }
+
+  function fallbackBackup(){
+    const storage={};
+    try{
+      for(let i=0;i<localStorage.length;i++){
+        const key=localStorage.key(i);
+        if(!key||(!(key.startsWith('trainer3.')||key.startsWith('trainer2.')))||key==='trainer3.photos')continue;
+        const value=localStorage.getItem(key);
+        if(value!==null)storage[key]=value;
+      }
+    }catch(e){}
+    return {
+      format:'trener2-backup',
+      version:5,
+      schemaVersion:Math.max(1,Number(localStorage.getItem('trainer3.schemaVersion')||1)||1),
+      appVersion:currentVersion(),
+      exportedAt:new Date().toISOString(),
+      metadata:{forwardCompatibleStorage:true,preserveUnknownKeys:true,automaticPreUpdate:true},
+      storage,
+      excludes:['trainer3.photos']
+    };
+  }
+
+  function preparePreUpdateBackup(version){
+    if(backupPreparedFor===version)return true;
+    try{
+      const data=window.TrenerBackup&&typeof window.TrenerBackup.buildBackup==='function'
+        ?window.TrenerBackup.buildBackup()
+        :fallbackBackup();
+      if(!window.Android||typeof Android.savePreUpdateBackup!=='function')return false;
+      const ok=!!Android.savePreUpdateBackup(JSON.stringify(data),version);
+      if(ok){backupPreparedFor=version;refreshPreUpdateBackupUi();}
+      return ok;
+    }catch(e){return false;}
   }
 
   function setChecking(on){
@@ -160,8 +218,17 @@
     const version=String(updateInfo.version||'');
     if(auto&&downloadStartedFor===version)return;
     downloadStartedFor=version;
-    const b=el('downloadUpdateBtn');if(b){b.disabled=true;b.textContent='POBIERAM…';}
-    if(el('updateStatus'))el('updateStatus').textContent='Pobieram Trener 2 '+version+'…';
+    const b=el('downloadUpdateBtn');if(b){b.disabled=true;b.textContent='TWORZĘ KOPIĘ…';}
+    if(el('updateStatus'))el('updateStatus').textContent='Tworzę kopię danych przed aktualizacją…';
+    if(!preparePreUpdateBackup(version)){
+      downloadStartedFor='';
+      if(b){b.disabled=false;b.textContent='ZAINSTALUJ AKTUALIZACJĘ';}
+      if(el('updateStatus'))el('updateStatus').textContent='Aktualizacja zatrzymana: nie udało się utworzyć kopii danych.';
+      if(typeof window.toast==='function')window.toast('Nie instaluję aktualizacji bez kopii danych.');
+      return;
+    }
+    if(b){b.disabled=true;b.textContent='POBIERAM…';}
+    if(el('updateStatus'))el('updateStatus').textContent='Kopia gotowa. Pobieram Trener 2 '+version+'…';
     try{
       if(window.Android&&Android.downloadAndInstallUpdate){
         Android.downloadAndInstallUpdate(url,String(updateInfo.sha256||''));
