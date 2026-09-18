@@ -19,6 +19,11 @@
   function group(){try{return window.TrenerGroup||null;}catch(e){return null}}
   function role(){try{return String(net?.role||'')}catch(e){return ''}}
   function shared(){try{return !!(running&&net?.active&&net?.sessionId)}catch(e){return false}}
+  function guestSharedContext(){
+    try{
+      return role()==='guest'&&!!running&&!!String(net?.sessionId||group()?.sessionId||'').trim();
+    }catch(e){return false}
+  }
   function ownAthlete(){try{return Number(net?.localAthlete)||0}catch(e){return 0}}
   function ownDeviceId(){
     try{return String(group()?.deviceId||localStorage.getItem('trainer3.participantId')||'')}catch(e){return ''}
@@ -51,6 +56,8 @@
       .v0829Actions button{min-height:52px;margin:0!important;font-weight:950}
       #v0829LeaveBtn{display:none}
       #v0829LeaveBtn.show{display:block}
+      #stopBtn.v08212GuestStop{font-size:0!important}
+      #stopBtn.v08212GuestStop::after{content:'ZAKOŃCZ WSPÓLNY TRENING';font-size:11px!important;font-weight:950;letter-spacing:.01em}
       @media(max-width:430px){.v0829Actions{grid-template-columns:1fr}.v0829Dialog h3{font-size:19px}}
     `;document.head.appendChild(s);
   }
@@ -78,12 +85,21 @@
 
   function paint(){
     installUi();
-    const guest=shared()&&role()==='guest';
+    const guest=guestSharedContext();
     const leave=$('v0829LeaveBtn');
     if(leave)leave.classList.toggle('show',guest);
     const stop=$('stopBtn');
-    if(stop&&guest)stop.textContent='POPROŚ O ZAKOŃCZENIE';
-    else if(stop&&stop.textContent==='POPROŚ O ZAKOŃCZENIE')stop.textContent='ZAKOŃCZ';
+    if(stop){
+      stop.classList.toggle('v08212GuestStop',guest);
+      if(guest){
+        stop.setAttribute('aria-label','ZAKOŃCZ WSPÓLNY TRENING');
+        if(stop.textContent!=='ZAKOŃCZ WSPÓLNY TRENING')stop.textContent='ZAKOŃCZ WSPÓLNY TRENING';
+      }else{
+        stop.classList.remove('v08212GuestStop');
+        stop.removeAttribute('aria-label');
+        if(stop.textContent==='ZAKOŃCZ WSPÓLNY TRENING'||stop.textContent==='POPROŚ O ZAKOŃCZENIE')stop.textContent='ZAKOŃCZ';
+      }
+    }
     const exit=$('v074ExitBtn');
     if(exit&&guest)exit.style.display='none';
     else if(exit)exit.style.display='';
@@ -102,8 +118,8 @@
       athlete:ownAthlete(),
       deviceId:ownDeviceId()
     },true);
-    if(!shared()||role()!=='guest'){
-      log('GUEST_FINISH_ROUTE_REJECTED',{shared:shared(),role:role(),sessionId:session()},true);
+    if(!guestSharedContext()){
+      log('GUEST_FINISH_ROUTE_REJECTED',{shared:shared(),guestContext:guestSharedContext(),role:role(),sessionId:session()},true);
       return false;
     }
     if(!net?.connected){
