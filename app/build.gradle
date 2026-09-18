@@ -21,8 +21,8 @@ android {
         applicationId 'pl.edwin.trener2'
         minSdk 26
         targetSdk 35
-        versionCode 54
-        versionName '0.8.2'
+        versionCode 55
+        versionName '0.8.2.1'
         buildConfigField "String", "UPDATE_CHANNEL", '"beta"'
 
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
