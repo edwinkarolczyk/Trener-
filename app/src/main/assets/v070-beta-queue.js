@@ -208,6 +208,15 @@
       if(state.active&&m&&m.type==='DONE'&&net.role==='host'){
         if(Array.isArray(m.records))m.records.forEach(mergeRecord);const a=Number(m.athlete)||1;state.left[a]=true;net.done[a]=true;if(Number(state.turn)===a)advanceHost(a);else{state.rev++;sendState();render();}return;
       }
+      if(state.active&&m&&m.type==='LEAVE'&&net.role==='host'){
+        if(Array.isArray(m.records))m.records.forEach(mergeRecord);
+        const a=Number(m.athlete)||1;
+        state.left[a]=true;
+        net.done[a]=true;
+        if(Number(state.turn)===a)advanceHost(a);else{state.rev++;sendState();render();}
+        try{toast((m.name||athleteName(a))+' opuścił wspólny trening.');}catch(e){}
+        return;
+      }
       const out=base(raw);
       setTimeout(()=>{if(net.role==='host')startHostQueue();render();},0);
       return out;
