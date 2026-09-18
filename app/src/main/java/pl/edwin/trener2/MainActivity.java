@@ -12,9 +12,13 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.PowerManager;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.util.Base64;
+import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
@@ -58,6 +62,14 @@ public class MainActivity extends Activity {
     private UpdateInstaller updateInstaller;
     private String pendingBackupJson;
     private ValueCallback<Uri[]> fileChooserCallback;
+    private PowerManager.WakeLock workoutCpuWakeLock;
+    private PowerManager.WakeLock workoutScreenWakeLock;
+    private final Handler workoutScreenHandler = new Handler(Looper.getMainLooper());
+    private Runnable workoutWakeRunnable;
+    private boolean workoutSessionActive = false;
+    private boolean workoutScreenPinned = false;
+    private boolean workoutSharedActive = false;
+    private int workoutLocalAthlete = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -378,6 +390,165 @@ public class MainActivity extends Activity {
         }
     }
 
+    private void setWorkoutScreenStateNative(
+            boolean workoutActive,
+            boolean keepScreenOn,
+            long wakeAtEpochMs,
+            boolean shared,
+            int localAthlete
+    ) {
+        runOnUiThread(() -> {
+            workoutSessionActive = workoutActive;
+            workoutSharedActive = shared;
+            workoutLocalAthlete = Math.max(0, localAthlete);
+
+            if (workoutWakeRunnable != null) {
+                workoutScreenHandler.removeCallbacks(workoutWakeRunnable);
+                workoutWakeRunnable = null;
+            }
+
+            if (workoutActive) {
+                ensureWorkoutCpuWakeLock();
+            } else {
+                releaseWorkoutCpuWakeLock();
+            }
+
+            if (!workoutActive) {
+                disableWorkoutScreenPin();
+                return;
+            }
+
+            if (keepScreenOn) {
+                enableWorkoutScreenPin(true);
+                return;
+            }
+
+            disableWorkoutScreenPin();
+            if (wakeAtEpochMs > System.currentTimeMillis()) {
+                scheduleWorkoutWake(wakeAtEpochMs);
+            }
+        });
+    }
+
+    private void ensureWorkoutCpuWakeLock() {
+        try {
+            if (workoutCpuWakeLock == null) {
+                PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+                if (pm != null) {
+                    workoutCpuWakeLock = pm.newWakeLock(
+                            PowerManager.PARTIAL_WAKE_LOCK,
+                            getPackageName() + ":workout-cpu"
+                    );
+                    workoutCpuWakeLock.setReferenceCounted(false);
+                }
+            }
+            if (workoutCpuWakeLock != null && !workoutCpuWakeLock.isHeld()) {
+                workoutCpuWakeLock.acquire(4L * 60L * 60L * 1000L);
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    private void releaseWorkoutCpuWakeLock() {
+        try {
+            if (workoutCpuWakeLock != null && workoutCpuWakeLock.isHeld()) {
+                workoutCpuWakeLock.release();
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    private void scheduleWorkoutWake(long wakeAtEpochMs) {
+        long delay = Math.max(0L, wakeAtEpochMs - System.currentTimeMillis());
+        workoutWakeRunnable = () -> {
+            workoutWakeRunnable = null;
+            if (!workoutSessionActive) return;
+            enableWorkoutScreenPin(true);
+        };
+        workoutScreenHandler.postDelayed(workoutWakeRunnable, delay);
+    }
+
+    @SuppressWarnings("deprecation")
+    private void enableWorkoutScreenPin(boolean wakeNow) {
+        try {
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+                setShowWhenLocked(true);
+                setTurnScreenOn(true);
+            } else {
+                getWindow().addFlags(
+                        WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+                                | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+                );
+            }
+
+            if (wakeNow && !workoutScreenPinned) {
+                PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+                if (pm != null && !pm.isInteractive()) {
+                    workoutScreenWakeLock = pm.newWakeLock(
+                            PowerManager.SCREEN_BRIGHT_WAKE_LOCK
+                                    | PowerManager.ACQUIRE_CAUSES_WAKEUP
+                                    | PowerManager.ON_AFTER_RELEASE,
+                            getPackageName() + ":workout-screen"
+                    );
+                    workoutScreenWakeLock.setReferenceCounted(false);
+                    workoutScreenWakeLock.acquire(5000L);
+                }
+            }
+            workoutScreenPinned = true;
+        } catch (Exception ignored) {
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    private void disableWorkoutScreenPin() {
+        try {
+            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+                setTurnScreenOn(false);
+                setShowWhenLocked(false);
+            } else {
+                getWindow().clearFlags(
+                        WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+                                | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+                );
+            }
+        } catch (Exception ignored) {
+        }
+        workoutScreenPinned = false;
+    }
+
+    private void handleWorkoutNetworkWake(String message) {
+        if (!workoutSessionActive || !workoutSharedActive || message == null) return;
+        try {
+            JSONObject obj = new JSONObject(message);
+            if (!"BETA070_STATE".equals(obj.optString("type", ""))) return;
+            if (obj.optInt("turn", -1) != workoutLocalAthlete) return;
+
+            long wakeAt = obj.optLong("waitUntil", 0L);
+            JSONObject readyAt = obj.optJSONObject("readyAt");
+            if (readyAt != null) {
+                wakeAt = Math.max(wakeAt, readyAt.optLong(String.valueOf(workoutLocalAthlete), 0L));
+            }
+
+            final long target = wakeAt;
+            runOnUiThread(() -> {
+                if (!workoutSessionActive || !workoutSharedActive) return;
+                if (workoutWakeRunnable != null) {
+                    workoutScreenHandler.removeCallbacks(workoutWakeRunnable);
+                    workoutWakeRunnable = null;
+                }
+                if (target <= System.currentTimeMillis() + 250L) {
+                    enableWorkoutScreenPin(true);
+                } else {
+                    disableWorkoutScreenPin();
+                    scheduleWorkoutWake(target);
+                }
+            });
+        } catch (Exception ignored) {
+        }
+    }
+
     private String appVersionName() {
         try {
             return getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
@@ -494,6 +665,7 @@ public class MainActivity extends Activity {
     }
 
     private void emitWifiMessage(String message) {
+        handleWorkoutNetworkWake(message);
         if (webView == null) return;
         final String js = "window.TrenerWifi&&window.TrenerWifi.nativeMessage("
                 + JSONObject.quote(message == null ? "" : message) + ");";
@@ -547,6 +719,17 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        releaseWorkoutCpuWakeLock();
+        if (workoutWakeRunnable != null) {
+            workoutScreenHandler.removeCallbacks(workoutWakeRunnable);
+            workoutWakeRunnable = null;
+        }
+        try {
+            if (workoutScreenWakeLock != null && workoutScreenWakeLock.isHeld()) {
+                workoutScreenWakeLock.release();
+            }
+        } catch (Exception ignored) {
+        }
         if (fileChooserCallback != null) {
             fileChooserCallback.onReceiveValue(null);
             fileChooserCallback = null;
@@ -673,6 +856,23 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public String getAppVersion() {
             return appVersionName();
+        }
+
+        @JavascriptInterface
+        public void setWorkoutScreenState(
+                boolean workoutActive,
+                boolean keepScreenOn,
+                long wakeAtEpochMs,
+                boolean shared,
+                int localAthlete
+        ) {
+            setWorkoutScreenStateNative(
+                    workoutActive,
+                    keepScreenOn,
+                    wakeAtEpochMs,
+                    shared,
+                    localAthlete
+            );
         }
 
         @JavascriptInterface
