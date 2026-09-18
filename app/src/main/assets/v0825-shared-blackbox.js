@@ -37,6 +37,13 @@
     prevConnectionKey:'',
     hostPeerBeats:{},
     stalePeers:{},
+    networkAvailable:null,
+    lastLocalIp:'',
+    networkLostAt:0,
+    networkRestoredAt:0,
+    hostRestartPending:false,
+    hostRestartInFlight:false,
+    lastHostRestartAt:0,
     booted:false
   };
 
@@ -62,6 +69,11 @@
   }
   function runningNow(){try{return !!running}catch(e){return false}}
   function connectedNow(){try{return !!net?.connected}catch(e){return false}}
+  function validLocalIp(ip){
+    const s=String(ip||'').trim();
+    if(!/^(\d{1,3}\.){3}\d{1,3}$/.test(s))return false;
+    return s.split('.').every(x=>{const n=Number(x);return Number.isInteger(n)&&n>=0&&n<=255});
+  }
   function roleNow(){try{return String(net?.role||'')}catch(e){return ''}}
   function sessionId(){try{return String(net?.sessionId||queue()?.sessionId||'')}catch(e){return ''}}
   function revNow(){try{return Number(queue()?.rev)||0}catch(e){return 0}}
@@ -240,8 +252,8 @@
   }
   function canReconnectGuest(){
     return roleNow()==='guest'&&runtime.everConnected&&!runtime.manualDisconnect&&!fatalReason(runtime.reconnectReason)&&
-      /^(\d{1,3}\.){3}\d{1,3}$/.test(runtime.creds.hostIp)&&/^\d{6}$/.test(runtime.creds.code)&&
-      (sharedActive()||runningNow());
+      runtime.networkAvailable!==false&&
+      /^(\d{1,3}\.){3}\d{1,3}$/.test(runtime.creds.hostIp)&&/^\d{6}$/.test(runtime.creds.code);
   }
   function canRestartHost(){
     return roleNow()==='host'&&!runtime.manualDisconnect&&/^\d{6}$/.test(runtime.creds.code)&&
@@ -260,10 +272,16 @@
   function paintReconnect(){
     const b=$('v0825ReconnectBanner');
     if(!b)return;
-    if(runtime.reconnecting&&roleNow()==='guest'){
+    if(runtime.networkAvailable===false&&roleNow()==='host'){
       b.classList.remove('hidden');
-      b.textContent='WSPÓLNY TRENING WSTRZYMANY — RECONNECT… próba '+runtime.reconnectAttempt;
-    }else if(sharedActive()&&roleNow()==='host'&&!connectedNow()){
+      b.textContent='HOST — BRAK SIECI WI‑FI. CZEKAM NA POWRÓT POŁĄCZENIA';
+    }else if(runtime.hostRestartInFlight&&roleNow()==='host'){
+      b.classList.remove('hidden');
+      b.textContent='HOST — SIEĆ WRÓCIŁA. PRZYWRACAM SESJĘ…';
+    }else if(runtime.reconnecting&&roleNow()==='guest'){
+      b.classList.remove('hidden');
+      b.textContent=(runningNow()?'WSPÓLNY TRENING WSTRZYMANY — ':'')+'RECONNECT… próba '+runtime.reconnectAttempt;
+    }else if(runtime.everConnected&&roleNow()==='host'&&!connectedNow()){
       b.classList.remove('hidden');
       b.textContent='PARTNER ROZŁĄCZONY — CZEKAM NA PONOWNE POŁĄCZENIE';
     }else{
@@ -280,6 +298,128 @@
       }
     }catch(e){}
     paintReconnect();
+  }
+
+  function setLocalIpUi(ip){
+    const el=$('localIp');
+    if(el)el.textContent=validLocalIp(ip)?String(ip):'—';
+  }
+
+  function restartHostAfterNetworkReturn(reason){
+    captureCreds();
+    if(roleNow()!=='host'||runtime.manualDisconnect||connectedNow())return false;
+    if(!/^\d{6}$/.test(runtime.creds.code))return false;
+    const diag=nativeDiag();
+    if(!validLocalIp(diag.localIp))return false;
+    const t=now();
+    if(runtime.hostRestartInFlight||t-runtime.lastHostRestartAt<1200)return false;
+    runtime.hostRestartPending=false;
+    runtime.hostRestartInFlight=true;
+    runtime.lastHostRestartAt=t;
+    try{
+      net.connected=false;
+      net.status='restoring';
+      net.detail=String(diag.localIp||'');
+      if(typeof updateWifiUi==='function')updateWifiUi();
+    }catch(e){}
+    log('HOST_RESTART_AFTER_NETWORK',{
+      reason:String(reason||'network-restored'),
+      localIp:String(diag.localIp||''),
+      native:diag
+    },true);
+    try{
+      if(window.Android&&Android.wifiHost){
+        Android.wifiHost(runtime.creds.code);
+        paintReconnect();
+        return true;
+      }
+    }catch(e){
+      runtime.hostRestartInFlight=false;
+      log('HOST_RESTART_CALL_ERROR',{message:String(e?.message||e),native:nativeDiag()},true);
+    }
+    return false;
+  }
+
+  function monitorNetwork(diag){
+    diag=diag&&typeof diag==='object'?diag:nativeDiag();
+    const ip=String(diag.localIp||'').trim();
+    const available=validLocalIp(ip);
+    if(runtime.networkAvailable===null){
+      runtime.networkAvailable=available;
+      if(available)runtime.lastLocalIp=ip;
+      setLocalIpUi(ip);
+      return;
+    }
+
+    if(!available&&runtime.networkAvailable!==false){
+      const previousIp=runtime.lastLocalIp;
+      runtime.networkAvailable=false;
+      runtime.networkLostAt=now();
+      runtime.hostRestartPending=roleNow()==='host'&&!runtime.manualDisconnect&&/^\d{6}$/.test(runtime.creds.code);
+      setLocalIpUi('—');
+      try{
+        if(net?.role){
+          net.connected=false;
+          net.status='network_lost';
+          net.detail='Brak aktywnego adresu Wi‑Fi';
+          if(typeof updateWifiUi==='function')updateWifiUi();
+        }
+      }catch(e){}
+      log('NETWORK_LOST',{previousIp,native:diag},true);
+      paintReconnect();
+      return;
+    }
+
+    if(!available&&runtime.networkAvailable===false){
+      setLocalIpUi('—');
+      try{
+        if(roleNow()==='host'&&net.status!=='network_lost'){
+          net.connected=false;
+          net.status='network_lost';
+          net.detail='Brak aktywnego adresu Wi‑Fi';
+          if(typeof updateWifiUi==='function')updateWifiUi();
+        }
+      }catch(e){}
+      paintReconnect();
+      return;
+    }
+
+    if(available&&runtime.networkAvailable===false){
+      const lostAt=runtime.networkLostAt||0;
+      runtime.networkAvailable=true;
+      runtime.networkRestoredAt=now();
+      runtime.lastLocalIp=ip;
+      setLocalIpUi(ip);
+      log('NETWORK_RESTORED',{
+        localIp:ip,
+        downtimeMs:lostAt?Math.max(0,runtime.networkRestoredAt-lostAt):null,
+        native:diag
+      },true);
+
+      if(roleNow()==='host'&&runtime.hostRestartPending&&!connectedNow()){
+        setTimeout(()=>restartHostAfterNetworkReturn('network-restored'),250);
+      }else if(roleNow()==='guest'&&runtime.everConnected&&!connectedNow()&&!runtime.manualDisconnect){
+        beginReconnect('network-restored',false);
+      }
+      paintReconnect();
+      return;
+    }
+
+    if(available){
+      if(runtime.lastLocalIp&&runtime.lastLocalIp!==ip){
+        const previousIp=runtime.lastLocalIp;
+        runtime.lastLocalIp=ip;
+        setLocalIpUi(ip);
+        log('NETWORK_IP_CHANGED',{previousIp,localIp:ip,native:diag},true);
+        if(roleNow()==='host'&&runtime.everConnected&&!connectedNow()&&!runtime.manualDisconnect){
+          runtime.hostRestartPending=true;
+          setTimeout(()=>restartHostAfterNetworkReturn('ip-changed'),250);
+        }
+      }else{
+        runtime.lastLocalIp=ip;
+        setLocalIpUi(ip);
+      }
+    }
   }
 
   function beginReconnect(reason,forceClose){
@@ -342,6 +482,14 @@
     runtime.lastRxAt=now();
     runtime.lastPongAt=runtime.lastRxAt;
     runtime.manualDisconnect=false;
+    runtime.hostRestartPending=false;
+    runtime.hostRestartInFlight=false;
+    const diag=nativeDiag();
+    if(validLocalIp(diag.localIp)){
+      runtime.networkAvailable=true;
+      runtime.lastLocalIp=String(diag.localIp);
+      setLocalIpUi(diag.localIp);
+    }
     paintReconnect();
     log(wasReconnect?'RECONNECTED':'CONNECTED',{native:nativeDiag(),participants:participantVersions()},true);
     if(wasReconnect){
@@ -424,12 +572,12 @@
         deviceId:localDeviceId(),
         sessionId:sessionId()
       });
-      if(ok===false&&roleNow()==='guest'&&sharedActive()&&!runtime.reconnecting){
+      if(ok===false&&roleNow()==='guest'&&runtime.everConnected&&!runtime.reconnecting){
         log('HEARTBEAT_SEND_FAILED',{native:nativeDiag()},true);
         beginReconnect('heartbeat-send-failed',true);
       }
     }catch(e){
-      if(roleNow()==='guest'&&sharedActive()&&!runtime.reconnecting){
+      if(roleNow()==='guest'&&runtime.everConnected&&!runtime.reconnecting){
         log('HEARTBEAT_SEND_ERROR',{message:String(e?.message||e),native:nativeDiag()},true);
         beginReconnect('heartbeat-send-error',true);
       }
@@ -498,8 +646,32 @@
         if(roleNow()==='host'){
           runtime.reconnecting=false;
           runtime.reconnectAttempt=0;
+          runtime.hostRestartInFlight=false;
+          const diag=nativeDiag();
+          if(validLocalIp(diag.localIp)){
+            runtime.networkAvailable=true;
+            runtime.lastLocalIp=String(diag.localIp);
+            setLocalIpUi(diag.localIp);
+          }else{
+            runtime.networkAvailable=false;
+            runtime.hostRestartPending=!runtime.manualDisconnect&&/^\d{6}$/.test(runtime.creds.code);
+            setLocalIpUi('—');
+            try{
+              net.connected=false;
+              net.status='network_lost';
+              net.detail='Brak aktywnego adresu Wi‑Fi';
+              if(typeof updateWifiUi==='function')updateWifiUi();
+            }catch(e){}
+          }
           paintReconnect();
-          if(sharedActive()&&runtime.everConnected)log('HOST_WAITING_FOR_PEER',{native:nativeDiag()},true);
+          if(runtime.everConnected)log('HOST_WAITING_FOR_PEER',{native:diag},true);
+        }
+      }else if(status==='disconnected_peer'){
+        if(roleNow()==='host'){
+          const diag=nativeDiag();
+          monitorNetwork(diag);
+          if(!validLocalIp(diag.localIp))runtime.hostRestartPending=true;
+          paintReconnect();
         }
       }else if(status==='disconnected'||status==='error'){
         if(!runtime.manualDisconnect&&!fatalReason(detail)){
@@ -589,6 +761,8 @@
   function heartbeatTick(){
     wrapSend();wrapMessage();wrapStatus();installUi();captureCreds();
     const t=now();
+    const diag=nativeDiag();
+    monitorNetwork(diag);
     const conn=connectedNow();
 
     const connectionKey=[roleNow(),String(net?.status||''),conn,sharedActive(),runningNow(),sessionId()].join('|');
@@ -625,7 +799,7 @@
       },false);
     }
 
-    if(roleNow()==='guest'&&conn&&sharedActive()&&runtime.everConnected){
+    if(roleNow()==='guest'&&conn&&runtime.everConnected){
       const age=t-Math.max(runtime.lastRxAt||0,runtime.lastPongAt||0);
       if(age>HEARTBEAT_TIMEOUT_MS&&!runtime.reconnecting){
         log('HEARTBEAT_TIMEOUT',{ageMs:age,native:nativeDiag()},true);
@@ -727,7 +901,11 @@
       lastRxAt:runtime.lastRxAt,
       lastTxAt:runtime.lastTxAt,
       lastPongAt:runtime.lastPongAt,
-      rttMs:runtime.lastRtt
+      rttMs:runtime.lastRtt,
+      networkAvailable:runtime.networkAvailable,
+      localIp:runtime.lastLocalIp,
+      hostRestartPending:runtime.hostRestartPending,
+      hostRestartInFlight:runtime.hostRestartInFlight
     })
   };
 
