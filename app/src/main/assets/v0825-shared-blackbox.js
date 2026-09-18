@@ -33,7 +33,7 @@
     prevRunning:false,
     prevShared:false,
     prevQueueKey:'',
-    prevMessageKey:'',
+    messageKeys:{},
     prevConnectionKey:'',
     hostPeerBeats:{},
     stalePeers:{},
@@ -368,16 +368,27 @@
   }
   function messageKey(m){
     if(!m)return '';
-    if(m.type==='BETA070_STATE')return [m.type,m.rev,m.exercise,m.turn,m.waitUntil,JSON.stringify(m.readyAt||{})].join('|');
-    if(m.type==='GROUP_STATE')return [m.type,JSON.stringify(m.participants||[])].join('|');
+    if(m.type==='BETA070_STATE'){
+      return [m.type,m.rev,m.exercise,m.turn,m.waitUntil,JSON.stringify(m.readyAt||{}),Array.isArray(m.records)?m.records.length:0,JSON.stringify(m.done||[])].join('|');
+    }
+    if(m.type==='GROUP_STATE'){
+      return [m.type,JSON.stringify(m.participants||[]),!!m.sharedEquipment].join('|');
+    }
+    if(m.type==='GROUP_RESYNC'){
+      return [m.type,m.sessionId,m.athlete,!!m.done,Array.isArray(m.records)?m.records.length:0,JSON.stringify(m.position||{}),JSON.stringify(m.extraSets||{})].join('|');
+    }
+    if(m.type==='GROUP_SNAPSHOT'){
+      return [m.type,!!m.active,m.sessionId,Array.isArray(m.records)?m.records.length:0,JSON.stringify(m.done||[]),JSON.stringify(m.positions||{}),!!m.paused].join('|');
+    }
     return '';
   }
   function logMessage(direction,m){
     if(!m||!m.type)return;
     if(m.type==='V0825_PING'||m.type==='V0825_PONG')return;
     const key=messageKey(m);
-    if(key&&key===runtime.prevMessageKey)return;
-    if(key)runtime.prevMessageKey=key;
+    const slot=String(direction)+'|'+String(m.type);
+    if(key&&key===runtime.messageKeys[slot])return;
+    if(key)runtime.messageKeys[slot]=key;
     log(direction+'_'+String(m.type),summarizeMessage(m),false);
   }
 
