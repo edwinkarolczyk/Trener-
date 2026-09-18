@@ -182,7 +182,15 @@
   function captureNavigation(ev){
     const stop=ev.target?.closest?.('#stopBtn');
     if(stop&&isRunning()){
-      ev.preventDefault();ev.stopPropagation();ev.stopImmediatePropagation();askFinish('start');return;
+      ev.preventDefault();ev.stopPropagation();ev.stopImmediatePropagation();
+      try{
+        window.TrenerSharedBlackbox0825?.log?.('STOP_BUTTON_CAPTURED',{
+          role:String(net?.role||''),
+          shared:!!net?.active,
+          sessionId:String(net?.sessionId||'')
+        },true);
+      }catch(e){}
+      askFinish('start');return;
     }
     const exit=ev.target?.closest?.('#v074ExitBtn');
     if(exit&&isRunning()){
