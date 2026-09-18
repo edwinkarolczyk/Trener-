@@ -18,12 +18,13 @@
       #v074ExitBtn{display:none}
       body.v072Running #v074ExitBtn{display:block;min-width:72px;height:48px;margin:0!important;padding:6px 9px!important;border-radius:11px!important;font-size:9px!important;font-weight:950!important;white-space:nowrap}
       body.v072Running #v072FixedTimers{grid-template-columns:1fr 1fr auto auto!important}
+      body.v072Running #v072FixedTimers.v08210NoOwnRest{grid-template-columns:1fr auto!important}
       #v074Confirm{position:fixed;inset:0;z-index:60000;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.78)}
       #v074Confirm.hidden{display:none!important}
       .v074Dialog{width:min(430px,100%);border:1px solid #563234;border-radius:18px;background:#111;padding:18px;box-shadow:0 20px 70px rgba(0,0,0,.65)}
       .v074Dialog h3{margin:0 0 8px;font-size:22px}.v074Dialog p{margin:0;color:#b3b3b3;font-size:12px;line-height:1.5}
       .v074Actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}.v074Actions button{height:50px;margin:0!important}
-      @media(max-width:430px){body.v072Running #v072FixedTimers{grid-template-columns:1fr 1fr!important}#v074ExitBtn,#v072Skip{grid-column:auto!important;width:100%!important;height:38px!important}.v074Actions{grid-template-columns:1fr}}
+      @media(max-width:430px){body.v072Running #v072FixedTimers{grid-template-columns:1fr 1fr!important}body.v072Running #v072FixedTimers.v08210NoOwnRest{grid-template-columns:1fr auto!important}#v074ExitBtn,#v072Skip{grid-column:auto!important;width:100%!important;height:38px!important}.v074Actions{grid-template-columns:1fr}}
     `;document.head.appendChild(s);
   }
 
