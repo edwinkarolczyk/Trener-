@@ -81,4 +81,9 @@ public class UpdateInstallerTest {
         assertTrue(UpdateInstaller.compareBetaVersions("0.8.2.12", "0.8.2.11") > 0);
     }
 
+    @Test
+    public void minorFeature083Advances08212() {
+        assertTrue(UpdateInstaller.compareBetaVersions("0.8.3", "0.8.2.12") > 0);
+    }
+
 }

@@ -1,7 +1,10 @@
 (function(){
   'use strict';
 
-  const MODULE='0.8.2';
+  const MODULE='0.8.3';
+  const CURRENT_PROTOCOL=2;
+  const LEGACY_PROTOCOL=1;
+  const LEGACY_COMPAT_VERSION='0.8.2.12';
   const ERR_KEY='trainer3.sharedErrors.v082';
   const state={wrapped:false,incompatible:false,lastMismatch:'',lastErrorAt:0};
 
@@ -33,18 +36,34 @@
     }catch(e){}
   }
 
+  function protocolOf(obj){
+    const n=Number(obj?.protocolVersion);
+    return Number.isFinite(n)&&n>0?n:LEGACY_PROTOCOL;
+  }
+  function displayVersion(obj){
+    return String(obj?.actualVersion||obj?.version||'brak').trim()||'brak';
+  }
+  function protocolCompatible(obj){
+    const protocol=protocolOf(obj);
+    if(protocol===CURRENT_PROTOCOL)return true;
+    if(protocol!==LEGACY_PROTOCOL)return false;
+    const remote=String(obj?.version||'').trim();
+    const local=appVersion();
+    if(remote===local)return true;
+    return /^0\.8\.3(?:\.|$)/.test(local)&&remote===LEGACY_COMPAT_VERSION;
+  }
   function versionsCompatible(remote){
-    const local=appVersion(),r=String(remote||'').trim();
-    return !!r&&r===local;
+    return protocolCompatible({version:String(remote||''),protocolVersion:LEGACY_PROTOCOL});
   }
 
   function mismatchReason(remote){
-    return 'Niezgodna wersja Trener 2. Gospodarz i uczestnicy muszą mieć dokładnie tę samą wersję. Ten telefon: '+appVersion()+', drugi telefon: '+String(remote||'brak')+'.';
+    const obj=(remote&&typeof remote==='object')?remote:{version:String(remote||'')};
+    return 'Niezgodny protokół wspólnego treningu. Ten telefon: '+appVersion()+' / protokół '+CURRENT_PROTOCOL+', drugi telefon: '+displayVersion(obj)+' / protokół '+protocolOf(obj)+'.';
   }
 
   function rejectRemote(deviceId,remote){
     state.incompatible=true;
-    state.lastMismatch=String(remote||'');
+    state.lastMismatch=displayVersion(remote);
     try{
       if(typeof wifiSend==='function')wifiSend({
         type:'GROUP_REJECT',
@@ -57,7 +76,7 @@
 
   function disconnectMismatch(remote){
     state.incompatible=true;
-    state.lastMismatch=String(remote||'');
+    state.lastMismatch=displayVersion(remote);
     const reason=mismatchReason(remote);
     toastMsg(reason);
     try{
@@ -72,27 +91,25 @@
     },100);
   }
 
-  function hostVersionFrom(m){
+  function hostParticipantFrom(m){
     try{
       const list=Array.isArray(m?.participants)?m.participants:[];
-      const host=list.find(p=>Number(p?.index)===0)||list[0];
-      return String(host?.version||'');
-    }catch(e){return '';}
+      return list.find(p=>Number(p?.index)===0)||list[0]||null;
+    }catch(e){return null;}
   }
 
   function guardMessage(m){
     if(!m||!m.type)return false;
     if(m.type==='GROUP_PROFILE'&&net?.role==='host'){
-      const remote=String(m.version||'');
-      if(!versionsCompatible(remote)){
-        rejectRemote(m.deviceId,remote);
+      if(!protocolCompatible(m)){
+        rejectRemote(m.deviceId,m);
         return true;
       }
     }
     if(net?.role==='guest'&&(m.type==='GROUP_STATE'||m.type==='GROUP_SNAPSHOT')){
-      const hv=hostVersionFrom(m);
-      if(hv&&!versionsCompatible(hv)){
-        disconnectMismatch(hv);
+      const host=hostParticipantFrom(m);
+      if(host&&!protocolCompatible(host)){
+        disconnectMismatch(host);
         return true;
       }
     }
@@ -129,8 +146,7 @@
   }
 
   function incompatibleParticipants(){
-    const local=appVersion();
-    try{return (group()?.participants||[]).filter(p=>String(p?.version||'')!==local);}catch(e){return [];}
+    try{return (group()?.participants||[]).filter(p=>!protocolCompatible(p));}catch(e){return [];}
   }
 
   function blockBadStart(ev){
@@ -142,8 +158,8 @@
       if(!bad.length)return;
       ev.preventDefault();ev.stopPropagation();ev.stopImmediatePropagation();
       state.incompatible=true;
-      const details=bad.map(p=>(p.name||'Uczestnik')+' '+(p.version||'brak wersji')).join(', ');
-      toastMsg('Nie można rozpocząć: różne wersje aplikacji. '+details+'.');
+      const details=bad.map(p=>(p.name||'Uczestnik')+' '+displayVersion(p)+' / protokół '+protocolOf(p)).join(', ');
+      toastMsg('Nie można rozpocząć: niezgodny protokół wspólnego treningu. '+details+'.');
     }catch(e){saveError(e,'blockBadStart');}
   }
 
@@ -248,6 +264,14 @@
     wrapWifi();
     renderProgress();
   }
+
+  window.TrenerSharedProtocol083={
+    current:CURRENT_PROTOCOL,
+    legacy:LEGACY_PROTOCOL,
+    legacyCompatVersion:LEGACY_COMPAT_VERSION,
+    protocolOf,
+    compatible:protocolCompatible
+  };
 
   function boot(){
     installCss();

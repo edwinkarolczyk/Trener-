@@ -1,5 +1,19 @@
 # Zmiany
 
+## 0.8.3
+- dodano drugi sposób wspólnego treningu: `JEDEN TELEFON`; dotychczasowy `KAŻDY NA SWOIM TELEFONIE` pozostaje bez usuwania funkcji,
+- w trybie jednego telefonu wybrane urządzenie wpisuje kg i powtórzenia dla osoby, której aktualnie przypada kolej,
+- rekord serii jest przypisywany do właściwego `participantId`, więc historia, progres i rekomendacje pozostają osobne dla każdego uczestnika niezależnie od telefonu użytego do wpisania danych,
+- HOST pozostaje źródłem prawdy i zatwierdza serie wysłane z telefonu sterującego,
+- sterowanie można przekazać innemu zgodnemu telefonowi; HOST może zawsze przejąć sterowanie,
+- pozostałe telefony działają jako podgląd i nie mogą przypadkiem zapisać serii w imieniu niewłaściwej osoby,
+- pomijanie przerwy w trybie jednego telefonu dotyczy osoby z aktualnej kolejki,
+- ekran kolejki, liczniki serii i opis ćwiczącego są świadome telefonu sterującego, bez dokładania konkurencyjnego renderera podstawowego UI,
+- wprowadzono `protocolVersion = 2`; zgodność wspólnego treningu nie zależy już wyłącznie od identycznego `versionName`,
+- 0.8.3 zachowuje zgodność ze wspólnym trybem 0.8.2.12 przez warstwę zgodności; nowe funkcje protokołu 2 są automatycznie wyłączane przy starszym uczestniku,
+- brak nowych wymaganych pól w dotychczasowej historii/backupach; starsze dane pozostają odczytywalne,
+- wersja podniesiona do `0.8.3`, `versionCode 67`.
+
 ## 0.8.2.12
 - naprawiono miganie czerwonego przycisku GOŚCIA między `ZAKOŃCZ` i `POPROŚ O ZAKOŃCZENIE`; podczas wspólnego treningu ma jedną stałą etykietę `ZAKOŃCZ WSPÓLNY TRENING`,
 - przycisk `ZAKOŃCZ WSPÓLNY TRENING` GOŚCIA zawsze trafia do `FINISH_REQUEST` i wymaga decyzji HOSTA,

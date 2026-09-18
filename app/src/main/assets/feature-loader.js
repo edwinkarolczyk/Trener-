@@ -43,7 +43,8 @@
     ['0.8.2.3','v0823-diagnostics.js'],
     ['0.8.2.5','v0825-shared-blackbox.js'],
     ['0.8.2.9','v0829-host-finish-authority.js'],
-    ['0.8.2.11','v08211-workout-attention.js']
+    ['0.8.2.11','v08211-workout-attention.js'],
+    ['0.8.3','v083-shared-controller.js']
   ];
   features.forEach(([min,src])=>{
     if(!gte(current,min))return;

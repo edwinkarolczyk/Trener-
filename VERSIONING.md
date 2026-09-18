@@ -25,3 +25,13 @@ Zgodność wsteczna jest obowiązkową zasadą projektu.
 - Import ma nadal przyjmować starsze backupy `trainer2.*` / `trainer3.*`; nowe wersje formatu muszą być migrowane zamiast odrzucane bez potrzeby.
 - Zmiana protokołu wspólnego treningu nie może opierać zgodności wyłącznie na numerze `versionName`. Przy przebudowie trybu wspólnego zostanie wprowadzony osobny `protocolVersion`.
 - Dla danych lokalnych i backupów należy utrzymywać jawne wersje schematu i migracje, gdy struktura faktycznie się zmienia.
+
+## Wspólny trening — protokół
+
+Od 0.8.3 wspólny trening ma własny `protocolVersion`.
+
+- `protocolVersion = 2` — obsługa trybu `JEDEN TELEFON`, przekazywania sterowania i zapisu serii za innego uczestnika.
+- Brak pola `protocolVersion` oznacza protokół 1.
+- 0.8.3 zachowuje tryb `KAŻDY NA SWOIM` dla zgodnego klienta 0.8.2.12.
+- Tryb `JEDEN TELEFON` jest dostępny tylko wtedy, gdy wszystkie telefony w sesji obsługują protokół 2.
+- Numer aplikacji i numer protokołu są niezależne: hotfix nie może zrywać wspólnego treningu, jeśli protokół pozostaje zgodny.

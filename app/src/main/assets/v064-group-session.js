@@ -2,6 +2,8 @@
   'use strict';
 
   const MAX_PARTICIPANTS=4;
+  const SHARED_PROTOCOL_VERSION=2;
+  const LEGACY_COMPAT_VERSION='0.8.2.12';
   const DEVICE_KEY='trainer3.deviceId.v064';
   const CFG_KEY='trainer3.groupCfg.v064';
   const $=id=>document.getElementById(id);
@@ -17,6 +19,8 @@
   function loadCfg(){try{return Object.assign({sharedEquipment:true},JSON.parse(localStorage.getItem(CFG_KEY)||'null')||{});}catch(e){return {sharedEquipment:true};}}
   function saveCfg(){try{localStorage.setItem(CFG_KEY,JSON.stringify({sharedEquipment:!!state.sharedEquipment}));}catch(e){}}
   function appVersion(){try{return window.Android&&Android.getAppVersion?String(Android.getAppVersion()):'0.6.4';}catch(e){return '0.6.4';}}
+  function advertisedVersion(){const v=appVersion();return /^0\.8\.3(?:\.|$)/.test(v)?LEGACY_COMPAT_VERSION:v;}
+  function protocolMeta(){return {version:advertisedVersion(),actualVersion:appVersion(),protocolVersion:SHARED_PROTOCOL_VERSION,capabilities:{singleController:true,protocolVersion:true}};}
   function ownName(){return ($('nameA')?.value||'').trim()||'Osoba';}
 
   const cfg=loadCfg();
@@ -27,8 +31,8 @@
   function participantByIndex(index){return state.participants.find(p=>Number(p.index)===Number(index))||null;}
   function ensureHostParticipant(){
     let p=participantById(state.deviceId);
-    if(!p){p={deviceId:state.deviceId,index:0,name:ownName(),version:appVersion()};state.participants.unshift(p);}
-    p.index=0;p.name=ownName();p.version=appVersion();state.assignedIndex=0;return p;
+    if(!p){p=Object.assign({deviceId:state.deviceId,index:0,name:ownName()},protocolMeta());state.participants.unshift(p);}
+    p.index=0;p.name=ownName();Object.assign(p,protocolMeta());state.assignedIndex=0;return p;
   }
   function sortedParticipants(){return [...state.participants].sort((a,b)=>Number(a.index)-Number(b.index));}
   function nextIndex(){const used=new Set(state.participants.map(p=>Number(p.index)));for(let i=1;i<MAX_PARTICIPANTS;i++)if(!used.has(i))return i;return -1;}
@@ -78,11 +82,12 @@
     if(!list.length){
       html='<div><b>Ty</b>Utwórz sesję albo dołącz do gospodarza.</div>';
     }else{
-      const localVersion=appVersion();
       html=list.map(p=>{
-        const version=String(p.version||'').trim();
-        const ok=!!version&&version===localVersion;
-        const versionText='wersja '+(version||'—')+(ok?' • zgodna':' • NIEZGODNA');
+        const shownVersion=String(p.actualVersion||p.version||'').trim();
+        const protocol=Number(p.protocolVersion||1);
+        const legacyOk=protocol===1&&String(p.version||'')===LEGACY_COMPAT_VERSION;
+        const ok=protocol===SHARED_PROTOCOL_VERSION||legacyOk;
+        const versionText='wersja '+(shownVersion||'—')+' • protokół '+protocol+(ok?' • zgodna':' • NIEZGODNA');
         return `<div><b>${esc(p.name||('Osoba '+(Number(p.index)+1)))}</b>#${Number(p.index)+1}${p.deviceId===state.deviceId?' • ten telefon':''}<span class="v064Version${ok?'':' bad'}">${esc(versionText)}</span></div>`;
       }).join('');
     }
@@ -92,18 +97,18 @@
   function resetForGuest(){state.participants=[];state.assignedIndex=1;state.sharedLoads={};state.extraSets={};state.positions={};state.groupSession=false;renderRoster();}
   function send(obj){try{return wifiSend(obj);}catch(e){return false;}}
   function sendOwnGroupProfile(){
-    try{if(!net.connected||net.role!=='guest')return;send({type:'GROUP_PROFILE',deviceId:state.deviceId,name:ownName(),version:appVersion()});if(net.active&&state.groupSession)send({type:'GROUP_RESYNC',sessionId:net.sessionId,deviceId:state.deviceId,athlete:net.localAthlete,done:!!net.done[net.localAthlete],records:records.filter(r=>r.athlete===net.localAthlete),extraSets:state.extraSets[state.deviceId]||{},position:state.positions[net.localAthlete]||null});}catch(e){}
+    try{if(!net.connected||net.role!=='guest')return;send(Object.assign({type:'GROUP_PROFILE',deviceId:state.deviceId,name:ownName()},protocolMeta()));if(net.active&&state.groupSession)send({type:'GROUP_RESYNC',sessionId:net.sessionId,deviceId:state.deviceId,athlete:net.localAthlete,done:!!net.done[net.localAthlete],records:records.filter(r=>r.athlete===net.localAthlete),extraSets:state.extraSets[state.deviceId]||{},position:state.positions[net.localAthlete]||null});}catch(e){}
   }
   function sendGroupState(){if(net.role==='host')send({type:'GROUP_STATE',participants:sortedParticipants(),sharedEquipment:state.sharedEquipment});}
   function sendGroupSnapshot(targetDeviceId){if(net.role!=='host'||!net.connected)return;send({type:'GROUP_SNAPSHOT',targetDeviceId:targetDeviceId||null,active:!!(running&&net.active&&state.groupSession),sessionId:net.sessionId,planKey,plan:currentPlan,participants:sortedParticipants(),names:[...net.names],done:[...net.done],records:[...records],sharedEquipment:state.sharedEquipment,sharedLoads:{...state.sharedLoads},extraSets:JSON.parse(JSON.stringify(state.extraSets)),positions:JSON.parse(JSON.stringify(state.positions)),paused:!!paused,elapsed:running?elapsedMs():0});}
 
   function receiveGroupProfile(m){
     if(net.role!=='host')return;ensureHostParticipant();const id=String(m.deviceId||'').trim();if(!id||id===state.deviceId)return;let p=participantById(id);
-    if(!p){const idx=nextIndex();if(idx<0){send({type:'GROUP_REJECT',targetDeviceId:id,reason:'Sesja jest pełna — maksymalnie 4 osoby.'});return;}p={deviceId:id,index:idx,name:String(m.name||'Partner').trim()||'Partner',version:String(m.version||'')};state.participants.push(p);}else{p.name=String(m.name||p.name||'Partner').trim()||'Partner';p.version=String(m.version||p.version||'');}
+    if(!p){const idx=nextIndex();if(idx<0){send({type:'GROUP_REJECT',targetDeviceId:id,reason:'Sesja jest pełna — maksymalnie 4 osoby.'});return;}p={deviceId:id,index:idx,name:String(m.name||'Partner').trim()||'Partner',version:String(m.version||''),actualVersion:String(m.actualVersion||m.version||''),protocolVersion:Number(m.protocolVersion||1),capabilities:Object.assign({},m.capabilities||{})};state.participants.push(p);}else{p.name=String(m.name||p.name||'Partner').trim()||'Partner';p.version=String(m.version||p.version||'');p.actualVersion=String(m.actualVersion||p.actualVersion||m.version||p.version||'');p.protocolVersion=Number(m.protocolVersion||p.protocolVersion||1);p.capabilities=Object.assign({},p.capabilities||{},m.capabilities||{});}
     state.settleUntil=Date.now()+350;syncCoreParticipants();sendGroupState();if(running&&net.active&&state.groupSession)setTimeout(()=>sendGroupSnapshot(id),80);renderRoster();renderLivePanel();
   }
   function receiveGroupState(m){
-    if(net.role!=='guest'||!Array.isArray(m.participants))return;state.participants=m.participants.slice(0,MAX_PARTICIPANTS).map(p=>({deviceId:String(p.deviceId||''),index:Number(p.index)||0,name:String(p.name||'Osoba'),version:String(p.version||'')}));
+    if(net.role!=='guest'||!Array.isArray(m.participants))return;state.participants=m.participants.slice(0,MAX_PARTICIPANTS).map(p=>({deviceId:String(p.deviceId||''),index:Number(p.index)||0,name:String(p.name||'Osoba'),version:String(p.version||''),actualVersion:String(p.actualVersion||p.version||''),protocolVersion:Number(p.protocolVersion||1),capabilities:Object.assign({},p.capabilities||{})}));
     const own=participantById(state.deviceId);if(own){state.assignedIndex=Number(own.index)||1;net.localAthlete=state.assignedIndex;}if(typeof m.sharedEquipment==='boolean')state.sharedEquipment=m.sharedEquipment;syncCoreParticipants();renderRoster();refreshAll();
   }
   function beginGuestGroup(m){
@@ -191,7 +196,26 @@
   function refreshWorkoutUi(){
     const box=$('v064Workout');if(!box)return;const active=!!(state.groupSession&&running&&net.active);box.classList.toggle('hidden',!active);document.documentElement.classList.toggle('v064SharedMode',active&&state.sharedEquipment);if(!active)return;
     if(net.done[net.localAthlete]){$('v064Target').textContent='Twój trening zakończony';$('v064Note').textContent='Pozostałe osoby mogą nadal wykonywać własne serie i ćwiczenia.';$('v064Shared').textContent='';return;}
-    const ex=currentPlan?.ex?.[exIdx];if(!ex)return;const kg=Number(state.sharedLoads[ex.id]||$('weight')?.value||0),t=personalTarget(ex,kg);$('v064Target').innerHTML=`Twoja rekomendacja: <em>${t.min}${t.min===t.max?'':'–'+t.max} ${ex.time?'sek.':'powt.'}</em>`;$('v064Note').textContent=t.note||'';$('v064Shared').textContent=state.sharedEquipment?(kg>0?`Wspólny sprzęt • ${kg.toLocaleString('pl-PL',{maximumFractionDigits:2})} kg dla tego ćwiczenia`:'Wspólny sprzęt • ustaw ciężar dla tego ćwiczenia'):'Osobny sprzęt • każdy wpisuje własny ciężar';const total=effectiveSets(ex),extra=ownExtraFor(ex);$('v064SetInfo').textContent=`Twoje serie: ${setIdx+1}/${total}${extra?' • +'+extra+' dodatk.':''}`;const base=Math.max(1,Number(ex.sets)||1),minNeeded=Math.max(0,(setIdx+1)-base);$('v064MinusSet').disabled=extra<=minNeeded;$('v064PlusSet').disabled=extra>=3;if($('series'))$('series').textContent='Seria '+(setIdx+1)+'/'+total+' • '+athleteName(net.localAthlete);if($('target'))$('target').textContent=ex.time?`Cel: ${t.min}${t.min===t.max?'':'–'+t.max} sekund`:`Cel dla Ciebie: ${t.min}${t.min===t.max?'':'–'+t.max} powtórzeń`;
+    const ex=currentPlan?.ex?.[exIdx];if(!ex)return;
+    const ctrl=window.TrenerSharedControl083;
+    const controlled=!!(ctrl?.isSingleController?.()&&ctrl?.isLocalController?.());
+    const displayAthlete=controlled?Number(window.TrenerBeta070?.turn||0):Number(net.localAthlete||0);
+    const displayParticipant=participantByIndex(displayAthlete);
+    const kg=Number(state.sharedLoads[ex.id]||$('weight')?.value||0);
+    const personal=displayAthlete===Number(net.localAthlete||0);
+    const t=personal?personalTarget(ex,kg):{min:Math.max(1,Number(ex.min)||1),max:Math.max(1,Number(ex.max)||Number(ex.min)||1),note:'Wynik zapisze się osobno dla '+(displayParticipant?.name||athleteName(displayAthlete))+'.'};
+    $('v064Target').innerHTML=(controlled&&!personal?'Wpisujesz dla '+esc(displayParticipant?.name||athleteName(displayAthlete))+': ':'Twoja rekomendacja: ')+`<em>${t.min}${t.min===t.max?'':'–'+t.max} ${ex.time?'sek.':'powt.'}</em>`;
+    $('v064Note').textContent=t.note||'';
+    $('v064Shared').textContent=controlled?'Jeden telefon wpisuje dane • historia i progres pozostają osobne':(state.sharedEquipment?(kg>0?`Wspólny sprzęt • ${kg.toLocaleString('pl-PL',{maximumFractionDigits:2})} kg dla tego ćwiczenia`:'Wspólny sprzęt • ustaw ciężar dla tego ćwiczenia'):'Osobny sprzęt • każdy wpisuje własny ciężar');
+    const base=Math.max(1,Number(ex.sets)||1);
+    const displayExtra=displayParticipant?participantExtra(displayParticipant,ex):0;
+    const total=base+displayExtra;
+    const done=(records||[]).filter(r=>Number(r.athlete)===displayAthlete&&Number(r.ex)===Number(exIdx)).length;
+    $('v064SetInfo').textContent=(controlled?'Serie '+esc(displayParticipant?.name||athleteName(displayAthlete))+': ':'Twoje serie: ')+Math.min(done+1,total)+'/'+total+(displayExtra?' • +'+displayExtra+' dodatk.':'');
+    const ownExtra=ownExtraFor(ex),minNeeded=Math.max(0,(setIdx+1)-base);$('v064MinusSet').disabled=ownExtra<=minNeeded;$('v064PlusSet').disabled=ownExtra>=3;
+    if($('series'))$('series').textContent='Seria '+Math.min(done+1,total)+'/'+total+' • '+athleteName(displayAthlete);
+    if($('athlete'))$('athlete').textContent=athleteName(displayAthlete);
+    if($('target'))$('target').textContent=ex.time?`Cel: ${t.min}${t.min===t.max?'':'–'+t.max} sekund`:`Cel: ${t.min}${t.min===t.max?'':'–'+t.max} powtórzeń`;
   }
   function refreshAll(){installUi();renderRoster();if(state.groupSession&&net.active){syncCoreParticipants();refreshWorkoutUi();renderLivePanel();}}
   function boot(){
