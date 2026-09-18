@@ -1,5 +1,15 @@
 # Zmiany
 
+## 0.8.2.7
+- pierwsze dołączanie GOŚCIA ponawia połączenie również wtedy, gdy nigdy wcześniej nie było stanu `CONNECTED`,
+- błędy chwilowe takie jak `EHOSTUNREACH`, timeout lub chwilowy brak trasy uruchamiają automatyczne próby 1 s → 2 s → 5 s → 10 s,
+- pierwsze dołączanie jest ograniczone do czterech automatycznych ponowień po próbie użytkownika, aby aplikacja nie próbowała bez końca,
+- po wyczerpaniu prób aplikacja pokazuje czytelny komunikat, że HOST jest niedostępny i należy sprawdzić IP/Wi‑Fi/status gospodarza,
+- jeśli GOŚĆ straci własne Wi‑Fi podczas pierwszego dołączania, próby są wznawiane po powrocie lokalnego adresu IP,
+- retry nie uruchamia się dla błędnego kodu, pełnej sesji, niezgodnej wersji, wykrycia różnych sieci ani braku Wi‑Fi/hotspotu,
+- black box zapisuje `INITIAL_JOIN_RETRY_BEGIN`, `INITIAL_JOIN_RETRY_SCHEDULED` i `INITIAL_JOIN_RETRIES_EXHAUSTED`,
+- wersja podniesiona do `0.8.2.7`, `versionCode 61`.
+
 ## 0.8.2.6
 - reconnect GOŚCIA działa również w lobby po pierwszym udanym połączeniu, jeszcze przed rozpoczęciem treningu,
 - po chwilowym zaniku Wi‑Fi aplikacja nie porzuca wspólnej sesji tylko zachowuje rolę, kod i dane potrzebne do ponownego połączenia,
