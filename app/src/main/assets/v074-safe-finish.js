@@ -119,6 +119,14 @@
   function finishNow(tab){
     if(state.finishing)return;state.finishing=true;
     const dest=safeTab(tab||'start');state.nextTab=dest;
+    const shared=(()=>{try{return !!net?.active;}catch(e){return false;}})();
+    const role=(()=>{try{return net?.role||'';}catch(e){return '';}})();
+    if(shared&&role==='guest'&&window.TrenerHostAuthority0829?.requestFinish){
+      state.finishing=false;
+      try{$('v074Confirm')?.classList.add('hidden');}catch(e){}
+      window.TrenerHostAuthority0829.requestFinish();
+      return;
+    }
     try{$('v074Confirm')?.classList.add('hidden');}catch(e){}
     try{window.TrenerSyncHistory?.checkpoint?.();}catch(e){}
     notifyPeers();
@@ -136,6 +144,14 @@
     const shared=(()=>{try{return !!net?.active;}catch(e){return false;}})();
     const role=(()=>{try{return net?.role||'';}catch(e){return '';}})();
     const dest=safeTab(tab||'start');
+    if(shared&&role==='guest'&&window.TrenerHostAuthority0829){
+      if(dest==='start'){
+        window.TrenerHostAuthority0829.requestFinish();
+      }else{
+        try{toast('Wspólny trening nadal trwa. Jeśli chcesz wyjść sam, użyj OPUŚĆ WSPÓLNY TRENING.');}catch(e){}
+      }
+      return;
+    }
     $('v074Title').textContent=dest==='plan'?'Zakończyć trening i przejść do Planu?':'Zakończyć trening?';
     $('v074Text').textContent=shared
       ?(role==='host'?'Twoje wykonane serie zostaną zapisane. Aplikacja spróbuje też zakończyć wspólną sesję na pozostałych telefonach, ale brak Wi‑Fi nie zablokuje wyjścia.':'Twoje wykonane serie zostaną zapisane na tym telefonie. Host zostanie poinformowany, jeśli połączenie Wi‑Fi działa.')
