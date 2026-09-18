@@ -1,5 +1,15 @@
 # Zmiany
 
+## 0.8.2
+- wspólny trening wymaga teraz dokładnie tej samej wersji Trener 2 na wszystkich telefonach; niezgodna wersja jest odrzucana przed rozpoczęciem sesji,
+- lista uczestników pokazuje wersję aplikacji i jej zgodność,
+- dodana ochrona błędów warstwy synchronizacji wspólnego treningu z lokalnym raportem ostatnich błędów,
+- plan gospodarza jest jawnie pokazany jako plan wspólnej sesji; lokalny plan gościa nie jest nadpisywany,
+- dodane dwa paski podczas treningu: `POSTĘP SERII` oraz `POSTĘP TRENINGU`, liczone dla bieżącego użytkownika,
+- w trybie wspólnym paski uwzględniają indywidualne dodatkowe serie,
+- wzmocnione ograniczenia szerokości elementów wspólnego treningu, aby uniknąć ucinania boków interfejsu,
+- wersja podniesiona do `0.8.2`, `versionCode 54`.
+
 ## 0.7.9 Beta
 - dodane gesty lewo/prawo między głównymi zakładkami poza aktywnym treningiem,
 - gest rozpoczęty na polu, przycisku, menu lub innym elemencie interaktywnym jest ignorowany, żeby nie przeszkadzać w wpisywaniu i klikaniu,
