@@ -8,6 +8,7 @@
   const HEARTBEAT_MS=3000;
   const HEARTBEAT_TIMEOUT_MS=9000;
   const RETRY_DELAYS=[1000,2000,5000,10000];
+  const MAX_INITIAL_RETRIES=4;
   const $=id=>document.getElementById(id);
 
   const runtime={
@@ -26,6 +27,7 @@
     reconnectReason:'',
     manualDisconnect:false,
     everConnected:false,
+    initialJoinArmed:false,
     creds:{role:'',hostIp:'',code:''},
     wrappedStatus:false,
     wrappedMessage:false,
@@ -248,10 +250,11 @@
 
   function fatalReason(detail){
     const s=String(detail||'')+' '+String(net?.lastError||'');
-    return /Niezgodna wersja|Błędny kod|Sesja jest pełna|DENY|FULL/i.test(s);
+    return /Niezgodna wersja|Błędny kod|Sesja jest pełna|Kod sesji musi mieć 6 cyfr|różnych sieciach|Połącz ten telefon z tym samym Wi-Fi|Włącz Wi-Fi albo hotspot|DENY|FULL/i.test(s);
   }
   function canReconnectGuest(){
-    return roleNow()==='guest'&&runtime.everConnected&&!runtime.manualDisconnect&&!fatalReason(runtime.reconnectReason)&&
+    return roleNow()==='guest'&&(runtime.everConnected||runtime.initialJoinArmed)&&
+      !runtime.manualDisconnect&&!fatalReason(runtime.reconnectReason)&&
       runtime.networkAvailable!==false&&
       /^(\d{1,3}\.){3}\d{1,3}$/.test(runtime.creds.hostIp)&&/^\d{6}$/.test(runtime.creds.code);
   }
@@ -398,7 +401,7 @@
 
       if(roleNow()==='host'&&runtime.hostRestartPending&&!connectedNow()){
         setTimeout(()=>restartHostAfterNetworkReturn('network-restored'),250);
-      }else if(roleNow()==='guest'&&runtime.everConnected&&!connectedNow()&&!runtime.manualDisconnect){
+      }else if(roleNow()==='guest'&&(runtime.everConnected||runtime.initialJoinArmed)&&!connectedNow()&&!runtime.manualDisconnect){
         beginReconnect('network-restored',false);
       }
       paintReconnect();
@@ -426,7 +429,27 @@
     runtime.reconnectReason=String(reason||'connection-lost');
     captureCreds();
     if(roleNow()==='guest'&&!canReconnectGuest()){
-      log('RECONNECT_NOT_STARTED',{reason:runtime.reconnectReason,fatal:fatalReason(reason),native:nativeDiag()},true);
+      log('RECONNECT_NOT_STARTED',{reason:runtime.reconnectReason,fatal:fatalReason(reason),initialJoinArmed:runtime.initialJoinArmed,native:nativeDiag()},true);
+      return;
+    }
+    if(roleNow()==='guest'&&!runtime.everConnected&&runtime.initialJoinArmed&&runtime.reconnectAttempt>=MAX_INITIAL_RETRIES){
+      runtime.reconnecting=false;
+      runtime.reconnectTimer=0;
+      const message='HOST niedostępny po kilku próbach. Sprawdź IP, Wi‑Fi i czy gospodarz nadal czeka na partnera.';
+      try{
+        net.connected=false;
+        net.status='error';
+        net.detail=message;
+        net.lastError=message;
+        if(typeof updateWifiUi==='function')updateWifiUi();
+      }catch(e){}
+      log('INITIAL_JOIN_RETRIES_EXHAUSTED',{
+        attempts:runtime.reconnectAttempt,
+        reason:runtime.reconnectReason,
+        hostIp:runtime.creds.hostIp,
+        native:nativeDiag()
+      },true);
+      paintReconnect();
       return;
     }
     if(roleNow()==='host'&&!canRestartHost()){
@@ -436,7 +459,12 @@
     if(!runtime.reconnecting){
       runtime.reconnecting=true;
       runtime.reconnectAttempt=0;
-      log(roleNow()==='host'?'HOST_RESTART_BEGIN':'RECONNECT_BEGIN',{reason:runtime.reconnectReason,native:nativeDiag()},true);
+      const initialGuest=roleNow()==='guest'&&!runtime.everConnected&&runtime.initialJoinArmed;
+      log(roleNow()==='host'?'HOST_RESTART_BEGIN':(initialGuest?'INITIAL_JOIN_RETRY_BEGIN':'RECONNECT_BEGIN'),{
+        reason:runtime.reconnectReason,
+        hostIp:initialGuest?runtime.creds.hostIp:'',
+        native:nativeDiag()
+      },true);
     }
     setReconnectUi();
     if(forceClose){
@@ -445,7 +473,12 @@
     if(runtime.reconnectTimer)return;
     runtime.reconnectAttempt++;
     const delay=retryDelay();
-    log('RECONNECT_SCHEDULED',{attempt:runtime.reconnectAttempt,delayMs:delay,reason:runtime.reconnectReason},true);
+    log(runtime.everConnected?'RECONNECT_SCHEDULED':'INITIAL_JOIN_RETRY_SCHEDULED',{
+      attempt:runtime.reconnectAttempt,
+      delayMs:delay,
+      reason:runtime.reconnectReason,
+      hostIp:roleNow()==='guest'?runtime.creds.hostIp:''
+    },true);
     runtime.reconnectTimer=setTimeout(()=>{
       runtime.reconnectTimer=0;
       attemptReconnect();
@@ -479,6 +512,7 @@
     const wasReconnect=runtime.reconnecting;
     cancelReconnect();
     runtime.everConnected=true;
+    runtime.initialJoinArmed=false;
     runtime.lastRxAt=now();
     runtime.lastPongAt=runtime.lastRxAt;
     runtime.manualDisconnect=false;
@@ -678,6 +712,7 @@
           beginReconnect(String(detail||status),false);
         }
       }else if(status==='denied'){
+        runtime.initialJoinArmed=false;
         cancelReconnect();
         paintReconnect();
       }
@@ -847,11 +882,13 @@
       const id=btn?.id||'';
       if(id==='disconnectWifiBtn'){
         runtime.manualDisconnect=true;
+        runtime.initialJoinArmed=false;
         cancelReconnect();
         log('USER_DISCONNECT',{native:nativeDiag()},true);
       }else if(id==='joinBtn'||id==='hostBtn'){
         runtime.manualDisconnect=false;
         runtime.everConnected=false;
+        runtime.initialJoinArmed=id==='joinBtn';
         cancelReconnect();
         setTimeout(()=>{
           captureCreds();
@@ -898,6 +935,7 @@
     status:()=>({
       reconnecting:runtime.reconnecting,
       attempt:runtime.reconnectAttempt,
+      initialJoinArmed:runtime.initialJoinArmed,
       lastRxAt:runtime.lastRxAt,
       lastTxAt:runtime.lastTxAt,
       lastPongAt:runtime.lastPongAt,
