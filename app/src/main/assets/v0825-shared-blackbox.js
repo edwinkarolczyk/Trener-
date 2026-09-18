@@ -252,6 +252,7 @@
   }
   function canReconnectGuest(){
     return roleNow()==='guest'&&runtime.everConnected&&!runtime.manualDisconnect&&!fatalReason(runtime.reconnectReason)&&
+      runtime.networkAvailable!==false&&
       /^(\d{1,3}\.){3}\d{1,3}$/.test(runtime.creds.hostIp)&&/^\d{6}$/.test(runtime.creds.code);
   }
   function canRestartHost(){
@@ -365,6 +366,20 @@
         }
       }catch(e){}
       log('NETWORK_LOST',{previousIp,native:diag},true);
+      paintReconnect();
+      return;
+    }
+
+    if(!available&&runtime.networkAvailable===false){
+      setLocalIpUi('—');
+      try{
+        if(roleNow()==='host'&&net.status!=='network_lost'){
+          net.connected=false;
+          net.status='network_lost';
+          net.detail='Brak aktywnego adresu Wi‑Fi';
+          if(typeof updateWifiUi==='function')updateWifiUi();
+        }
+      }catch(e){}
       paintReconnect();
       return;
     }
@@ -637,6 +652,16 @@
             runtime.networkAvailable=true;
             runtime.lastLocalIp=String(diag.localIp);
             setLocalIpUi(diag.localIp);
+          }else{
+            runtime.networkAvailable=false;
+            runtime.hostRestartPending=!runtime.manualDisconnect&&/^\d{6}$/.test(runtime.creds.code);
+            setLocalIpUi('—');
+            try{
+              net.connected=false;
+              net.status='network_lost';
+              net.detail='Brak aktywnego adresu Wi‑Fi';
+              if(typeof updateWifiUi==='function')updateWifiUi();
+            }catch(e){}
           }
           paintReconnect();
           if(runtime.everConnected)log('HOST_WAITING_FOR_PEER',{native:diag},true);
