@@ -127,12 +127,17 @@
     if(role()!=='host'||!shared()||String(m.sessionId||'')!==session())return;
     if(!m.requestId)return;
     if(state.activeRequest?.requestId===m.requestId||state.requests.some(x=>x.requestId===m.requestId))return;
+    const claimedDeviceId=String(m.deviceId||'');
+    const claimedAthlete=Number(m.athlete)||0;
+    const roster=participants();
+    const known=roster.find(p=>(claimedDeviceId&&String(p?.deviceId||'')===claimedDeviceId)||Number(p?.index)===claimedAthlete)||null;
+    const athlete=known?Number(known.index):claimedAthlete;
     const req={
       requestId:String(m.requestId),
       sessionId:String(m.sessionId),
-      deviceId:String(m.deviceId||''),
-      athlete:Number(m.athlete)||0,
-      name:String(m.name||('Osoba '+((Number(m.athlete)||0)+1))),
+      deviceId:String(known?.deviceId||claimedDeviceId),
+      athlete,
+      name:String(known?.name||m.name||('Osoba '+(athlete+1))),
       at:Number(m.at)||Date.now()
     };
     state.requests.push(req);
@@ -277,7 +282,11 @@
     const base=window.TrenerWifi.nativeMessage.bind(window.TrenerWifi);
     window.TrenerWifi.nativeMessage=function(raw){
       let m=null;try{m=JSON.parse(String(raw||''))}catch(e){}
-      if(handleMessage(m))return;
+      if(m&&(m.type==='V0829_FINISH_REQUEST'||m.type==='V0829_FINISH_DECISION')){
+        const out=base(raw);
+        handleMessage(m);
+        return out;
+      }
       return base(raw);
     };
     state.wrappedMessage=true;
