@@ -276,6 +276,7 @@
     document.addEventListener('click',ev=>{
       const btn=ev.target?.closest?.('#skipRestBtn,#v072Skip');
       if(!btn||!state.active||!running||!net.active)return;
+      if(window.TrenerSharedControl083?.isSingleController?.())return;
       ev.preventDefault();
       ev.stopPropagation();
       ev.stopImmediatePropagation();
@@ -394,6 +395,11 @@
     state.booted=true;
     state.requestSkipRest=requestSkipRest;
     state.submitControlledRecord=submitControlledRecord;
+    state.skipControlledRest=function(athlete){
+      const a=Number(athlete)||0;
+      const p=participantForAthlete(a);
+      return applySkipRest(a,String(p?.deviceId||''));
+    };
     state.participants=participants;
     state.athleteName=athleteName;
     state.currentExercise=currentEx;
