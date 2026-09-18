@@ -123,12 +123,12 @@
     }catch(e){}
     const left=Math.max(0,end-now),cell=document.getElementById('v072RestCell'),rt=document.getElementById('v072RestTime'),bar=document.getElementById('v072FixedTimers');
     if(!cell||!rt||!bar)return;
-    const hideSharedRest=sharedQueue&&!isPaused&&left<=0;
+    const hideSharedRest=sharedQueue&&left<=0;
     bar.classList.toggle('v08210NoOwnRest',hideSharedRest);
     cell.classList.toggle('hidden',hideSharedRest);
     cell.classList.remove('ready','resting','paused');
     bar.classList.toggle('has-rest',left>0&&!isPaused);
-    if(isPaused){cell.classList.remove('hidden');cell.classList.add('paused');rt.textContent='PAUZA';}
+    if(isPaused&&!hideSharedRest){cell.classList.add('paused');rt.textContent='PAUZA';}
     else if(left>0){cell.classList.remove('hidden');cell.classList.add('resting');rt.textContent=fmt(left);}
     else if(sharedQueue){rt.textContent='';}
     else{cell.classList.add('ready');rt.textContent='GOTOWY';}
