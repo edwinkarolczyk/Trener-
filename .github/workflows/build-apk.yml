@@ -2,11 +2,13 @@ name: Build Trener APK
 
 on:
   push:
+    branches: [main, 'feature/**']
+  pull_request:
     branches: [main]
   workflow_dispatch:
 
 concurrency:
-  group: trener2-main-release
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -47,6 +49,9 @@ jobs:
           node --check app/src/main/assets/v0636-feedback.js
           node --check app/src/main/assets/v064-group-session.js
           node --check app/src/main/assets/v064-group-guard.js
+          node --check app/src/main/assets/v0642-adaptive-volume.js
+          node --check app/src/main/assets/v0643-resilient-sync.js
+          node --check app/src/main/assets/v070-diet.js
           node --check app/src/main/assets/backup-addon.js
           node --check app/src/main/assets/exercise-visuals.js
           node --check app/src/main/assets/live-status.js
@@ -134,7 +139,7 @@ jobs:
           echo "VERSION_CODE=$VERSION_CODE" >> "$GITHUB_ENV"
 
       - name: Publish version release
-        if: steps.signing.outputs.ready == 'true'
+        if: steps.signing.outputs.ready == 'true' && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -156,7 +161,7 @@ jobs:
           exit 1
 
       - name: Update updater metadata
-        if: steps.signing.outputs.ready == 'true'
+        if: steps.signing.outputs.ready == 'true' && github.ref == 'refs/heads/main'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
