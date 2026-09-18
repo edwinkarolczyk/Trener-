@@ -1,5 +1,15 @@
 # Zmiany
 
+## 0.8.2.12
+- naprawiono miganie czerwonego przycisku GOŚCIA między `ZAKOŃCZ` i `POPROŚ O ZAKOŃCZENIE`; podczas wspólnego treningu ma jedną stałą etykietę `ZAKOŃCZ WSPÓLNY TRENING`,
+- przycisk `ZAKOŃCZ WSPÓLNY TRENING` GOŚCIA zawsze trafia do `FINISH_REQUEST` i wymaga decyzji HOSTA,
+- stary handler `v0635-duo-profile-finish` nie może już lokalnie zakończyć treningu GOŚCIA ani wysłać `DONE` po naciśnięciu wspólnego zakończenia,
+- bazowy `app.js` nie może wysłać `LEAVE` ani zamknąć wspólnej sesji GOŚCIA ze zwykłej ścieżki STOP/finish; `LEAVE` pozostaje wyłącznie dla osobnego `OPUŚĆ WSPÓLNY TRENING`,
+- `v074-safe-finish` przekazuje wspólny STOP GOŚCIA bezpośrednio do autoryzacji HOSTA przed uruchomieniem starszych handlerów,
+- usunięto drugi renderer tekstu zielonego przycisku zapisu serii z `v070-beta-queue`; stan przycisku jest wyświetlany wyłącznie przez `v071-shared-ui-authority`, co usuwa miganie `CZEKAJ — <osoba>` ↔ `CZEKAJ NA SWOJĄ KOLEJ`,
+- black box zapisuje dodatkowo `LEGACY_GUEST_STOP_REDIRECTED`, `BASE_GUEST_STOP_REDIRECTED` i `BASE_GUEST_FINISH_BLOCKED`, jeśli stara ścieżka próbuje przejąć zakończenie,
+- wersja podniesiona do `0.8.2.12`, `versionCode 66`.
+
 ## 0.8.2.11
 - GOŚĆ ma jednoznacznie rozdzielone akcje: `POPROŚ O ZAKOŃCZENIE` oraz `OPUŚĆ WSPÓLNY TRENING`,
 - komunikat `LEAVE` może zostać wysłany wyłącznie z dedykowanego przycisku opuszczenia; ścieżka `ZAKOŃCZ` nie może już wywołać `LEAVE`,
