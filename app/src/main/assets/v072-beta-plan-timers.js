@@ -73,6 +73,7 @@
       #v072RestCell.ready b{color:#68e89c}#v072RestCell.paused b{color:#ff7779}
       #v072Skip{display:none;width:auto!important;min-width:62px!important;height:48px!important;padding:6px 8px!important;margin:0!important;font-size:9px!important;border-radius:11px!important}
       #v072FixedTimers.has-rest #v072Skip{display:block}
+      #v072FixedTimers.v08210NoOwnRest #v072RestCell{display:none!important}
       body.v072Running #training.trainingCard{padding-bottom:calc(92px + env(safe-area-inset-bottom))!important}
       body.v072Running #training #restBox{display:none!important}
       @media(max-width:380px){
@@ -108,13 +109,28 @@
     lastRunning=true;ensureTimers();
     let elapsed=0;try{elapsed=typeof elapsedMs==='function'?elapsedMs():0;}catch(e){}
     const wt=document.getElementById('v072WorkoutTime');if(wt)wt.textContent=fmt(elapsed);
-    const now=Date.now();let end=0,isPaused=false;
-    try{end=Number(restEnd)||0;isPaused=!!paused;}catch(e){}
+    const now=Date.now();let end=0,isPaused=false,sharedQueue=false;
+    try{
+      isPaused=!!paused;
+      const q=window.TrenerBeta070;
+      sharedQueue=!!(q?.active&&net?.active&&window.TrenerGroup?.groupSession);
+      if(sharedQueue){
+        const me=Number(net?.localAthlete)||0;
+        end=Number(q?.readyAt?.[me]||0);
+      }else{
+        end=Number(restEnd)||0;
+      }
+    }catch(e){}
     const left=Math.max(0,end-now),cell=document.getElementById('v072RestCell'),rt=document.getElementById('v072RestTime'),bar=document.getElementById('v072FixedTimers');
     if(!cell||!rt||!bar)return;
-    cell.classList.remove('ready','resting','paused');bar.classList.toggle('has-rest',left>0&&!isPaused);
-    if(isPaused){cell.classList.add('paused');rt.textContent='PAUZA';}
-    else if(left>0){cell.classList.add('resting');rt.textContent=fmt(left);}
+    const hideSharedRest=sharedQueue&&!isPaused&&left<=0;
+    bar.classList.toggle('v08210NoOwnRest',hideSharedRest);
+    cell.classList.toggle('hidden',hideSharedRest);
+    cell.classList.remove('ready','resting','paused');
+    bar.classList.toggle('has-rest',left>0&&!isPaused);
+    if(isPaused){cell.classList.remove('hidden');cell.classList.add('paused');rt.textContent='PAUZA';}
+    else if(left>0){cell.classList.remove('hidden');cell.classList.add('resting');rt.textContent=fmt(left);}
+    else if(sharedQueue){rt.textContent='';}
     else{cell.classList.add('ready');rt.textContent='GOTOWY';}
   }
 
