@@ -165,6 +165,28 @@
     rec.set=setCount(a,state.exercise);rec.uid=rec.uid||(`${state.sessionId}:${a}:${state.exercise}:${rec.set}`);mergeRecord(rec);net.last[a]=rec;state.readyAt[a]=Date.now()+Math.max(0,Number(ex.rest)||0)*1000;return {ok:true};
   }
 
+  function submitControlledRecord(athlete,kg,reps,participantId){
+    if(net.role!=='host'||!state.active)return {ok:false,reason:'Tylko HOST może zatwierdzić serię sterowaną'};
+    const a=Number(athlete)||0;
+    const ex=currentEx();
+    if(!ex)return {ok:false,reason:'Brak aktywnego ćwiczenia'};
+    const repCount=parseInt(String(reps??''),10);
+    if(!Number.isFinite(repCount)||repCount<=0)return {ok:false,reason:'Wpisz liczbę powtórzeń albo sekund'};
+    const weight=Number(String(kg??0).replace(',','.'))||0;
+    const idx=setCount(a,state.exercise);
+    const rec=makeRecord(ex,state.exercise,idx,a,weight,repCount);
+    rec.uid=`${state.sessionId}:${a}:${state.exercise}:${idx}`;
+    if(participantId)rec.participantId=String(participantId);
+    const result=acceptRecord(rec,'');
+    if(!result.ok)return result;
+    if(!result.duplicate){
+      lastCompletedExercise=state.exercise;
+      advanceHost(a);
+      try{window.TrenerSyncHistory?.checkpoint?.();}catch(e){}
+    }
+    return {ok:true,duplicate:!!result.duplicate,record:clone(rec,null)};
+  }
+
   function completeBetaSet(){
     if(!state.active)return state.baseComplete?.apply(this,arguments);
     if(!turnReady()){toast(state.pending?'Czekam na potwierdzenie hosta.':'Teraz ćwiczy '+athleteName(state.turn)+'.');return;}
@@ -367,6 +389,18 @@
     render();
   }
 
-  function boot(){if(state.booted)return;state.booted=true;state.requestSkipRest=requestSkipRest;installUi();installSkipCapture();wrapWifi();wrapCore();state.timer=setInterval(maintain,250);maintain();}
+  function boot(){
+    if(state.booted)return;
+    state.booted=true;
+    state.requestSkipRest=requestSkipRest;
+    state.submitControlledRecord=submitControlledRecord;
+    state.participants=participants;
+    state.athleteName=athleteName;
+    state.currentExercise=currentEx;
+    state.setCount=setCount;
+    state.targetSets=targetSets;
+    state.sendState=sendState;
+    installUi();installSkipCapture();wrapWifi();wrapCore();state.timer=setInterval(maintain,250);maintain();
+  }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
