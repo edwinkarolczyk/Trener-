@@ -4,6 +4,8 @@ import android.Manifest;
 import android.app.Activity;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -766,6 +768,18 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public String getReminderConfig() {
             return ReminderScheduler.getConfigJson(context);
+        }
+
+        @JavascriptInterface
+        public boolean copyText(String text) {
+            try {
+                ClipboardManager clipboard = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
+                if (clipboard == null) return false;
+                clipboard.setPrimaryClip(ClipData.newPlainText("Trener 2 logi", text == null ? "" : text));
+                return true;
+            } catch (Exception e) {
+                return false;
+            }
         }
 
         @JavascriptInterface
