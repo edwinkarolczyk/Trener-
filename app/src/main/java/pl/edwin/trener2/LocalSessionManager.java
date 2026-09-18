@@ -21,6 +21,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public final class LocalSessionManager {
     public static final int PORT = 48721;
@@ -36,10 +40,16 @@ public final class LocalSessionManager {
     private static final class HostPeer {
         final Socket socket;
         final DataOutputStream out;
+        final String remote;
+        volatile long lastRxAtMs;
+        volatile long lastTxAtMs;
+        volatile long rxCount;
+        volatile long txCount;
 
         HostPeer(Socket socket) throws IOException {
             this.socket = socket;
             this.out = new DataOutputStream(socket.getOutputStream());
+            this.remote = String.valueOf(socket.getRemoteSocketAddress());
         }
     }
 
@@ -56,6 +66,15 @@ public final class LocalSessionManager {
     private volatile String sessionCode = "";
     private volatile boolean hosting = false;
     private volatile boolean shuttingDown = false;
+    private volatile long connectedAtMs = 0L;
+    private volatile long lastRxAtMs = 0L;
+    private volatile long lastTxAtMs = 0L;
+    private final AtomicLong rxCount = new AtomicLong(0L);
+    private final AtomicLong txCount = new AtomicLong(0L);
+    private volatile String lastRemote = "";
+    private volatile String lastCloseType = "";
+    private volatile String lastCloseReason = "";
+    private volatile long lastCloseAtMs = 0L;
 
     public LocalSessionManager(Listener listener) {
         this.listener = listener;
@@ -114,6 +133,10 @@ public final class LocalSessionManager {
                             }
                             hostPeers.add(peer);
                         }
+                        connectedAtMs = System.currentTimeMillis();
+                        lastRemote = peer.remote;
+                        lastCloseType = "";
+                        lastCloseReason = "";
                         emitStatus("connected", "host");
                         try {
                             io.execute(() -> readHostPeerLoop(peer, gen));
@@ -201,6 +224,10 @@ public final class LocalSessionManager {
                         peerSocket = socket;
                         peerOut = out;
                     }
+                    connectedAtMs = System.currentTimeMillis();
+                    lastRemote = String.valueOf(socket.getRemoteSocketAddress());
+                    lastCloseType = "";
+                    lastCloseReason = "";
                     emitStatus("connected", "guest");
                     readGuestLoop(socket, in, gen);
                 } catch (IOException e) {
@@ -223,9 +250,11 @@ public final class LocalSessionManager {
             try {
                 out.writeUTF(message);
                 out.flush();
+                lastTxAtMs = System.currentTimeMillis();
+                txCount.incrementAndGet();
                 return true;
             } catch (IOException e) {
-                emitStatus("disconnected", "Połączenie z gospodarzem zostało przerwane.");
+                rememberClose("WRITE_ERROR", safeMessage(e));
                 closeGuestPeerOnly();
                 return false;
             }
@@ -249,6 +278,12 @@ public final class LocalSessionManager {
                 try {
                     peer.out.writeUTF(message);
                     peer.out.flush();
+                    long now = System.currentTimeMillis();
+                    peer.lastTxAtMs = now;
+                    peer.txCount++;
+                    lastTxAtMs = now;
+                    txCount.incrementAndGet();
+                    lastRemote = peer.remote;
                     sent = true;
                 } catch (IOException e) {
                     removeHostPeer(peer);
@@ -378,16 +413,36 @@ public final class LocalSessionManager {
     }
 
     private void readHostPeerLoop(HostPeer peer, int gen) {
+        String closeType = "LOOP_END";
+        String closeReason = "Połączenie uczestnika zostało zakończone.";
         try {
             DataInputStream in = new DataInputStream(peer.socket.getInputStream());
             while (gen == generation.get() && !peer.socket.isClosed()) {
                 String message = in.readUTF();
-                if (message != null && !message.isEmpty()) emitMessage(message);
+                if (message != null && !message.isEmpty()) {
+                    long now = System.currentTimeMillis();
+                    peer.lastRxAtMs = now;
+                    peer.rxCount++;
+                    lastRxAtMs = now;
+                    rxCount.incrementAndGet();
+                    lastRemote = peer.remote;
+                    emitMessage(message);
+                }
             }
-        } catch (EOFException | SocketException ignored) {
+        } catch (EOFException e) {
+            closeType = "EOF";
+            closeReason = "Uczestnik zamknął strumień TCP.";
+        } catch (SocketException e) {
+            closeType = "SOCKET_EXCEPTION";
+            closeReason = safeMessage(e);
         } catch (IOException e) {
-            if (gen == generation.get() && !shuttingDown) emitStatus("disconnected_peer", safeMessage(e));
+            closeType = "IO_ERROR";
+            closeReason = safeMessage(e);
         } finally {
+            if (gen == generation.get() && !shuttingDown) {
+                rememberClose(closeType, closeReason);
+                emitStatus("disconnected_peer", closeType + ": " + closeReason);
+            }
             removeHostPeer(peer);
             if (gen == generation.get() && !shuttingDown && hosting) {
                 if (hostPeerCount() == 0) emitStatus("waiting", getLocalIp());
@@ -397,20 +452,35 @@ public final class LocalSessionManager {
     }
 
     private void readGuestLoop(Socket socket, DataInputStream in, int gen) {
+        String closeType = "LOOP_END";
+        String closeReason = "Połączenie z gospodarzem zostało zakończone.";
         try {
             while (gen == generation.get() && !socket.isClosed()) {
                 String message = in.readUTF();
-                if (message != null && !message.isEmpty()) emitMessage(message);
+                if (message != null && !message.isEmpty()) {
+                    long now = System.currentTimeMillis();
+                    lastRxAtMs = now;
+                    rxCount.incrementAndGet();
+                    lastRemote = String.valueOf(socket.getRemoteSocketAddress());
+                    emitMessage(message);
+                }
             }
-        } catch (EOFException | SocketException ignored) {
+        } catch (EOFException e) {
+            closeType = "EOF";
+            closeReason = "Gospodarz zamknął strumień TCP.";
+        } catch (SocketException e) {
+            closeType = "SOCKET_EXCEPTION";
+            closeReason = safeMessage(e);
         } catch (IOException e) {
-            if (gen == generation.get() && !shuttingDown) emitStatus("disconnected", safeMessage(e));
+            closeType = "IO_ERROR";
+            closeReason = safeMessage(e);
         } finally {
             synchronized (this) {
                 if (peerSocket == socket) closeGuestPeerOnly();
             }
             if (gen == generation.get() && !shuttingDown) {
-                emitStatus("disconnected", "Połączenie z gospodarzem zostało przerwane.");
+                rememberClose(closeType, closeReason);
+                emitStatus("disconnected", closeType + ": " + closeReason);
             }
         }
     }
@@ -459,7 +529,52 @@ public final class LocalSessionManager {
         serverSocket = null;
         hosting = false;
         sessionCode = "";
-        if (notify && !shuttingDown) emitStatus("disconnected", "Rozłączono.");
+        if (notify && !shuttingDown) {
+            rememberClose("MANUAL", "Rozłączono ręcznie.");
+            emitStatus("disconnected", "MANUAL: Rozłączono ręcznie.");
+        }
+    }
+
+    private void rememberClose(String type, String reason) {
+        lastCloseType = type == null ? "" : type;
+        lastCloseReason = reason == null ? "" : reason;
+        lastCloseAtMs = System.currentTimeMillis();
+    }
+
+    public String diagnosticsJson() {
+        try {
+            JSONObject root = new JSONObject();
+            root.put("hosting", hosting);
+            root.put("connected", isConnected());
+            root.put("localIp", getLocalIp());
+            root.put("remote", lastRemote);
+            root.put("connectedAt", connectedAtMs);
+            root.put("lastRx", lastRxAtMs);
+            root.put("lastTx", lastTxAtMs);
+            root.put("rxCount", rxCount.get());
+            root.put("txCount", txCount.get());
+            root.put("lastCloseType", lastCloseType);
+            root.put("lastCloseReason", lastCloseReason);
+            root.put("lastCloseAt", lastCloseAtMs);
+            root.put("peerCount", hostPeerCount());
+            JSONArray peers = new JSONArray();
+            synchronized (hostPeersLock) {
+                for (HostPeer peer : hostPeers) {
+                    JSONObject p = new JSONObject();
+                    p.put("remote", peer.remote);
+                    p.put("closed", peer.socket.isClosed());
+                    p.put("lastRx", peer.lastRxAtMs);
+                    p.put("lastTx", peer.lastTxAtMs);
+                    p.put("rxCount", peer.rxCount);
+                    p.put("txCount", peer.txCount);
+                    peers.put(p);
+                }
+            }
+            root.put("peers", peers);
+            return root.toString();
+        } catch (Exception e) {
+            return "{}";
+        }
     }
 
     private void emitStatus(String status, String detail) {
