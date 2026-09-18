@@ -243,23 +243,10 @@
     }
   }
 
-  function annotateVersions(){
-    const roster=$('v064Roster');if(!roster)return;
-    const people=group()?.participants||[];
-    [...roster.children].forEach((el,i)=>{
-      const p=people[i];if(!p)return;
-      let v=el.querySelector('.v082Version');
-      if(!v){v=document.createElement('span');v.className='v082Version';v.style.cssText='display:block;margin-top:2px;font-size:9px;color:#777';el.appendChild(v);}
-      const ok=versionsCompatible(p.version);
-      v.textContent='wersja '+(p.version||'—')+(ok?' • zgodna':' • NIEZGODNA');
-      v.style.color=ok?'#777':'#ff696b';
-    });
-  }
 
   function maintain(){
     wrapWifi();
     renderProgress();
-    annotateVersions();
   }
 
   function boot(){
