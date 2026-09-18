@@ -1,5 +1,16 @@
 # Zmiany
 
+## 0.8.2.6
+- reconnect GOŚCIA działa również w lobby po pierwszym udanym połączeniu, jeszcze przed rozpoczęciem treningu,
+- po chwilowym zaniku Wi‑Fi aplikacja nie porzuca wspólnej sesji tylko zachowuje rolę, kod i dane potrzebne do ponownego połączenia,
+- HOST wykrywa utratę lokalnego adresu IP jako osobny stan `BRAK SIECI` zamiast pozostawać w pozornym `waiting`,
+- po powrocie poprawnego adresu IP HOST automatycznie stawia serwer ponownie na tym samym kodzie sesji i aktualizuje widoczny adres,
+- GOŚĆ po powrocie własnej sieci automatycznie wraca do sekwencji reconnectu 1 s → 2 s → 5 s → 10 s,
+- `disconnected_peer` natychmiast ustawia `connected=false`, dzięki czemu UI i black box nie pokazują już sprzecznego stanu,
+- black box zapisuje `NETWORK_LOST`, `NETWORK_RESTORED`, `NETWORK_IP_CHANGED` i `HOST_RESTART_AFTER_NETWORK` wraz z diagnostyką natywnego transportu,
+- stan nagłówka rozróżnia `BRAK SIECI`, `PRZYWRACAM…` i `RECONNECT…`,
+- wersja podniesiona do `0.8.2.6`, `versionCode 60`.
+
 ## 0.8.2.5
 - dodany pełny `black box` wspólnego treningu: połączenie, role HOST/GOŚĆ, wersje, sessionId, plan i hash planu, kolejka, serie, snapshoty, resync, przejścia aplikacji w tło oraz przyczyny rozłączeń,
 - black box przechowuje automatycznie do 10 ostatnich wspólnych sesji i do 1500 zdarzeń na sesję, z dodatkowym limitem około 2,5 MB; najstarsze dane są nadpisywane automatycznie,
