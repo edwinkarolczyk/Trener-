@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - 'beta/**'
-      - 'feature/**'
   pull_request:
     branches:
       - 'beta/0.7.0'
@@ -116,7 +115,7 @@ jobs:
           retention-days: 30
 
       - name: Publish beta prerelease for automatic updater
-        if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/heads/beta/') || github.ref == 'refs/heads/feature/trener2-0.8.1-dieta-backup')
+        if: github.event_name != 'pull_request' && startsWith(github.ref, 'refs/heads/beta/')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
