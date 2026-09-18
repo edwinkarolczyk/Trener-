@@ -229,10 +229,12 @@ public class MainActivity extends Activity {
     private void startBackupExport(String json, String suggestedName) {
         if (json == null || json.trim().isEmpty()) {
             Toast.makeText(this, "Brak danych do eksportu.", Toast.LENGTH_LONG).show();
+            emitBackupExportResult(false);
             return;
         }
         if (json.getBytes(StandardCharsets.UTF_8).length > MAX_BACKUP_BYTES) {
             Toast.makeText(this, "Kopia danych jest zbyt duża.", Toast.LENGTH_LONG).show();
+            emitBackupExportResult(false);
             return;
         }
         pendingBackupJson = json;
@@ -276,12 +278,20 @@ public class MainActivity extends Activity {
         runOnUiThread(() -> webView.evaluateJavascript(js, null));
     }
 
+    private void emitBackupExportResult(boolean success) {
+        if (webView == null) return;
+        final String js = "window.TrenerBackup&&window.TrenerBackup.nativeExportResult("
+                + (success ? "true" : "false") + ");";
+        runOnUiThread(() -> webView.evaluateJavascript(js, null));
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == BACKUP_EXPORT_REQUEST) {
             if (resultCode != RESULT_OK || data == null || data.getData() == null) {
                 pendingBackupJson = null;
+                emitBackupExportResult(false);
                 return;
             }
             Uri uri = data.getData();
@@ -290,8 +300,10 @@ public class MainActivity extends Activity {
                 out.write(pendingBackupJson.getBytes(StandardCharsets.UTF_8));
                 out.flush();
                 Toast.makeText(this, "Kopia Trener 2 zapisana.", Toast.LENGTH_SHORT).show();
+                emitBackupExportResult(true);
             } catch (Exception e) {
                 Toast.makeText(this, "Nie udało się zapisać kopii danych.", Toast.LENGTH_LONG).show();
+                emitBackupExportResult(false);
             } finally {
                 pendingBackupJson = null;
             }
