@@ -787,7 +787,7 @@ function nativeWifiStatus(status,detail){
     toast('Połączono z partnerem przez Wi‑Fi.');
   }else if(incoming==='waiting'){
     net.connected=false;net.lastError='';
-  }else if(incoming==='disconnected'){
+  }else if(incoming==='disconnected'||incoming==='disconnected_peer'){
     net.connected=false;
     if(running&&net.active)toast('Partner rozłączony — trening działa dalej lokalnie.');
   }else if(incoming==='error'||incoming==='denied'){
@@ -941,6 +941,7 @@ function updateWifiUi(){
     restoring:'Sieć wróciła — przywracam sesję…',
     connected:'Połączono',
     disconnected:'Rozłączono',
+    disconnected_peer:'Partner rozłączony — czekam na ponowne połączenie',
     error:'Błąd połączenia',
     denied:'Błędny kod'
   };
