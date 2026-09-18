@@ -937,6 +937,8 @@ function updateWifiUi(){
     waiting:'Sesja utworzona — czekam na partnera',
     connecting:'Łączenie…',
     reconnecting:'Utracono połączenie — łączę ponownie…',
+    network_lost:'Brak sieci Wi‑Fi — czekam na powrót…',
+    restoring:'Sieć wróciła — przywracam sesję…',
     connected:'Połączono',
     disconnected:'Rozłączono',
     error:'Błąd połączenia',
@@ -977,6 +979,8 @@ function updateWifiUi(){
       else if(net.role==='host'&&(net.status==='waiting'||net.status==='starting')){link='CZEKA NA PARTNERA';cls='waiting';}
       else if(net.status==='connecting'){link='ŁĄCZENIE';cls='waiting';}
       else if(net.status==='reconnecting'){link='RECONNECT…';cls='waiting';}
+      else if(net.status==='network_lost'){link='BRAK SIECI';cls='error';}
+      else if(net.status==='restoring'){link='PRZYWRACAM…';cls='waiting';}
       else if(net.status==='error'||net.status==='denied'){link='BŁĄD';cls='error';}
       linkBadge.textContent=link;
       linkBadge.className='wifiHeaderBadge link '+cls;
