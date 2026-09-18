@@ -36,6 +36,7 @@
     prevMessageKey:'',
     prevConnectionKey:'',
     hostPeerBeats:{},
+    stalePeers:{},
     booted:false
   };
 
@@ -405,14 +406,23 @@
     runtime.lastHeartbeatSentAt=t;
     runtime.seq++;
     try{
-      wifiSend({
+      const ok=wifiSend({
         type:'V0825_PING',
         at:t,
         seq:runtime.seq,
         deviceId:localDeviceId(),
         sessionId:sessionId()
       });
-    }catch(e){}
+      if(ok===false&&roleNow()==='guest'&&sharedActive()&&!runtime.reconnecting){
+        log('HEARTBEAT_SEND_FAILED',{native:nativeDiag()},true);
+        beginReconnect('heartbeat-send-failed',true);
+      }
+    }catch(e){
+      if(roleNow()==='guest'&&sharedActive()&&!runtime.reconnecting){
+        log('HEARTBEAT_SEND_ERROR',{message:String(e?.message||e),native:nativeDiag()},true);
+        beginReconnect('heartbeat-send-error',true);
+      }
+    }
   }
 
   function wrapMessage(){
@@ -569,7 +579,30 @@
     wrapSend();wrapMessage();wrapStatus();installUi();captureCreds();
     const t=now();
     const conn=connectedNow();
+
+    const connectionKey=[roleNow(),String(net?.status||''),conn,sharedActive(),runningNow(),sessionId()].join('|');
+    if(connectionKey!==runtime.prevConnectionKey){
+      runtime.prevConnectionKey=connectionKey;
+      log('STATE_CHANGE',{connection:commonState(),native:nativeDiag()},true);
+    }
+
     if(conn&&t-runtime.lastHeartbeatSentAt>=HEARTBEAT_MS)sendHeartbeat();
+
+    if(roleNow()==='host'&&sharedActive()){
+      const mine=localDeviceId();
+      participantVersions().filter(p=>p.deviceId&&p.deviceId!==mine).forEach(p=>{
+        const beat=runtime.hostPeerBeats[p.deviceId];
+        if(!beat)return;
+        const age=Math.max(0,t-Number(beat.lastRxAt||0));
+        if(age>HEARTBEAT_TIMEOUT_MS&&!runtime.stalePeers[p.deviceId]){
+          runtime.stalePeers[p.deviceId]=true;
+          log('PEER_HEARTBEAT_STALE',{deviceId:p.deviceId,name:p.name,version:p.version,ageMs:age,native:nativeDiag()},true);
+        }else if(age<=HEARTBEAT_TIMEOUT_MS&&runtime.stalePeers[p.deviceId]){
+          delete runtime.stalePeers[p.deviceId];
+          log('PEER_HEARTBEAT_RECOVERED',{deviceId:p.deviceId,name:p.name,ageMs:age},true);
+        }
+      });
+    }
 
     if(conn&&t-runtime.lastHeartbeatLogAt>=15000){
       runtime.lastHeartbeatLogAt=t;
