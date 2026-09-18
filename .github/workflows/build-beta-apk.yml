@@ -1,16 +1,18 @@
-name: Build Trener Beta APK
+name: Build Trener 2 APK
 
 on:
   push:
     branches:
+      - 'main'
       - 'beta/**'
   pull_request:
     branches:
+      - 'main'
       - 'beta/0.7.0'
   workflow_dispatch:
 
 concurrency:
-  group: trener2-beta-${{ github.ref }}
+  group: trener2-build-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -24,7 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
-      - name: Checkout beta branch
+      - name: Checkout source branch
         uses: actions/checkout@v4
 
       - name: Check all JavaScript assets
