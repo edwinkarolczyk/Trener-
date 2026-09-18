@@ -196,7 +196,26 @@
   function refreshWorkoutUi(){
     const box=$('v064Workout');if(!box)return;const active=!!(state.groupSession&&running&&net.active);box.classList.toggle('hidden',!active);document.documentElement.classList.toggle('v064SharedMode',active&&state.sharedEquipment);if(!active)return;
     if(net.done[net.localAthlete]){$('v064Target').textContent='Twój trening zakończony';$('v064Note').textContent='Pozostałe osoby mogą nadal wykonywać własne serie i ćwiczenia.';$('v064Shared').textContent='';return;}
-    const ex=currentPlan?.ex?.[exIdx];if(!ex)return;const kg=Number(state.sharedLoads[ex.id]||$('weight')?.value||0),t=personalTarget(ex,kg);$('v064Target').innerHTML=`Twoja rekomendacja: <em>${t.min}${t.min===t.max?'':'–'+t.max} ${ex.time?'sek.':'powt.'}</em>`;$('v064Note').textContent=t.note||'';$('v064Shared').textContent=state.sharedEquipment?(kg>0?`Wspólny sprzęt • ${kg.toLocaleString('pl-PL',{maximumFractionDigits:2})} kg dla tego ćwiczenia`:'Wspólny sprzęt • ustaw ciężar dla tego ćwiczenia'):'Osobny sprzęt • każdy wpisuje własny ciężar';const total=effectiveSets(ex),extra=ownExtraFor(ex);$('v064SetInfo').textContent=`Twoje serie: ${setIdx+1}/${total}${extra?' • +'+extra+' dodatk.':''}`;const base=Math.max(1,Number(ex.sets)||1),minNeeded=Math.max(0,(setIdx+1)-base);$('v064MinusSet').disabled=extra<=minNeeded;$('v064PlusSet').disabled=extra>=3;if($('series'))$('series').textContent='Seria '+(setIdx+1)+'/'+total+' • '+athleteName(net.localAthlete);if($('target'))$('target').textContent=ex.time?`Cel: ${t.min}${t.min===t.max?'':'–'+t.max} sekund`:`Cel dla Ciebie: ${t.min}${t.min===t.max?'':'–'+t.max} powtórzeń`;
+    const ex=currentPlan?.ex?.[exIdx];if(!ex)return;
+    const ctrl=window.TrenerSharedControl083;
+    const controlled=!!(ctrl?.isSingleController?.()&&ctrl?.isLocalController?.());
+    const displayAthlete=controlled?Number(window.TrenerBeta070?.turn||0):Number(net.localAthlete||0);
+    const displayParticipant=participantByIndex(displayAthlete);
+    const kg=Number(state.sharedLoads[ex.id]||$('weight')?.value||0);
+    const personal=displayAthlete===Number(net.localAthlete||0);
+    const t=personal?personalTarget(ex,kg):{min:Math.max(1,Number(ex.min)||1),max:Math.max(1,Number(ex.max)||Number(ex.min)||1),note:'Wynik zapisze się osobno dla '+(displayParticipant?.name||athleteName(displayAthlete))+'.'};
+    $('v064Target').innerHTML=(controlled&&!personal?'Wpisujesz dla '+esc(displayParticipant?.name||athleteName(displayAthlete))+': ':'Twoja rekomendacja: ')+`<em>${t.min}${t.min===t.max?'':'–'+t.max} ${ex.time?'sek.':'powt.'}</em>`;
+    $('v064Note').textContent=t.note||'';
+    $('v064Shared').textContent=controlled?'Jeden telefon wpisuje dane • historia i progres pozostają osobne':(state.sharedEquipment?(kg>0?`Wspólny sprzęt • ${kg.toLocaleString('pl-PL',{maximumFractionDigits:2})} kg dla tego ćwiczenia`:'Wspólny sprzęt • ustaw ciężar dla tego ćwiczenia'):'Osobny sprzęt • każdy wpisuje własny ciężar');
+    const base=Math.max(1,Number(ex.sets)||1);
+    const displayExtra=displayParticipant?participantExtra(displayParticipant,ex):0;
+    const total=base+displayExtra;
+    const done=(records||[]).filter(r=>Number(r.athlete)===displayAthlete&&Number(r.ex)===Number(exIdx)).length;
+    $('v064SetInfo').textContent=(controlled?'Serie '+esc(displayParticipant?.name||athleteName(displayAthlete))+': ':'Twoje serie: ')+Math.min(done+1,total)+'/'+total+(displayExtra?' • +'+displayExtra+' dodatk.':'');
+    const ownExtra=ownExtraFor(ex),minNeeded=Math.max(0,(setIdx+1)-base);$('v064MinusSet').disabled=ownExtra<=minNeeded;$('v064PlusSet').disabled=ownExtra>=3;
+    if($('series'))$('series').textContent='Seria '+Math.min(done+1,total)+'/'+total+' • '+athleteName(displayAthlete);
+    if($('athlete'))$('athlete').textContent=athleteName(displayAthlete);
+    if($('target'))$('target').textContent=ex.time?`Cel: ${t.min}${t.min===t.max?'':'–'+t.max} sekund`:`Cel: ${t.min}${t.min===t.max?'':'–'+t.max} powtórzeń`;
   }
   function refreshAll(){installUi();renderRoster();if(state.groupSession&&net.active){syncCoreParticipants();refreshWorkoutUi();renderLivePanel();}}
   function boot(){
