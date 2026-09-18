@@ -148,7 +148,7 @@
           <button id="v0823ClearLogs" class="danger" type="button">WYCZYŚĆ LOGI</button>
         </div>
       </div>
-      <p class="hint">Logi zapisują błędy, połączenie Wi‑Fi, wejście w pola kg/powt., zmianę rozmiaru ekranu po otwarciu klawiatury i wykryte zatrzymania UI.</p>
+      <p class="hint">Logi zapisują błędy, Wi‑Fi i zdarzenia UI. Black box wspólnej sesji nadpisuje najstarsze dane automatycznie — do 10 sesji / 1500 zdarzeń na sesję, maks. ok. 2,5 MB.</p>
       <pre id="v0823LogBody">Brak logów.</pre>
     `;
     history.appendChild(card);
