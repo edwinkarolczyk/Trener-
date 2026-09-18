@@ -41,7 +41,8 @@
     ['0.8.2','v082-shared-guard-progress.js'],
     ['0.8.2.1','v0821-workout-ux.js'],
     ['0.8.2.3','v0823-diagnostics.js'],
-    ['0.8.2.5','v0825-shared-blackbox.js']
+    ['0.8.2.5','v0825-shared-blackbox.js'],
+    ['0.8.2.9','v0829-host-finish-authority.js']
   ];
   features.forEach(([min,src])=>{
     if(!gte(current,min))return;
