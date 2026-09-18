@@ -52,7 +52,7 @@
         reason:mismatchReason(remote)
       });
     }catch(e){saveError(e,'rejectRemote');}
-    toastMsg('Nie łączę wspólnego treningu — różne wersje aplikacji.');
+    toastMsg(mismatchReason(remote));
   }
 
   function disconnectMismatch(remote){
