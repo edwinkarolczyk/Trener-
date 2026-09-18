@@ -1,0 +1,23 @@
+name: Cleanup legacy 0.8.2 bridge
+
+on:
+  push:
+    branches:
+      - 'beta/0.7.0'
+    paths:
+      - '.github/workflows/cleanup-legacy-082.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remove legacy release and tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          gh release delete v0.8.2-legacy-beta --repo "$GITHUB_REPOSITORY" --cleanup-tag -y || true
