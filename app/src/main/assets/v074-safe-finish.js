@@ -183,13 +183,19 @@
     const stop=ev.target?.closest?.('#stopBtn');
     if(stop&&isRunning()){
       ev.preventDefault();ev.stopPropagation();ev.stopImmediatePropagation();
+      const role=(()=>{try{return String(net?.role||'')}catch(e){return ''}})();
+      const sid=(()=>{try{return String(net?.sessionId||'')}catch(e){return ''}})();
       try{
         window.TrenerSharedBlackbox0825?.log?.('STOP_BUTTON_CAPTURED',{
-          role:String(net?.role||''),
+          role,
           shared:!!net?.active,
-          sessionId:String(net?.sessionId||'')
+          sessionId:sid
         },true);
       }catch(e){}
+      if(role==='guest'&&sid&&window.TrenerHostAuthority0829?.requestFinish){
+        window.TrenerHostAuthority0829.requestFinish();
+        return;
+      }
       askFinish('start');return;
     }
     const exit=ev.target?.closest?.('#v074ExitBtn');

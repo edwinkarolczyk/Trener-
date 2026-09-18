@@ -103,7 +103,8 @@
       const status=state.left[a]?'opuścił trening':(done?'gotowy':(a===turn?(Number(state.waitUntil||0)>Date.now()?'odpoczywa':'ćwiczy teraz'):'czeka'));
       return `<div class="v070Person ${a===turn?'active':''} ${done?'done':''}"><strong>${escapeHtml(p.name||('Osoba '+(a+1)))}</strong><span>${cnt}/${total} serii • ${status}</span></div>`;
     }).join('');
-    const save=$('saveSetBtn');if(save){save.disabled=!turnReady();save.textContent=turnReady()?'ZAPISZ SERIĘ':(state.pending?'CZEKAM NA POTWIERDZENIE…':'CZEKAJ NA SWOJĄ KOLEJ');}
+    // Widoczny stan przycisku zapisu jest własnością v071-shared-ui-authority.
+    // v070 utrzymuje wyłącznie autorytatywny stan kolejki, żeby warstwy nie migały między różnymi tekstami.
     if($('series')&&ex)$('series').textContent=`Seria ${Math.min(setCount(ownAthlete(),state.exercise)+1,targetSets(ownAthlete(),ex))}/${targetSets(ownAthlete(),ex)} • ${athleteName(ownAthlete())}`;
     if($('athlete'))$('athlete').textContent=athleteName(ownAthlete());
     const myReadyAt=Number(state.readyAt[ownAthlete()]||0);
