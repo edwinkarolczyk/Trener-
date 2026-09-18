@@ -1,5 +1,18 @@
 # Zmiany
 
+## 0.8.2.1
+- dwa paski postępu są przypięte w nieruchomym panelu nad `Czas treningu` i `Twój odpoczynek`,
+- podczas Twojej aktywnej serii ekran jest utrzymywany włączony; telefon nie powinien sam wygasić ekranu,
+- podczas odpoczynku lub oczekiwania na swoją kolej ekran może się wygasić,
+- po końcu odpoczynku w treningu solo telefon jest automatycznie wybudzany,
+- we wspólnym treningu telefon jest wybudzany po przejściu kolejki hosta na tego uczestnika,
+- podczas aktywnego treningu aplikacja utrzymuje lekki częściowy wake lock CPU, aby timer i synchronizacja mogły wybudzić ekran po przerwie,
+- ekran treningu może zostać pokazany nad ekranem blokady, ale aplikacja nie omija systemowego PIN-u/hasła,
+- raport testowy zapisuje ostatnią serię również wtedy, gdy ta seria natychmiast kończy trening,
+- ręczne pominięcie odpoczynku jest zapisywane jako `REST_SKIP`, a nie `REST_END`,
+- punkt `PROBLEM` zapisuje dodatkowo pozycję przewinięcia i wartości obu pasków postępu,
+- wersja podniesiona do `0.8.2.1`, `versionCode 55`.
+
 ## 0.8.2
 - wspólny trening wymaga teraz dokładnie tej samej wersji Trener 2 na wszystkich telefonach; niezgodna wersja jest odrzucana przed rozpoczęciem sesji,
 - lista uczestników pokazuje wersję aplikacji i jej zgodność,
