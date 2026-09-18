@@ -2,9 +2,11 @@
   'use strict';
 
   const UPDATE_STORAGE='trainer3.updateSettings';
+  const UPDATE_BACKUP_STORAGE='trainer3.updateBackup.v070';
   const WEEKLY_SCHEDULE_STORAGE='trainer3.schedule.v050';
   let updateInfo=null;
   let checking=false;
+  let waitingForBackup=false;
 
   function el(id){return document.getElementById(id)}
   function safeJson(raw,fallback){try{return raw?JSON.parse(raw):fallback}catch(e){return fallback}}
@@ -138,9 +140,12 @@
     }
   }
 
-  function downloadUpdate(){
-    if(!updateInfo){checkForUpdate(true);return;}
-    const url=String(updateInfo.apkUrl||updateInfo.pageUrl||'');
+  function updateUrl(){
+    return updateInfo?String(updateInfo.apkUrl||updateInfo.pageUrl||''):'';
+  }
+
+  function openUpdate(){
+    const url=updateUrl();
     if(!url){
       if(typeof window.toast==='function')window.toast('Brak adresu aktualizacji.');
       return;
@@ -151,6 +156,47 @@
     }catch(e){
       if(typeof window.toast==='function')window.toast('Nie udało się otworzyć aktualizacji.');
     }
+  }
+
+  function backupAlreadySaved(version){
+    const x=safeJson(localStorage.getItem(UPDATE_BACKUP_STORAGE),{});
+    return !!(x&&x.version===String(version||'')&&Number(x.at)>0);
+  }
+
+  function downloadUpdate(){
+    if(!updateInfo){checkForUpdate(true);return;}
+    if(backupAlreadySaved(updateInfo.version)){openUpdate();return;}
+    if(waitingForBackup)return;
+    if(!window.TrenerBackup||typeof window.TrenerBackup.exportBeforeUpdate!=='function'){
+      if(typeof window.toast==='function')window.toast('Najpierw zapisz kopię danych w Ustawienia → Dane.');
+      return;
+    }
+    waitingForBackup=true;
+    const btn=el('downloadUpdateBtn');
+    if(btn){btn.disabled=true;btn.textContent='ZAPISZ KOPIĘ…';}
+    if(el('updateStatus'))el('updateStatus').innerHTML='<b>Najpierw kopia danych.</b> Wybierz miejsce zapisu. Aktualizacja ruszy dopiero po poprawnym zapisaniu pliku.';
+    const started=window.TrenerBackup.exportBeforeUpdate(updateInfo.version);
+    if(!started){
+      waitingForBackup=false;
+      if(btn){btn.disabled=false;btn.textContent='POBIERZ AKTUALIZACJĘ';}
+    }
+  }
+
+  function onBackupExportResult(ev){
+    if(!waitingForBackup)return;
+    waitingForBackup=false;
+    const btn=el('downloadUpdateBtn');
+    if(btn){btn.disabled=false;btn.textContent='POBIERZ AKTUALIZACJĘ';}
+    const ok=!!ev?.detail?.success;
+    if(!ok){
+      if(el('updateStatus'))el('updateStatus').textContent='Aktualizacja wstrzymana — kopia danych nie została zapisana.';
+      return;
+    }
+    if(updateInfo?.version){
+      localStorage.setItem(UPDATE_BACKUP_STORAGE,JSON.stringify({version:String(updateInfo.version),at:Date.now()}));
+    }
+    if(el('updateStatus'))el('updateStatus').textContent='Kopia zapisana. Otwieram aktualizację…';
+    openUpdate();
   }
 
   function ensureNeutralScheduleDefault(){
@@ -180,6 +226,7 @@
     installUi();
     ensureNeutralScheduleDefault();
     loadProgressionAddon();
+    window.addEventListener('trener:backup-export-result',onBackupExportResult);
     const cfg=safeJson(localStorage.getItem(UPDATE_STORAGE),{});
     if(cfg.auto!==false)setTimeout(()=>checkForUpdate(false),900);
   }
