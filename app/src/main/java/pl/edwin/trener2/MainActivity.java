@@ -830,6 +830,12 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public String wifiDiagnostics() {
+            return localSession == null ? "{}" : localSession.diagnosticsJson();
+        }
+
+
+        @JavascriptInterface
         public String wifiQr(String payload) {
             if (payload == null || payload.length() > 512) return "";
             try {

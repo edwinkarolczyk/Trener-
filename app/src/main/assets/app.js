@@ -936,6 +936,7 @@ function updateWifiUi(){
     starting:'Uruchamianie gospodarza…',
     waiting:'Sesja utworzona — czekam na partnera',
     connecting:'Łączenie…',
+    reconnecting:'Utracono połączenie — łączę ponownie…',
     connected:'Połączono',
     disconnected:'Rozłączono',
     error:'Błąd połączenia',
@@ -961,6 +962,7 @@ function updateWifiUi(){
   if(net.connected&&net.role==='guest')$('wifiPartner').textContent=net.names[0]||'Gospodarz';
   else if(net.role==='host'&&net.connected)$('wifiPartner').textContent=net.names[1]||$('nameB').value||'Partner';
   else if(net.role==='host')$('wifiPartner').textContent='Brak połączenia';
+  else if(net.role==='guest'&&net.status==='reconnecting')$('wifiPartner').textContent=net.names?.[0]||'Gospodarz';
   else $('wifiPartner').textContent='—';
 
   const header=$('wifiHeaderState'),roleBadge=$('wifiHeaderRole'),linkBadge=$('wifiHeaderLink');
@@ -974,6 +976,7 @@ function updateWifiUi(){
       if(net.connected){link='POŁĄCZONO';cls='connected';}
       else if(net.role==='host'&&(net.status==='waiting'||net.status==='starting')){link='CZEKA NA PARTNERA';cls='waiting';}
       else if(net.status==='connecting'){link='ŁĄCZENIE';cls='waiting';}
+      else if(net.status==='reconnecting'){link='RECONNECT…';cls='waiting';}
       else if(net.status==='error'||net.status==='denied'){link='BŁĄD';cls='error';}
       linkBadge.textContent=link;
       linkBadge.className='wifiHeaderBadge link '+cls;

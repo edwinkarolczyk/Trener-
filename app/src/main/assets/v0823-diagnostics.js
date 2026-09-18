@@ -85,7 +85,12 @@
       body.push('','--- BŁĘDY WSPÓLNEJ SESJI ---');
       shared.slice(0,30).forEach(x=>body.push(clean(x,1200)));
     }
-    return head.concat(body).join('\n');
+    let out=head.concat(body).join('\n');
+    try{
+      const sharedBox=window.TrenerSharedBlackbox0825?.exportLatest?.();
+      if(sharedBox)out+='\n\n--- BLACK BOX WSPÓLNEJ SESJI ---\n'+sharedBox;
+    }catch(e){}
+    return out;
   }
 
   async function copyLogs(){
@@ -112,6 +117,7 @@
     if(!confirm('Wyczyścić logi diagnostyczne?'))return;
     localStorage.removeItem(KEY);
     localStorage.removeItem(SHARED_KEY);
+    try{window.TrenerSharedBlackbox0825?.clear?.()}catch(e){}
     write('ACTION','LOGS_CLEARED');
     render();
     try{if(typeof toast==='function')toast('Logi wyczyszczone.')}catch(e){}
@@ -142,7 +148,7 @@
           <button id="v0823ClearLogs" class="danger" type="button">WYCZYŚĆ LOGI</button>
         </div>
       </div>
-      <p class="hint">Logi zapisują błędy, połączenie Wi‑Fi, wejście w pola kg/powt., zmianę rozmiaru ekranu po otwarciu klawiatury i wykryte zatrzymania UI.</p>
+      <p class="hint">Logi zapisują błędy, Wi‑Fi i zdarzenia UI. Black box wspólnej sesji nadpisuje najstarsze dane automatycznie — do 10 sesji / 1500 zdarzeń na sesję, maks. ok. 2,5 MB.</p>
       <pre id="v0823LogBody">Brak logów.</pre>
     `;
     history.appendChild(card);
@@ -169,8 +175,9 @@
     if(api.nativeStatus.__v0823Diag){wifiWrapped=true;return}
     const base=api.nativeStatus.bind(api);
     const wrapped=function(status,detail){
+      const out=base(status,detail);
       write('WIFI',String(status||''),{detail:clean(detail,500)});
-      return base(status,detail);
+      return out;
     };
     wrapped.__v0823Diag=true;
     api.nativeStatus=wrapped;
