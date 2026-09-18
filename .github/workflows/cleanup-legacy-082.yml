@@ -1,4 +1,5 @@
 name: Cleanup legacy 0.8.2 bridge
+# one-shot cleanup trigger
 
 on:
   push:
