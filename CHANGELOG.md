@@ -1,5 +1,20 @@
 # Zmiany
 
+## 0.8.2.5
+- dodany pełny `black box` wspólnego treningu: połączenie, role HOST/GOŚĆ, wersje, sessionId, plan i hash planu, kolejka, serie, snapshoty, resync, przejścia aplikacji w tło oraz przyczyny rozłączeń,
+- black box przechowuje automatycznie do 10 ostatnich wspólnych sesji i do 1500 zdarzeń na sesję, z dodatkowym limitem około 2,5 MB; najstarsze dane są nadpisywane automatycznie,
+- natywna warstwa TCP zapisuje `EOF`, `SOCKET_EXCEPTION`, `IO_ERROR`, `WRITE_ERROR` i `MANUAL` wraz z peerem, liczbą wiadomości oraz czasem ostatniego RX/TX,
+- heartbeat host–guest działa co 3 s; brak odpowiedzi przez około 9 s albo błąd wysłania heartbeat uruchamia reconnect,
+- GOŚĆ po utracie HOSTA przechodzi w stan `WSPÓLNY TRENING WSTRZYMANY — RECONNECT…`; wykonane serie i sessionId zostają zachowane,
+- automatyczny reconnect używa sekwencji 1 s → 2 s → 5 s → 10 s, a kolejne próby podczas aktywnego treningu są wykonywane co 10 s,
+- po odzyskaniu połączenia wykonywany jest pełny resync stanu zamiast rozpoczynania treningu od początku,
+- HOST po utracie uczestnika pozostaje serwerem i czeka na jego ponowne dołączenie; black box notuje także brak heartbeat konkretnego uczestnika,
+- status `WIFI connected` jest logowany dopiero po aktualizacji stanu `connected=true`, więc log nie pokazuje już sprzecznego `connected / connecting false`,
+- nagłówek wspólnej sesji pokazuje stan `RECONNECT…`,
+- w Historii przy logach dostępne jest `KOPIUJ WSPÓLNĄ SESJĘ`; zwykłe `KOPIUJ LOGI` dołącza również najnowszy black box,
+- identyczne cykliczne snapshoty/resynci są deduplikowane, aby diagnostyka nie zapychała pamięci i nie obciążała UI,
+- wersja podniesiona do `0.8.2.5`, `versionCode 59`.
+
 ## 0.8.2.4
 - nazwa aplikacji pod ikoną launchera jest stała: `Trener 2`; numer wersji nie jest już częścią nazwy aplikacji,
 - wersja każdego uczestnika wspólnej sesji jest renderowana bezpośrednio w jego karcie,
