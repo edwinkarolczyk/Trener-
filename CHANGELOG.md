@@ -1,5 +1,12 @@
 # Zmiany
 
+## 0.8.2.4
+- nazwa aplikacji pod ikoną launchera jest stała: `Trener 2`; numer wersji nie jest już częścią nazwy aplikacji,
+- wersja każdego uczestnika wspólnej sesji jest renderowana bezpośrednio w jego karcie,
+- usunięto osobny timer dopisujący wersje uczestników co 250 ms, który powodował miganie wersji HOSTA,
+- lista uczestników nie jest ponownie podmieniana w DOM, jeśli jej zawartość faktycznie się nie zmieniła,
+- wersja podniesiona do `0.8.2.4`, `versionCode 58`.
+
 ## 0.8.2.3
 - poprawiono możliwe zawieszanie WebView po wejściu w pola `Ciężar [kg]` / `Powtórzenia` podczas wspólnego treningu,
 - usunięto sprzężenie zwrotne `MutationObserver → patch UI → MutationObserver` z warstwy wspólnego treningu,
