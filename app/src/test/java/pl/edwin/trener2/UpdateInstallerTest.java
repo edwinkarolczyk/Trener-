@@ -66,4 +66,9 @@ public class UpdateInstallerTest {
         assertTrue(UpdateInstaller.compareBetaVersions("0.8.2.9", "0.8.2.8") > 0);
     }
 
+    @Test
+    public void tenthHotfixAdvances0829() {
+        assertTrue(UpdateInstaller.compareBetaVersions("0.8.2.10", "0.8.2.9") > 0);
+    }
+
 }
