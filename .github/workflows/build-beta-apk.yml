@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - 'beta/**'
+      - 'feature/**'
   pull_request:
     branches:
       - 'beta/0.7.0'
