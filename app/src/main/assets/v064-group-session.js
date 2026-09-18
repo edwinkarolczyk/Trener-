@@ -45,7 +45,7 @@
 
   function installCss(){
     if($('v064Style'))return;const s=document.createElement('style');s.id='v064Style';s.textContent=`
-      #v064GroupBox{margin:9px 0 12px;padding:10px;border:1px solid #343434;border-radius:12px;background:#0d0d0d}#v064GroupBox.hidden{display:none!important}.v064Head{display:flex;justify-content:space-between;gap:8px;align-items:center}.v064Head b{font-size:11px;color:#ef4b4d;letter-spacing:.06em}.v064Head span{font-size:10px;color:#888}.v064Switch{display:flex;gap:8px;align-items:flex-start;margin-top:9px;font-size:11px;color:#bbb;line-height:1.35}.v064Switch input{margin-top:2px}.v064Roster{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}.v064Roster div{border:1px solid #2c2c2c;border-radius:9px;padding:7px 8px;background:#101010;font-size:10px;color:#aaa}.v064Roster b{display:block;color:#fff;font-size:11px;margin-bottom:2px}
+      #v064GroupBox{margin:9px 0 12px;padding:10px;border:1px solid #343434;border-radius:12px;background:#0d0d0d}#v064GroupBox.hidden{display:none!important}.v064Head{display:flex;justify-content:space-between;gap:8px;align-items:center}.v064Head b{font-size:11px;color:#ef4b4d;letter-spacing:.06em}.v064Head span{font-size:10px;color:#888}.v064Switch{display:flex;gap:8px;align-items:flex-start;margin-top:9px;font-size:11px;color:#bbb;line-height:1.35}.v064Switch input{margin-top:2px}.v064Roster{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}.v064Roster div{border:1px solid #2c2c2c;border-radius:9px;padding:7px 8px;background:#101010;font-size:10px;color:#aaa}.v064Roster b{display:block;color:#fff;font-size:11px;margin-bottom:2px}.v064Version{display:block;margin-top:2px;font-size:9px;color:#777}.v064Version.bad{color:#ff696b}
       #v064Workout{margin:8px 0 10px;padding:10px;border:1px solid #3a2d2e;border-radius:12px;background:#110b0c;font-size:11px;line-height:1.45}.v064Target{font-weight:900;color:#fff;margin-bottom:5px}.v064Target em{font-style:normal;color:#61d990}.v064Note{color:#aaa}.v064Sets{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px}.v064Sets .buttons{display:flex;gap:6px}.v064Sets button{min-width:42px;min-height:34px;padding:4px 9px}.v064Shared{color:#ffd269;margin-top:5px}.v064PersonGrid{display:grid;grid-template-columns:1fr 1fr;gap:7px}.v064Person{border:1px solid #303030;border-radius:10px;padding:8px;background:#0c0c0c}.v064Person.done{border-color:#2e6b49}.v064Person strong{display:block;color:#fff}.v064Person span{display:block;color:#999;font-size:10px;margin-top:2px}.v064Person .now{color:#ddd}html.v064SharedMode #v060Calc{display:none!important}@media(max-width:520px){.v064Roster,.v064PersonGrid{grid-template-columns:1fr}}
     `;document.head.appendChild(s);
   }
@@ -73,8 +73,20 @@
   function renderRoster(){
     const box=$('v064GroupBox'),roster=$('v064Roster');if(!box||!roster)return;let m=1;try{m=mode;}catch(e){}box.classList.toggle('hidden',m!==2);if(m!==2)return;
     const cb=$('v064SharedEquipment');if(cb){cb.checked=state.sharedEquipment;cb.disabled=!!(net?.role==='guest'&&net?.connected);}
-    const list=sortedParticipants();if(!list.length){roster.innerHTML='<div><b>Ty</b>Utwórz sesję albo dołącz do gospodarza.</div>';return;}
-    roster.innerHTML=list.map(p=>`<div><b>${esc(p.name||('Osoba '+(Number(p.index)+1)))}</b>#${Number(p.index)+1}${p.deviceId===state.deviceId?' • ten telefon':''}</div>`).join('');
+    const list=sortedParticipants();
+    let html='';
+    if(!list.length){
+      html='<div><b>Ty</b>Utwórz sesję albo dołącz do gospodarza.</div>';
+    }else{
+      const localVersion=appVersion();
+      html=list.map(p=>{
+        const version=String(p.version||'').trim();
+        const ok=!!version&&version===localVersion;
+        const versionText='wersja '+(version||'—')+(ok?' • zgodna':' • NIEZGODNA');
+        return `<div><b>${esc(p.name||('Osoba '+(Number(p.index)+1)))}</b>#${Number(p.index)+1}${p.deviceId===state.deviceId?' • ten telefon':''}<span class="v064Version${ok?'':' bad'}">${esc(versionText)}</span></div>`;
+      }).join('');
+    }
+    if(roster.innerHTML!==html)roster.innerHTML=html;
   }
   function resetForHost(){state.participants=[];state.assignedIndex=0;state.sharedLoads={};state.extraSets={};state.positions={};state.groupSession=false;ensureHostParticipant();syncCoreParticipants();renderRoster();}
   function resetForGuest(){state.participants=[];state.assignedIndex=1;state.sharedLoads={};state.extraSets={};state.positions={};state.groupSession=false;renderRoster();}
