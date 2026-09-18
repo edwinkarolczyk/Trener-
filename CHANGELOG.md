@@ -1,5 +1,15 @@
 # Zmiany
 
+## 0.8.2.2
+- po utworzeniu sesji jako gospodarz panel dołączania jest ukrywany; gospodarz widzi tylko własną sesję i przycisk rozłączenia,
+- przy nagłówku `TRENER 2` pojawia się zielony status `HOST` oraz stan `CZEKA NA PARTNERA` / `POŁĄCZONO`,
+- ekran połączenia pokazuje dokładny komunikat błędu zamiast samego `Błąd`,
+- odrzucenie telefonu z inną wersją kończy teraz także połączenie transportowe; host wraca do oczekiwania zamiast pozostawać w pozornym stanie połączenia,
+- gospodarz i gość dostają czytelny komunikat z obiema wersjami aplikacji przy niezgodności,
+- usunięto konflikt napisu przycisku trybu wspólnego: pozostaje stale `WSPÓLNY 2–4`,
+- stara warstwa UI nie nadpisuje już statusu osoby i odpoczynku podczas aktywnej wspólnej kolejki, dzięki czemu nie powinny migać napisy typu `EDWIN — ODPOCZYWA` / `ODPOCZYNEK`,
+- wersja podniesiona do `0.8.2.2`, `versionCode 56`.
+
 ## 0.8.2.1
 - dwa paski postępu są przypięte w nieruchomym panelu nad `Czas treningu` i `Twój odpoczynek`,
 - podczas Twojej aktywnej serii ekran jest utrzymywany włączony; telefon nie powinien sam wygasić ekranu,
