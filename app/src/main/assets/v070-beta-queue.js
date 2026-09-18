@@ -6,6 +6,7 @@
     active:false,sessionId:'',rev:0,exercise:0,turn:0,waitUntil:0,
     readyAt:{},left:{},pending:null,lastStateAt:0,lastAckAt:0,
     baseComplete:null,baseRender:null,baseFinishShared:null,wifiWrapped:false,
+    skipCaptureInstalled:false,
     booted:false,timer:null
   };
   window.TrenerBeta070=state;
@@ -105,9 +106,11 @@
     const save=$('saveSetBtn');if(save){save.disabled=!turnReady();save.textContent=turnReady()?'ZAPISZ SERIĘ':(state.pending?'CZEKAM NA POTWIERDZENIE…':'CZEKAJ NA SWOJĄ KOLEJ');}
     if($('series')&&ex)$('series').textContent=`Seria ${Math.min(setCount(ownAthlete(),state.exercise)+1,targetSets(ownAthlete(),ex))}/${targetSets(ownAthlete(),ex)} • ${athleteName(ownAthlete())}`;
     if($('athlete'))$('athlete').textContent=athleteName(ownAthlete());
-    restEnd=0;transitionRest=false;
-    if($('restTime'))$('restTime').textContent=mine&&left>0?('ODPOCZYNEK '+formatTime(left)):(mine?'GOTOWY':'CZEKAJ NA '+athleteName(turn));
-    if($('skipRestBtn'))$('skipRestBtn').classList.add('hidden');
+    const myReadyAt=Number(state.readyAt[ownAthlete()]||0);
+    const myRest=Math.max(0,myReadyAt-Date.now());
+    restEnd=myRest>0?myReadyAt:0;transitionRest=false;
+    if($('restTime'))$('restTime').textContent=myRest>0?formatTime(myRest):'';
+    if($('skipRestBtn'))$('skipRestBtn').classList.toggle('hidden',myRest<=0);
   }
 
   function snapshot(){
@@ -174,6 +177,89 @@
     lastCompletedExercise=state.exercise;try{window.TrenerSyncHistory?.checkpoint?.();}catch(e){}render();
   }
 
+  function participantForAthlete(a){
+    return participants().find(p=>Number(p.index)===Number(a))||null;
+  }
+
+  function applySkipRest(a,deviceId){
+    if(net.role!=='host'||!state.active)return {ok:false,reason:'Sesja nieaktywna'};
+    const athlete=Number(a)||0;
+    const p=participantForAthlete(athlete);
+    const expectedId=String(p?.deviceId||'');
+    const receivedId=String(deviceId||'');
+    if(receivedId&&expectedId&&receivedId!==expectedId)return {ok:false,reason:'Telefon nie pasuje do uczestnika'};
+
+    const now=Date.now();
+    const ready=Number(state.readyAt[athlete]||0);
+    if(ready<=now)return {ok:false,reason:'Brak aktywnej przerwy do pominięcia'};
+
+    state.readyAt[athlete]=now;
+    if(Number(state.turn)===athlete)state.waitUntil=0;
+    state.rev++;
+    sendState();
+    syncLocalPosition();
+    try{updateView();}catch(e){}
+    render();
+    try{window.TrenerSharedBlackbox0825?.log?.('SHARED_REST_SKIPPED',{
+      athlete,
+      deviceId:expectedId||receivedId,
+      previousReadyAt:ready,
+      skippedAt:now,
+      byHost:athlete===ownAthlete()
+    },true);}catch(e){}
+    return {ok:true};
+  }
+
+  function requestSkipRest(){
+    if(!state.active||!running||!net.active)return false;
+    const a=ownAthlete();
+    const ready=Number(state.readyAt[a]||0);
+    if(ready<=Date.now()){
+      try{toast('Nie masz aktywnej przerwy do pominięcia.');}catch(e){}
+      return true;
+    }
+
+    if(net.role==='host'){
+      const result=applySkipRest(a,String(group()?.deviceId||''));
+      if(result.ok){try{toast('Przerwa pominięta — jesteś gotowy.');}catch(e){}}
+      else try{toast(result.reason||'Nie można pominąć przerwy.');}catch(e){}
+      return true;
+    }
+
+    if(net.role==='guest'){
+      if(!net.connected){
+        try{toast('Brak połączenia z HOSTEM — nie mogę zmienić wspólnej kolejki.');}catch(e){}
+        return true;
+      }
+      const deviceId=String(group()?.deviceId||'');
+      const ok=!!wifiSend({
+        type:'BETA070_SKIP_REST_REQUEST',
+        sessionId:state.sessionId,
+        deviceId,
+        athlete:a,
+        knownRev:state.rev,
+        at:Date.now()
+      });
+      if(ok)try{toast('Proszę HOSTA o pominięcie Twojej przerwy…');}catch(e){}
+      else try{toast('Nie udało się wysłać pominięcia przerwy.');}catch(e){}
+      return true;
+    }
+    return false;
+  }
+
+  function installSkipCapture(){
+    if(state.skipCaptureInstalled)return;
+    state.skipCaptureInstalled=true;
+    document.addEventListener('click',ev=>{
+      const btn=ev.target?.closest?.('#skipRestBtn,#v072Skip');
+      if(!btn||!state.active||!running||!net.active)return;
+      ev.preventDefault();
+      ev.stopPropagation();
+      ev.stopImmediatePropagation();
+      requestSkipRest();
+    },true);
+  }
+
   function handleBetaMessage(m){
     if(!m||!m.type)return false;
     if(m.type==='BETA070_STATE'){
@@ -191,6 +277,29 @@
         else{const uid=state.pending.uid;records=records.filter(r=>r.uid!==uid);state.pending=null;toast(m.reason||'Host odrzucił serię — spróbuj ponownie.');}
       }
       render();return true;
+    }
+    if(m.type==='BETA070_SKIP_REST_REQUEST'&&net.role==='host'&&state.active&&m.sessionId===state.sessionId){
+      const result=applySkipRest(Number(m.athlete)||0,String(m.deviceId||''));
+      wifiSend({
+        type:result.ok?'BETA070_SKIP_REST_ACK':'BETA070_SKIP_REST_NACK',
+        sessionId:state.sessionId,
+        targetDeviceId:String(m.deviceId||''),
+        athlete:Number(m.athlete)||0,
+        reason:result.reason||'',
+        rev:state.rev
+      });
+      if(!result.ok)sendState();
+      return true;
+    }
+    if((m.type==='BETA070_SKIP_REST_ACK'||m.type==='BETA070_SKIP_REST_NACK')&&net.role==='guest'&&m.sessionId===state.sessionId){
+      const ownId=String(group()?.deviceId||'');
+      if(m.targetDeviceId&&String(m.targetDeviceId)!==ownId)return true;
+      if(m.type==='BETA070_SKIP_REST_ACK'){
+        try{toast('Przerwa pominięta — jesteś gotowy.');}catch(e){}
+      }else{
+        try{toast(m.reason||'HOST nie pozwolił pominąć przerwy.');}catch(e){}
+      }
+      return true;
     }
     if(m.type==='BETA070_FINISH'&&m.sessionId===state.sessionId){
       if(Array.isArray(m.records))m.records.forEach(mergeRecord);state.active=false;finishWorkout(!!m.interrupted,true);return true;
@@ -257,6 +366,6 @@
     render();
   }
 
-  function boot(){if(state.booted)return;state.booted=true;installUi();wrapWifi();wrapCore();state.timer=setInterval(maintain,250);maintain();}
+  function boot(){if(state.booted)return;state.booted=true;state.requestSkipRest=requestSkipRest;installUi();installSkipCapture();wrapWifi();wrapCore();state.timer=setInterval(maintain,250);maintain();}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
