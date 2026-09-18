@@ -855,12 +855,92 @@
     if(current)return current;
     return db.sessions.length?db.sessions[db.sessions.length-1]:null;
   }
+
+  function sessionIdsInFragment(fragment){
+    const ids=new Set();
+    try{
+      if(fragment?.sessionId)ids.add(String(fragment.sessionId));
+      (fragment?.events||[]).forEach(ev=>{
+        const a=String(ev?.state?.sessionId||'').trim();
+        const b=String(ev?.data?.sessionId||'').trim();
+        if(a)ids.add(a);
+        if(b)ids.add(b);
+      });
+    }catch(e){}
+    return [...ids];
+  }
+
+  function newestKnownSharedSessionId(){
+    const live=String(sessionId()||'').trim();
+    if(live)return live;
+    for(let i=db.sessions.length-1;i>=0;i--){
+      const events=Array.isArray(db.sessions[i]?.events)?db.sessions[i].events:[];
+      for(let j=events.length-1;j>=0;j--){
+        const sid=String(events[j]?.state?.sessionId||events[j]?.data?.sessionId||'').trim();
+        if(sid)return sid;
+      }
+    }
+    return '';
+  }
+
+  function mergedSessionForEmail(targetSessionId){
+    const sid=String(targetSessionId||'').trim();
+    if(!sid){
+      const s=latestSession();
+      return s?clone(s,{}):null;
+    }
+
+    const fragments=db.sessions.filter(s=>sessionIdsInFragment(s).includes(sid));
+    if(!fragments.length){
+      const s=latestSession();
+      return s?clone(s,{}):null;
+    }
+
+    const events=[];
+    fragments.forEach(fragment=>{
+      (fragment.events||[]).forEach(ev=>events.push(clone(ev,{})));
+    });
+    events.sort((a,b)=>(Number(a?.at)||0)-(Number(b?.at)||0));
+
+    const starts=fragments.map(x=>Number(x?.startedAt)||0).filter(Boolean);
+    const ends=fragments.map(x=>Number(x?.endedAt||x?.updatedAt)||0).filter(Boolean);
+    const first=fragments[0]||{};
+    const last=fragments[fragments.length-1]||{};
+
+    return {
+      id:'bb-merged-'+sid,
+      schemaVersion:2,
+      mergedBy:'0.8.2.11',
+      completeSessionExport:true,
+      sessionId:sid,
+      appVersion:appVersion(),
+      deviceId:localDeviceId()||String(last.deviceId||first.deviceId||''),
+      initialRole:String(first.initialRole||''),
+      startedAt:starts.length?Math.min(...starts):Number(first.startedAt)||0,
+      startedIso:starts.length?iso(Math.min(...starts)):String(first.startedIso||''),
+      endedAt:ends.length?Math.max(...ends):0,
+      endedIso:ends.length?iso(Math.max(...ends)):'',
+      fragmentCount:fragments.length,
+      fragments:fragments.map(x=>({
+        id:String(x.id||''),
+        startReason:String(x.startReason||''),
+        startedAt:Number(x.startedAt)||0,
+        startedIso:String(x.startedIso||''),
+        endedAt:Number(x.endedAt)||0,
+        endedIso:String(x.endedIso||''),
+        endReason:String(x.endReason||''),
+        eventCount:Array.isArray(x.events)?x.events.length:0
+      })),
+      events
+    };
+  }
+
   function exportLatest(){
     const s=latestSession();
     if(!s)return '';
     return JSON.stringify(s,null,2);
   }
-  function localPhoneMeta(){
+  function localPhoneMeta(targetSessionId){
     const dev=localDeviceId();
     const participants=participantVersions();
     let participant=participants.find(p=>p.deviceId&&p.deviceId===dev)||null;
@@ -892,16 +972,22 @@
       deviceId:dev,
       localIp:String(diag.localIp||runtime.lastLocalIp||'—'),
       appVersion:appVersion(),
-      sessionId:sessionId(),
+      sessionId:String(targetSessionId||sessionId()||''),
       exportedAt:iso(now())
     };
   }
 
   function exportLatestForEmail(){
-    const s=latestSession();
-    if(!s)return null;
-    const payload=clone(s,{});
-    payload.exportedFrom=localPhoneMeta();
+    const targetSessionId=newestKnownSharedSessionId();
+    const payload=mergedSessionForEmail(targetSessionId);
+    if(!payload)return null;
+    payload.exportedFrom=localPhoneMeta(targetSessionId||payload.sessionId||'');
+    payload.exportSummary={
+      requestedSessionId:String(targetSessionId||payload.sessionId||''),
+      fragmentCount:Number(payload.fragmentCount)||1,
+      eventCount:Array.isArray(payload.events)?payload.events.length:0,
+      completeSessionExport:!!payload.completeSessionExport
+    };
     return payload;
   }
 
@@ -927,7 +1013,9 @@
       'Session ID: '+(meta.sessionId||'—'),
       'Eksport: '+meta.exportedAt,
       '',
-      'Pełny black box znajduje się w załączniku JSON.'
+      'Pełny black box znajduje się w załączniku JSON.',
+      'Fragmenty scalone: '+(payload.exportSummary?.fragmentCount||1),
+      'Liczba zdarzeń: '+(payload.exportSummary?.eventCount||0)
     ].join('\n');
 
     const stamp=String(meta.exportedAt||'').replace(/[:.]/g,'-');
@@ -943,7 +1031,10 @@
       role:meta.role,
       name:meta.name,
       deviceModel:meta.deviceModel,
-      localIp:meta.localIp
+      localIp:meta.localIp,
+      sessionId:meta.sessionId,
+      fragmentCount:payload.exportSummary?.fragmentCount||1,
+      eventCount:payload.exportSummary?.eventCount||0
     },true);
 
     try{

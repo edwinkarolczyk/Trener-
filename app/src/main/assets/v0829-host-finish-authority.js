@@ -69,7 +69,10 @@
       const controls=$('training')?.querySelector('.controls');
       if(controls)controls.appendChild(b);
       else $('training')?.appendChild(b);
-      b.addEventListener('click',leaveShared);
+      b.addEventListener('click',()=>{
+        log('GUEST_LEAVE_CLICK',{sessionId:session(),athlete:ownAthlete(),deviceId:ownDeviceId()},true);
+        leaveShared('explicit-button');
+      });
     }
   }
 
@@ -78,6 +81,9 @@
     const guest=shared()&&role()==='guest';
     const leave=$('v0829LeaveBtn');
     if(leave)leave.classList.toggle('show',guest);
+    const stop=$('stopBtn');
+    if(stop&&guest)stop.textContent='POPROŚ O ZAKOŃCZENIE';
+    else if(stop&&stop.textContent==='POPROŚ O ZAKOŃCZENIE')stop.textContent='ZAKOŃCZ';
     const exit=$('v074ExitBtn');
     if(exit&&guest)exit.style.display='none';
     else if(exit)exit.style.display='';
@@ -88,7 +94,18 @@
   }
 
   function requestFinish(){
-    if(!shared()||role()!=='guest')return false;
+    log('GUEST_FINISH_CLICK',{
+      shared:shared(),
+      role:role(),
+      connected:!!net?.connected,
+      sessionId:session(),
+      athlete:ownAthlete(),
+      deviceId:ownDeviceId()
+    },true);
+    if(!shared()||role()!=='guest'){
+      log('GUEST_FINISH_ROUTE_REJECTED',{shared:shared(),role:role(),sessionId:session()},true);
+      return false;
+    }
     if(!net?.connected){
       try{toast('Brak połączenia z HOSTEM. Nie mogę zakończyć treningu wszystkim — możesz użyć OPUŚĆ WSPÓLNY TRENING.')}catch(e){}
       log('FINISH_REQUEST_BLOCKED_OFFLINE',{sessionId:session()},true);
@@ -98,7 +115,10 @@
       try{toast('Prośba jest już u HOSTA — czekam na decyzję.')}catch(e){}
       return true;
     }
-    if(!confirm('Wysłać prośbę do HOSTA o zakończenie wspólnego treningu?'))return true;
+    log('GUEST_FINISH_CONFIRM_SHOWN',{sessionId:session()},true);
+    const accepted=confirm('Wysłać prośbę do HOSTA o zakończenie wspólnego treningu?');
+    log(accepted?'GUEST_FINISH_CONFIRM_ACCEPTED':'GUEST_FINISH_CONFIRM_CANCELLED',{sessionId:session()},true);
+    if(!accepted)return true;
 
     const id=requestId();
     const msg={
@@ -153,7 +173,21 @@
     installUi();
     $('v0829FinishTitle').textContent=req.name+' chce zakończyć wspólny trening.';
     $('v0829HostFinishModal').classList.remove('hidden');
-    try{vibrate(180)}catch(e){}
+    log('HOST_FINISH_MODAL_SHOWN',{
+      requestId:req.requestId,
+      name:req.name,
+      athlete:req.athlete,
+      deviceId:req.deviceId,
+      documentHidden:!!document.hidden
+    },true);
+    try{vibrate(360)}catch(e){}
+    if(document.hidden){
+      try{
+        if(window.Android&&typeof Android.showWorkoutAlert==='function'){
+          Android.showWorkoutAlert('Trener 2 — prośba o zakończenie',req.name+' chce zakończyć wspólny trening.');
+        }
+      }catch(e){}
+    }
   }
 
   function sendDecision(req,accepted){
@@ -222,7 +256,11 @@
     },2500);
   }
 
-  function leaveShared(){
+  function leaveShared(source){
+    if(source!=='explicit-button'){
+      log('GUEST_LEAVE_BLOCKED_NON_BUTTON',{source:String(source||''),sessionId:session()},true);
+      return;
+    }
     if(!shared()||role()!=='guest')return;
     if(!confirm('Opuścić wspólny trening? Twoje wykonane serie zostaną zapisane tylko na tym telefonie. Trening HOSTA i pozostałych osób będzie trwał dalej.'))return;
     const a=ownAthlete();

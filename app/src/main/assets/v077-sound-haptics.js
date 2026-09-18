@@ -29,6 +29,7 @@
     if(type==='set'&&c.sets){tone(620,0.07);nativeVibrate(45);}
     if(type==='rest'&&c.rest){tone(740,0.09);tone(980,0.12,0.11);nativeVibrate(180);}
     if(type==='finish'&&c.finish){tone(620,0.10);tone(780,0.11,0.12);tone(1040,0.18,0.25);nativeVibrate(260);}
+    if(type==='exercise'){tone(540,0.09);tone(760,0.11,0.11);tone(1080,0.16,0.25);nativeVibrate(360);}
     if(type==='water'){tone(520,0.08,0,0.7);tone(660,0.10,0.10,0.75);nativeVibrate(70);}
   }
 

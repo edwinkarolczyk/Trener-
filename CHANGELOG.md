@@ -1,5 +1,17 @@
 # Zmiany
 
+## 0.8.2.11
+- GOŚĆ ma jednoznacznie rozdzielone akcje: `POPROŚ O ZAKOŃCZENIE` oraz `OPUŚĆ WSPÓLNY TRENING`,
+- komunikat `LEAVE` może zostać wysłany wyłącznie z dedykowanego przycisku opuszczenia; ścieżka `ZAKOŃCZ` nie może już wywołać `LEAVE`,
+- black box zapisuje `STOP_BUTTON_CAPTURED`, `GUEST_FINISH_CLICK`, pokazanie i wynik potwierdzenia GOŚCIA oraz `HOST_FINISH_MODAL_SHOWN`,
+- HOST w tle dostaje ważne systemowe powiadomienie, gdy GOŚĆ prosi o zakończenie wspólnego treningu,
+- zmiana ćwiczenia podczas aktywnego treningu pokazuje pełnoekranowy alert `NOWE ĆWICZENIE` z nazwą nowego ćwiczenia, mocnym sygnałem i wibracją,
+- gdy aplikacja jest w tle, zmiana ćwiczenia generuje systemowe powiadomienie wysokiego priorytetu,
+- black box zapisuje `EXERCISE_ALERT_SHOWN` wraz z poprzednim i nowym ćwiczeniem,
+- `WYŚLIJ WSPÓLNY LOG MAILEM` scala wszystkie fragmenty black boxa należące do tego samego `sessionId`,
+- scalony log ma `schemaVersion 2`, `completeSessionExport=true`, listę fragmentów, łączną liczbę zdarzeń i pełną chronologię sesji,
+- wersja podniesiona do `0.8.2.11`, `versionCode 65`.
+
 ## 0.8.2.10
 - przycisk `POMIŃ PRZERWĘ` działa również podczas wspólnego treningu,
 - pominięcie przerwy w trybie wspólnym jest autorytatywne: GOŚĆ wysyła żądanie do HOSTA, a HOST aktualizuje `readyAt` uczestnika i rozsyła nowy stan kolejki,
