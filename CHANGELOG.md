@@ -1,5 +1,14 @@
 # Zmiany
 
+## 0.7.0
+- uruchomione liczenie diety zamiast pustej makiety,
+- ręczne dodawanie produktów bez kodu: gramy albo sztuki,
+- automatyczne przeliczanie kcal, białka, węglowodanów i tłuszczu dla porcji,
+- własne produkty z wartościami na 100 g i opcjonalną masą jednej sztuki,
+- dzienny bilans oraz lista zjedzonych produktów z możliwością usunięcia wpisu,
+- kopia danych ma wersjonowany schemat i obejmuje dane diety,
+- pobranie aktualizacji wymaga najpierw poprawnego zapisania kopii; anulowanie lub błąd zatrzymuje aktualizację.
+
 ## 0.6.4.3
 - zapis awaryjny aktywnego treningu po każdej serii i okresowo podczas sesji,
 - odzyskiwanie niedokończonego treningu po restarcie aplikacji lub telefonu,
