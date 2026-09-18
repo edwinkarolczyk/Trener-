@@ -736,6 +736,7 @@ function joinWifiSession(){
 }
 
 function disconnectWifi(preserveError=false){
+  preserveError=preserveError===true;
   try{if(wifiNativeAvailable())Android.wifiDisconnect();}catch(e){}
   net.connected=false;
   if(preserveError){
@@ -1041,7 +1042,7 @@ function bind(){
   $('planSelect').addEventListener('change',saveSettings);
   $('hostBtn').addEventListener('click',createWifiSession);
   $('joinBtn').addEventListener('click',joinWifiSession);
-  $('disconnectWifiBtn').addEventListener('click',disconnectWifi);
+  $('disconnectWifiBtn').addEventListener('click',()=>disconnectWifi(false));
 }
 
 function init(){
