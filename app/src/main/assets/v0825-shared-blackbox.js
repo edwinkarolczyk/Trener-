@@ -45,7 +45,10 @@
     networkRestoredAt:0,
     hostRestartPending:false,
     hostRestartInFlight:false,
+    hostStableTimer:0,
+    hostWatchdogTimer:0,
     lastHostRestartAt:0,
+    hostRecoveryRestarts:0,
     booted:false
   };
 
@@ -61,7 +64,13 @@
     try{
       if(window.Android&&typeof Android.wifiDiagnostics==='function'){
         const x=safe(Android.wifiDiagnostics(),{});
-        return x&&typeof x==='object'?x:{};
+        const out=x&&typeof x==='object'?x:{};
+        try{
+          if(typeof Android.hostNetworkLocks==='function'){
+            out.hostLocks=safe(Android.hostNetworkLocks(),{});
+          }
+        }catch(e){}
+        return out;
       }
     }catch(e){}
     return {};
@@ -308,7 +317,77 @@
     if(el)el.textContent=validLocalIp(ip)?String(ip):'—';
   }
 
+  function clearHostStableTimer(){
+    if(runtime.hostStableTimer){clearTimeout(runtime.hostStableTimer);runtime.hostStableTimer=0}
+  }
+
+  function clearHostWatchdog(){
+    if(runtime.hostWatchdogTimer){clearTimeout(runtime.hostWatchdogTimer);runtime.hostWatchdogTimer=0}
+  }
+
+  function hostRecoveryEligible(){
+    captureCreds();
+    const diag=nativeDiag();
+    return roleNow()==='host'&&!runtime.manualDisconnect&&!connectedNow()&&
+      /^\d{6}$/.test(runtime.creds.code)&&validLocalIp(diag.localIp);
+  }
+
+  function scheduleHostRestartAfterStable(reason){
+    clearHostStableTimer();
+    const first=nativeDiag();
+    const expectedIp=String(first.localIp||'');
+    if(!validLocalIp(expectedIp))return false;
+    runtime.hostRestartPending=true;
+    log('HOST_IP_STABILITY_WAIT',{
+      reason:String(reason||'network-restored'),
+      localIp:expectedIp,
+      waitMs:2000,
+      native:first
+    },true);
+    runtime.hostStableTimer=setTimeout(()=>{
+      runtime.hostStableTimer=0;
+      const diag=nativeDiag();
+      const currentIp=String(diag.localIp||'');
+      if(!hostRecoveryEligible()||currentIp!==expectedIp){
+        log('HOST_IP_STABILITY_ABORT',{
+          reason:String(reason||'network-restored'),
+          expectedIp,
+          currentIp,
+          native:diag
+        },true);
+        if(validLocalIp(currentIp)&&roleNow()==='host'&&!runtime.manualDisconnect&&!connectedNow()){
+          scheduleHostRestartAfterStable('ip-changed-during-stability');
+        }
+        return;
+      }
+      log('HOST_IP_STABLE',{reason:String(reason||'network-restored'),localIp:currentIp,native:diag},true);
+      restartHostAfterNetworkReturn(String(reason||'network-restored')+'-stable');
+    },2000);
+    return true;
+  }
+
+  function scheduleHostPeerWatchdog(reason){
+    clearHostWatchdog();
+    if(!runtime.everConnected||!hostRecoveryEligible())return false;
+    runtime.hostWatchdogTimer=setTimeout(()=>{
+      runtime.hostWatchdogTimer=0;
+      if(!runtime.everConnected||!hostRecoveryEligible())return;
+      const diag=nativeDiag();
+      runtime.hostRecoveryRestarts++;
+      log('HOST_NO_PEER_RESTART',{
+        reason:String(reason||'no-peer'),
+        restartNumber:runtime.hostRecoveryRestarts,
+        waitMs:12000,
+        native:diag
+      },true);
+      restartHostAfterNetworkReturn('no-peer-watchdog');
+    },12000);
+    return true;
+  }
+
   function restartHostAfterNetworkReturn(reason){
+    clearHostStableTimer();
+    clearHostWatchdog();
     captureCreds();
     if(roleNow()!=='host'||runtime.manualDisconnect||connectedNow())return false;
     if(!/^\d{6}$/.test(runtime.creds.code))return false;
@@ -358,6 +437,8 @@
       const previousIp=runtime.lastLocalIp;
       runtime.networkAvailable=false;
       runtime.networkLostAt=now();
+      clearHostStableTimer();
+      clearHostWatchdog();
       runtime.hostRestartPending=roleNow()==='host'&&!runtime.manualDisconnect&&/^\d{6}$/.test(runtime.creds.code);
       setLocalIpUi('—');
       try{
@@ -400,7 +481,7 @@
       },true);
 
       if(roleNow()==='host'&&runtime.hostRestartPending&&!connectedNow()){
-        setTimeout(()=>restartHostAfterNetworkReturn('network-restored'),250);
+        scheduleHostRestartAfterStable('network-restored');
       }else if(roleNow()==='guest'&&(runtime.everConnected||runtime.initialJoinArmed)&&!connectedNow()&&!runtime.manualDisconnect){
         beginReconnect('network-restored',false);
       }
@@ -416,7 +497,7 @@
         log('NETWORK_IP_CHANGED',{previousIp,localIp:ip,native:diag},true);
         if(roleNow()==='host'&&runtime.everConnected&&!connectedNow()&&!runtime.manualDisconnect){
           runtime.hostRestartPending=true;
-          setTimeout(()=>restartHostAfterNetworkReturn('ip-changed'),250);
+          scheduleHostRestartAfterStable('ip-changed');
         }
       }else{
         runtime.lastLocalIp=ip;
@@ -518,6 +599,9 @@
     runtime.manualDisconnect=false;
     runtime.hostRestartPending=false;
     runtime.hostRestartInFlight=false;
+    clearHostStableTimer();
+    clearHostWatchdog();
+    runtime.hostRecoveryRestarts=0;
     const diag=nativeDiag();
     if(validLocalIp(diag.localIp)){
       runtime.networkAvailable=true;
@@ -708,7 +792,10 @@
             }catch(e){}
           }
           paintReconnect();
-          if(runtime.everConnected)log('HOST_WAITING_FOR_PEER',{native:diag},true);
+          if(runtime.everConnected){
+            log('HOST_WAITING_FOR_PEER',{native:diag},true);
+            if(validLocalIp(diag.localIp))scheduleHostPeerWatchdog('waiting-after-recovery');
+          }
         }
       }else if(status==='disconnected_peer'){
         if(roleNow()==='host'){
@@ -993,12 +1080,17 @@
       if(id==='disconnectWifiBtn'){
         runtime.manualDisconnect=true;
         runtime.initialJoinArmed=false;
+        clearHostStableTimer();
+        clearHostWatchdog();
         cancelReconnect();
         log('USER_DISCONNECT',{native:nativeDiag()},true);
       }else if(id==='joinBtn'||id==='hostBtn'){
         runtime.manualDisconnect=false;
         runtime.everConnected=false;
         runtime.initialJoinArmed=id==='joinBtn';
+        runtime.hostRecoveryRestarts=0;
+        clearHostStableTimer();
+        clearHostWatchdog();
         cancelReconnect();
         setTimeout(()=>{
           captureCreds();
@@ -1054,7 +1146,8 @@
       networkAvailable:runtime.networkAvailable,
       localIp:runtime.lastLocalIp,
       hostRestartPending:runtime.hostRestartPending,
-      hostRestartInFlight:runtime.hostRestartInFlight
+      hostRestartInFlight:runtime.hostRestartInFlight,
+      hostRecoveryRestarts:runtime.hostRecoveryRestarts
     })
   };
 

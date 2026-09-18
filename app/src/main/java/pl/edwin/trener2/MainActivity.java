@@ -12,6 +12,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.net.Uri;
+import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -70,6 +71,8 @@ public class MainActivity extends Activity {
     private ValueCallback<Uri[]> fileChooserCallback;
     private PowerManager.WakeLock workoutCpuWakeLock;
     private PowerManager.WakeLock workoutScreenWakeLock;
+    private PowerManager.WakeLock hostNetworkWakeLock;
+    private WifiManager.WifiLock hostWifiLock;
     private final Handler workoutScreenHandler = new Handler(Looper.getMainLooper());
     private Runnable workoutWakeRunnable;
     private boolean workoutSessionActive = false;
@@ -464,6 +467,69 @@ public class MainActivity extends Activity {
         }
     }
 
+    @SuppressWarnings("deprecation")
+    private void ensureHostNetworkLocks() {
+        try {
+            if (hostNetworkWakeLock == null) {
+                PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+                if (pm != null) {
+                    hostNetworkWakeLock = pm.newWakeLock(
+                            PowerManager.PARTIAL_WAKE_LOCK,
+                            getPackageName() + ":shared-host-network"
+                    );
+                    hostNetworkWakeLock.setReferenceCounted(false);
+                }
+            }
+            if (hostNetworkWakeLock != null && !hostNetworkWakeLock.isHeld()) {
+                hostNetworkWakeLock.acquire();
+            }
+        } catch (Exception ignored) {
+        }
+
+        try {
+            if (hostWifiLock == null) {
+                WifiManager wifi = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+                if (wifi != null) {
+                    hostWifiLock = wifi.createWifiLock(
+                            WifiManager.WIFI_MODE_FULL_HIGH_PERF,
+                            getPackageName() + ":shared-host-wifi"
+                    );
+                    hostWifiLock.setReferenceCounted(false);
+                }
+            }
+            if (hostWifiLock != null && !hostWifiLock.isHeld()) {
+                hostWifiLock.acquire();
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    private void releaseHostNetworkLocks() {
+        try {
+            if (hostWifiLock != null && hostWifiLock.isHeld()) {
+                hostWifiLock.release();
+            }
+        } catch (Exception ignored) {
+        }
+        try {
+            if (hostNetworkWakeLock != null && hostNetworkWakeLock.isHeld()) {
+                hostNetworkWakeLock.release();
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    private String hostNetworkLocksJson() {
+        try {
+            JSONObject json = new JSONObject();
+            json.put("wifiLockHeld", hostWifiLock != null && hostWifiLock.isHeld());
+            json.put("wakeLockHeld", hostNetworkWakeLock != null && hostNetworkWakeLock.isHeld());
+            return json.toString();
+        } catch (Exception ignored) {
+            return "{}";
+        }
+    }
+
     private void scheduleWorkoutWake(long wakeAtEpochMs) {
         long delay = Math.max(0L, wakeAtEpochMs - System.currentTimeMillis());
         workoutWakeRunnable = () -> {
@@ -778,6 +844,7 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        releaseHostNetworkLocks();
         releaseWorkoutCpuWakeLock();
         if (workoutWakeRunnable != null) {
             workoutScreenHandler.removeCallbacks(workoutWakeRunnable);
@@ -870,11 +937,15 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void wifiHost(String code) {
-            if (localSession != null) localSession.host(code);
+            if (localSession != null) {
+                if (!"—".equals(localSession.getLocalIp())) ensureHostNetworkLocks();
+                localSession.host(code);
+            }
         }
 
         @JavascriptInterface
         public void wifiJoin(String hostIp, String code) {
+            releaseHostNetworkLocks();
             if (localSession != null) localSession.join(hostIp, code);
         }
 
@@ -885,7 +956,13 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void wifiDisconnect() {
+            releaseHostNetworkLocks();
             if (localSession != null) localSession.disconnect();
+        }
+
+        @JavascriptInterface
+        public String hostNetworkLocks() {
+            return hostNetworkLocksJson();
         }
 
         @JavascriptInterface
