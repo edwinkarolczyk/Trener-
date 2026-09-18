@@ -2,8 +2,10 @@ package pl.edwin.trener2;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -329,6 +331,63 @@ public class MainActivity extends Activity {
             );
             channel.setDescription("Przypomnienia o zaplanowanych treningach");
             manager.createNotificationChannel(channel);
+        }
+    }
+
+    private static final String SHARED_ALERT_CHANNEL_ID = "shared_workout_alerts_v08211";
+
+    private void showWorkoutAlertNative(String rawTitle, String rawText) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                    && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                requestNotificationPermissionIfNeeded();
+                return;
+            }
+
+            NotificationManager manager = getSystemService(NotificationManager.class);
+            if (manager == null) return;
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                NotificationChannel channel = new NotificationChannel(
+                        SHARED_ALERT_CHANNEL_ID,
+                        "Wspólny trening — ważne",
+                        NotificationManager.IMPORTANCE_HIGH
+                );
+                channel.setDescription("Ważne komunikaty wspólnego treningu i zmiany ćwiczeń");
+                channel.enableVibration(true);
+                manager.createNotificationChannel(channel);
+            }
+
+            Intent openApp = new Intent(this, MainActivityV077.class);
+            openApp.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            PendingIntent contentIntent = PendingIntent.getActivity(
+                    this,
+                    8211,
+                    openApp,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+            );
+
+            String title = rawTitle == null || rawTitle.trim().isEmpty() ? "Trener 2" : rawTitle.trim();
+            String text = rawText == null ? "" : rawText.trim();
+
+            Notification.Builder builder = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                    ? new Notification.Builder(this, SHARED_ALERT_CHANNEL_ID)
+                    : new Notification.Builder(this);
+
+            Notification notification = builder
+                    .setSmallIcon(android.R.drawable.ic_dialog_alert)
+                    .setContentTitle(title)
+                    .setContentText(text)
+                    .setStyle(new Notification.BigTextStyle().bigText(text))
+                    .setContentIntent(contentIntent)
+                    .setAutoCancel(true)
+                    .setCategory(Notification.CATEGORY_EVENT)
+                    .setPriority(Notification.PRIORITY_HIGH)
+                    .setDefaults(Notification.DEFAULT_ALL)
+                    .build();
+
+            manager.notify(8211, notification);
+        } catch (Exception ignored) {
         }
     }
 
@@ -921,6 +980,11 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void emailSharedLog(String json, String subject, String body, String suggestedName) {
             runOnUiThread(() -> startSharedLogEmail(json, subject, body, suggestedName));
+        }
+
+        @JavascriptInterface
+        public void showWorkoutAlert(String title, String text) {
+            runOnUiThread(() -> showWorkoutAlertNative(title, text));
         }
 
         @JavascriptInterface
