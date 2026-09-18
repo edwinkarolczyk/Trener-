@@ -122,6 +122,8 @@
     document.documentElement.classList.toggle('v062Active',isRunning);
     document.body?.classList.toggle('v062Active',isRunning);
     if(!isRunning)return;
+    const focused=document.activeElement;
+    if(focused&&focused.matches&&focused.matches('#weight,#reps'))return;
     ensureUi();
     const ex=currentEx();if(!ex)return;
     const a=activeAthlete();
@@ -142,7 +144,6 @@
     installCss();ensureUi();
     setInterval(update,200);
     document.addEventListener('visibilitychange',update);
-    window.addEventListener('resize',update);
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();

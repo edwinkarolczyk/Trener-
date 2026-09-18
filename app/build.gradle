@@ -8,6 +8,11 @@ def signingKeyAlias = System.getenv('TR2_KEY_ALIAS')
 def signingKeyPassword = System.getenv('TR2_KEY_PASSWORD')
 def hasReleaseSigning = signingStorePath && signingStorePassword && signingKeyAlias && signingKeyPassword
 
+configurations.configureEach {
+    exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'
+    exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'
+}
+
 android {
     namespace 'pl.edwin.trener2'
     compileSdk 35
@@ -16,8 +21,9 @@ android {
         applicationId 'pl.edwin.trener2'
         minSdk 26
         targetSdk 35
-        versionCode 34
-        versionName '0.6.4.3'
+        versionCode 66
+        versionName '0.8.2.12'
+        buildConfigField "String", "UPDATE_CHANNEL", '"beta"'
 
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
@@ -43,6 +49,10 @@ android {
         }
     }
 
+    buildFeatures {
+        buildConfig true
+    }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
@@ -50,6 +60,7 @@ android {
 }
 
 dependencies {
+    implementation 'androidx.core:core:1.15.0'
     implementation 'com.google.android.gms:play-services-code-scanner:16.1.0'
     implementation 'com.google.zxing:core:3.5.3'
     testImplementation 'junit:junit:4.13.2'

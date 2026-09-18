@@ -139,7 +139,11 @@
 
   function refresh(){
     try{if(typeof running!=='undefined'&&!running)return;}catch(e){return;}
-    installUi();renderVisual();renderPeople();
+    installUi();renderVisual();
+    let sharedAuthority=false;
+    try{sharedAuthority=!!(window.TrenerBeta070?.active&&net?.active&&window.TrenerGroup?.groupSession);}catch(e){}
+    if(sharedAuthority)return;
+    renderPeople();
     const ex=currentEx();
     let active=0;try{active=net.active?net.localAthlete:athleteIdx;}catch(e){}
     const name=personName(active);

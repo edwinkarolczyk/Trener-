@@ -1,0 +1,84 @@
+package pl.edwin.trener2;
+
+import static org.junit.Assert.assertTrue;
+
+import org.junit.Test;
+
+public class UpdateInstallerTest {
+    @Test
+    public void newerMajorMinorBeatsOlderPatchBeta() {
+        assertTrue(UpdateInstaller.compareBetaVersions("0.8-beta", "0.7.10-beta.2") > 0);
+    }
+
+    @Test
+    public void betaBuildIncrementsWithinSameCore() {
+        assertTrue(UpdateInstaller.compareBetaVersions("0.8-beta.1", "0.8-beta") > 0);
+        assertTrue(UpdateInstaller.compareBetaVersions("0.7.10-beta.2", "0.7.10-beta.1") > 0);
+    }
+
+    @Test
+    public void nextPatchBeatsBetaBuildSuffix() {
+        assertTrue(UpdateInstaller.compareBetaVersions("0.8.1", "0.8-beta.9") > 0);
+    }
+
+    @Test
+    public void fourthSegmentIsARealHotfixIncrement() {
+        assertTrue(UpdateInstaller.compareBetaVersions("0.8.1.1", "0.8.1") > 0);
+        assertTrue(UpdateInstaller.compareBetaVersions("0.8.2", "0.8.1.9") > 0);
+    }
+    @Test
+    public void secondHotfixSegmentAdvances0821() {
+        assertTrue(UpdateInstaller.compareBetaVersions("0.8.2.2", "0.8.2.1") > 0);
+    }
+
+    @Test
+    public void thirdHotfixSegmentAdvances0822() {
+        assertTrue(UpdateInstaller.compareBetaVersions("0.8.2.3", "0.8.2.2") > 0);
+    }
+
+    @Test
+    public void fourthHotfixSegmentAdvances0823() {
+        assertTrue(UpdateInstaller.compareBetaVersions("0.8.2.4", "0.8.2.3") > 0);
+    }
+
+    @Test
+    public void fifthHotfixSegmentAdvances0824() {
+        assertTrue(UpdateInstaller.compareBetaVersions("0.8.2.5", "0.8.2.4") > 0);
+    }
+
+    @Test
+    public void sixthHotfixAdvances0825() {
+        assertTrue(UpdateInstaller.compareBetaVersions("0.8.2.6", "0.8.2.5") > 0);
+    }
+
+    @Test
+    public void seventhHotfixAdvances0826() {
+        assertTrue(UpdateInstaller.compareBetaVersions("0.8.2.7", "0.8.2.6") > 0);
+    }
+
+    @Test
+    public void eighthHotfixAdvances0827() {
+        assertTrue(UpdateInstaller.compareBetaVersions("0.8.2.8", "0.8.2.7") > 0);
+    }
+
+    @Test
+    public void ninthHotfixAdvances0828() {
+        assertTrue(UpdateInstaller.compareBetaVersions("0.8.2.9", "0.8.2.8") > 0);
+    }
+
+    @Test
+    public void tenthHotfixAdvances0829() {
+        assertTrue(UpdateInstaller.compareBetaVersions("0.8.2.10", "0.8.2.9") > 0);
+    }
+
+    @Test
+    public void eleventhHotfixAdvances08210() {
+        assertTrue(UpdateInstaller.compareBetaVersions("0.8.2.11", "0.8.2.10") > 0);
+    }
+
+    @Test
+    public void twelfthHotfixAdvances08211() {
+        assertTrue(UpdateInstaller.compareBetaVersions("0.8.2.12", "0.8.2.11") > 0);
+    }
+
+}

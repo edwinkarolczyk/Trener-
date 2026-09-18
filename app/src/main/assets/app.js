@@ -40,6 +40,8 @@ const net={
   names:['Osoba 1','Osoba 2'],
   done:[false,false],
   status:'offline',
+  detail:'',
+  lastError:'',
   last:[null,null]
 };
 
@@ -375,9 +377,16 @@ function setPausedState(value){
 function stopWorkout(){
   if(!running)return;
   if(net.active&&net.role==='guest'){
-    if(confirm('Opuścić wspólny trening? Twoje wykonane serie zostaną zapisane na tym telefonie.')){
-      wifiSend({type:'LEAVE',sessionId:net.sessionId,athlete:net.localAthlete});
-      finishWorkout(true,true);
+    try{
+      window.TrenerSharedBlackbox0825?.log?.('BASE_GUEST_STOP_REDIRECTED',{
+        sessionId:String(net.sessionId||''),
+        athlete:Number(net.localAthlete)||0
+      },true);
+    }catch(e){}
+    if(window.TrenerHostAuthority0829?.requestFinish){
+      window.TrenerHostAuthority0829.requestFinish();
+    }else{
+      toast('Zakończenie wspólnego treningu wymaga zgody HOSTA.');
     }
     return;
   }
@@ -396,10 +405,23 @@ function finishSharedForAll(interrupted){
 
 function finishWorkout(interrupted,fromNetwork=false){
   if(!running)return;
+  if(net.active&&!fromNetwork&&net.role==='guest'){
+    try{
+      window.TrenerSharedBlackbox0825?.log?.('BASE_GUEST_FINISH_BLOCKED',{
+        sessionId:String(net.sessionId||''),
+        interrupted:!!interrupted
+      },true);
+    }catch(e){}
+    if(window.TrenerHostAuthority0829?.requestFinish){
+      window.TrenerHostAuthority0829.requestFinish();
+    }else{
+      toast('Tylko HOST może zakończyć wspólny trening.');
+    }
+    return;
+  }
   const duration=elapsedMs();
   if(net.active&&!fromNetwork){
     if(net.role==='host')wifiSend({type:'FINISH',sessionId:net.sessionId,interrupted:!!interrupted,records:[...records]});
-    else wifiSend({type:'LEAVE',sessionId:net.sessionId,athlete:net.localAthlete});
   }
   running=false;paused=false;restEnd=0;restPaused=0;
   if(tickHandle){clearInterval(tickHandle);tickHandle=null;}
@@ -651,14 +673,14 @@ function installWifiUi(){
         <div><span>Partner</span><b id="wifiPartner">—</b></div>
       </div>
       <div class="wifiSplit">
-        <div class="wifiPane">
+        <div id="wifiHostPane" class="wifiPane">
           <h3>1. Gospodarz</h3>
           <p class="hint">Na telefonie osoby, która wybiera plan treningu.</p>
           <label>Kod sesji</label>
           <input id="hostCode" readonly placeholder="pojawi się po utworzeniu">
           <button id="hostBtn" class="primary">UTWÓRZ SESJĘ</button>
         </div>
-        <div class="wifiPane">
+        <div id="wifiJoinPane" class="wifiPane">
           <h3>2. Partner</h3>
           <p class="hint">Przepisz IP i 6‑cyfrowy kod z telefonu gospodarza.</p>
           <label>IP gospodarza</label>
@@ -670,6 +692,15 @@ function installWifiUi(){
       </div>
       <button id="disconnectWifiBtn" class="danger hidden wifiDisconnect">ROZŁĄCZ WI‑FI</button>
       <p class="hint wifiNote">Po utracie połączenia trening działa dalej lokalnie. Po ponownym dołączeniu brakujące serie są dosyłane automatycznie. Połączenie jest lokalne i chronione kodem sesji, ale nie jest szyfrowane.</p>`;
+  }
+
+  const appTitle=document.querySelector('.appHeader h1');
+  if(appTitle&&!$('wifiHeaderState')){
+    const state=document.createElement('span');
+    state.id='wifiHeaderState';
+    state.className='wifiHeaderState hidden';
+    state.innerHTML='<span id="wifiHeaderRole" class="wifiHeaderBadge role"></span><span id="wifiHeaderLink" class="wifiHeaderBadge link"></span>';
+    appTitle.appendChild(state);
   }
 
   if(!$('wifiLive')){
@@ -704,7 +735,7 @@ function createWifiSession(){
   if(!wifiNativeAvailable()){toast('Połączenie Wi‑Fi działa tylko w aplikacji Android.');return;}
   const code=String(Math.floor(100000+Math.random()*900000));
   $('hostCode').value=code;
-  net.role='host';net.localAthlete=0;net.status='starting';net.connected=false;
+  net.role='host';net.localAthlete=0;net.status='starting';net.connected=false;net.detail='';net.lastError='';
   net.names=[$('nameA').value.trim()||'Osoba 1',$('nameB').value.trim()||'Osoba 2'];
   setMode(2);
   try{Android.wifiHost(code);toast('Tworzę sesję. Partner wpisuje IP i kod.');}catch(e){toast('Nie udało się uruchomić sesji.');}
@@ -718,15 +749,22 @@ function joinWifiSession(){
   const code=$('joinCode').value.trim();
   if(!/^(\d{1,3}\.){3}\d{1,3}$/.test(ip)){toast('Wpisz IP gospodarza, np. 192.168.1.25.');return;}
   if(!/^\d{6}$/.test(code)){toast('Kod sesji ma 6 cyfr.');return;}
-  net.role='guest';net.localAthlete=1;net.status='connecting';net.connected=false;
+  net.role='guest';net.localAthlete=1;net.status='connecting';net.connected=false;net.detail='';net.lastError='';
   setMode(2);
   try{Android.wifiJoin(ip,code);toast('Łączę z gospodarzem…');}catch(e){toast('Nie udało się rozpocząć połączenia.');}
   updateWifiUi();
 }
 
-function disconnectWifi(){
+function disconnectWifi(preserveError=false){
+  preserveError=preserveError===true;
   try{if(wifiNativeAvailable())Android.wifiDisconnect();}catch(e){}
-  net.connected=false;net.status='offline';
+  net.connected=false;
+  if(preserveError){
+    net.status='error';
+    net.detail=net.lastError||net.detail||'Połączenie odrzucone.';
+  }else{
+    net.status='offline';net.detail='';net.lastError='';
+  }
   if(!running){net.role=null;net.active=false;net.sessionId='';}
   updateWifiUi();
 }
@@ -737,9 +775,17 @@ function wifiSend(obj){
 }
 
 function nativeWifiStatus(status,detail){
-  net.status=status||'offline';
-  if(status==='connected'){
-    net.connected=true;
+  const incoming=status||'offline';
+  const message=String(detail||'');
+  if(incoming==='disconnected'&&net.lastError){
+    net.status='error';
+    net.detail=net.lastError;
+  }else{
+    net.status=incoming;
+    net.detail=message;
+  }
+  if(incoming==='connected'){
+    net.connected=true;net.lastError='';net.detail='';
     if(detail==='host')net.role='host';
     if(detail==='guest')net.role='guest';
     setMode(2);
@@ -759,14 +805,16 @@ function nativeWifiStatus(status,detail){
       else wifiSend({type:'PROFILE_STATE',names:[$('nameA').value.trim()||'Osoba 1',$('nameB').value.trim()||'Osoba 2']});
     }
     toast('Połączono z partnerem przez Wi‑Fi.');
-  }else if(status==='waiting'){
-    net.connected=false;
-  }else if(status==='disconnected'){
+  }else if(incoming==='waiting'){
+    net.connected=false;net.lastError='';
+  }else if(incoming==='disconnected'||incoming==='disconnected_peer'){
     net.connected=false;
     if(running&&net.active)toast('Partner rozłączony — trening działa dalej lokalnie.');
-  }else if(status==='error'||status==='denied'){
+  }else if(incoming==='error'||incoming==='denied'){
     net.connected=false;
-    toast(detail||'Błąd połączenia Wi‑Fi.');
+    net.lastError=message||'Błąd połączenia Wi‑Fi.';
+    net.detail=net.lastError;
+    toast(net.lastError);
   }
   updateWifiUi();
   renderLivePanel();
@@ -908,21 +956,57 @@ function updateWifiUi(){
     starting:'Uruchamianie gospodarza…',
     waiting:'Sesja utworzona — czekam na partnera',
     connecting:'Łączenie…',
+    reconnecting:'Utracono połączenie — łączę ponownie…',
+    network_lost:'Brak sieci Wi‑Fi — czekam na powrót…',
+    restoring:'Sieć wróciła — przywracam sesję…',
     connected:'Połączono',
     disconnected:'Rozłączono',
-    error:'Błąd',
+    disconnected_peer:'Partner rozłączony — czekam na ponowne połączenie',
+    error:'Błąd połączenia',
     denied:'Błędny kod'
   };
-  $('wifiStatus').textContent=labels[net.status]||net.status;
+  let statusText=labels[net.status]||net.status||'Niepołączono';
+  const detail=String(net.lastError||net.detail||'').trim();
+  if((net.status==='error'||net.status==='denied')&&detail)statusText+=' — '+detail;
+  $('wifiStatus').textContent=statusText;
   $('wifiStatus').className='connectionStatus '+(net.connected?'ok':(net.status==='error'||net.status==='denied'?'bad':''));
+
+  const hostPane=$('wifiHostPane'),joinPane=$('wifiJoinPane');
+  if(hostPane)hostPane.classList.toggle('hidden',net.role==='guest');
+  if(joinPane)joinPane.classList.toggle('hidden',net.role==='host');
+
   $('disconnectWifiBtn').classList.toggle('hidden',!(net.connected||net.role));
-  $('hostBtn').disabled=running||!net.available;
-  $('joinBtn').disabled=!net.available||(running&&!(net.active&&net.role==='guest'));
+  $('hostBtn').disabled=running||!net.available||net.role==='host';
+  $('hostBtn').textContent=net.role==='host'?'SESJA UTWORZONA':'UTWÓRZ SESJĘ';
+  $('joinBtn').disabled=!net.available||net.role==='guest'||(running&&!(net.active&&net.role==='guest'));
+
   const role=net.role==='host'?'Gospodarz':(net.role==='guest'?'Gość':'—');
   $('wifiRole').textContent=role;
   if(net.connected&&net.role==='guest')$('wifiPartner').textContent=net.names[0]||'Gospodarz';
-  else if(net.role==='host')$('wifiPartner').textContent=net.names[1]||$('nameB').value||'Partner';
+  else if(net.role==='host'&&net.connected)$('wifiPartner').textContent=net.names[1]||$('nameB').value||'Partner';
+  else if(net.role==='host')$('wifiPartner').textContent='Brak połączenia';
+  else if(net.role==='guest'&&net.status==='reconnecting')$('wifiPartner').textContent=net.names?.[0]||'Gospodarz';
   else $('wifiPartner').textContent='—';
+
+  const header=$('wifiHeaderState'),roleBadge=$('wifiHeaderRole'),linkBadge=$('wifiHeaderLink');
+  if(header&&roleBadge&&linkBadge){
+    const visible=!!net.role;
+    header.classList.toggle('hidden',!visible);
+    if(visible){
+      roleBadge.textContent=net.role==='host'?'HOST':'GOŚĆ';
+      roleBadge.className='wifiHeaderBadge role '+(net.role==='host'?'host':'guest');
+      let link='OFFLINE',cls='offline';
+      if(net.connected){link='POŁĄCZONO';cls='connected';}
+      else if(net.role==='host'&&(net.status==='waiting'||net.status==='starting')){link='CZEKA NA PARTNERA';cls='waiting';}
+      else if(net.status==='connecting'){link='ŁĄCZENIE';cls='waiting';}
+      else if(net.status==='reconnecting'){link='RECONNECT…';cls='waiting';}
+      else if(net.status==='network_lost'){link='BRAK SIECI';cls='error';}
+      else if(net.status==='restoring'){link='PRZYWRACAM…';cls='waiting';}
+      else if(net.status==='error'||net.status==='denied'){link='BŁĄD';cls='error';}
+      linkBadge.textContent=link;
+      linkBadge.className='wifiHeaderBadge link '+cls;
+    }
+  }
 }
 
 window.TrenerWifi={
@@ -986,7 +1070,7 @@ function bind(){
   $('planSelect').addEventListener('change',saveSettings);
   $('hostBtn').addEventListener('click',createWifiSession);
   $('joinBtn').addEventListener('click',joinWifiSession);
-  $('disconnectWifiBtn').addEventListener('click',disconnectWifi);
+  $('disconnectWifiBtn').addEventListener('click',()=>disconnectWifi(false));
 }
 
 function init(){

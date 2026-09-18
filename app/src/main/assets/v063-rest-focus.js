@@ -110,6 +110,9 @@
   }
 
   function update(){
+    let sharedAuthority=false;
+    try{sharedAuthority=!!(window.TrenerBeta070?.active&&net?.active&&window.TrenerGroup?.groupSession);}catch(e){}
+    if(sharedAuthority)return;
     const box=document.getElementById('restBox');
     if(!box)return;
     let active=false;

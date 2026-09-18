@@ -87,3 +87,52 @@ button:disabled{opacity:.48;cursor:not-allowed}
   .wifiSplit{grid-template-columns:1fr}
   .liveGrid{grid-template-columns:1fr 1fr}
 }
+
+.wifiHeaderState{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  margin-left:9px;
+  vertical-align:middle;
+  transform:translateY(-2px);
+}
+.wifiHeaderState.hidden{display:none!important}
+.wifiHeaderBadge{
+  display:inline-flex;
+  align-items:center;
+  min-height:20px;
+  padding:3px 7px;
+  border-radius:999px;
+  border:1px solid #343434;
+  background:#121212;
+  font-size:8px;
+  line-height:1;
+  font-weight:950;
+  letter-spacing:.07em;
+  white-space:nowrap;
+}
+.wifiHeaderBadge.role.host,
+.wifiHeaderBadge.link.connected{
+  border-color:#256b48;
+  background:#10251a;
+  color:#73efad;
+}
+.wifiHeaderBadge.role.guest{
+  border-color:#355b7d;
+  background:#101d2a;
+  color:#8bc9ff;
+}
+.wifiHeaderBadge.link.waiting{
+  border-color:#6e592a;
+  background:#251f10;
+  color:#ffd269;
+}
+.wifiHeaderBadge.link.offline{color:#8d8d8d}
+.wifiHeaderBadge.link.error{
+  border-color:#7d2a31;
+  background:#2d1114;
+  color:#ff8f98;
+}
+@media(max-width:430px){
+  .wifiHeaderState{display:flex;margin:5px 0 0;transform:none}
+}

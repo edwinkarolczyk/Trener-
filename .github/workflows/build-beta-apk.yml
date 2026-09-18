@@ -1,0 +1,144 @@
+name: Build Trener 2 APK
+
+on:
+  push:
+    branches:
+      - 'main'
+      - 'beta/**'
+  pull_request:
+    branches:
+      - 'main'
+      - 'beta/0.7.0'
+  workflow_dispatch:
+
+concurrency:
+  group: trener2-build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+env:
+  TR2_EXPECTED_SHA256: 30:68:33:34:5C:88:E2:34:4A:5A:0C:BC:51:F6:01:97:69:31:E7:24:CF:95:67:FE:6B:70:D1:59:86:56:69:CB
+
+jobs:
+  build-beta:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout source branch
+        uses: actions/checkout@v4
+
+      - name: Check all JavaScript assets
+        run: |
+          set -e
+          find app/src/main/assets -maxdepth 1 -type f -name '*.js' -print0 | while IFS= read -r -d '' f; do
+            echo "node --check $f"
+            node --check "$f"
+          done
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+
+      - name: Install Android platform
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Prepare durable release signing
+        env:
+          TR2_KEYSTORE_B64: ${{ secrets.TR2_KEYSTORE_B64 }}
+          TR2_STORE_PASSWORD: ${{ secrets.TR2_STORE_PASSWORD }}
+          TR2_KEY_ALIAS: ${{ secrets.TR2_KEY_ALIAS }}
+          TR2_KEY_PASSWORD: ${{ secrets.TR2_KEY_PASSWORD }}
+        run: |
+          test -n "$TR2_KEYSTORE_B64"
+          test -n "$TR2_STORE_PASSWORD"
+          test -n "$TR2_KEY_ALIAS"
+          test -n "$TR2_KEY_PASSWORD"
+          SIGN_DIR="$RUNNER_TEMP/trener2-signing"
+          mkdir -p "$SIGN_DIR"
+          KEYSTORE="$SIGN_DIR/trener2-release.jks"
+          printf '%s' "$TR2_KEYSTORE_B64" | base64 --decode > "$KEYSTORE"
+          chmod 600 "$KEYSTORE"
+          ACTUAL_SHA256=$(keytool -list -v -keystore "$KEYSTORE" -storepass "$TR2_STORE_PASSWORD" -alias "$TR2_KEY_ALIAS" | awk '/SHA256:/{print $2; exit}')
+          test "$ACTUAL_SHA256" = "$TR2_EXPECTED_SHA256"
+          echo "TR2_KEYSTORE_PATH=$KEYSTORE" >> "$GITHUB_ENV"
+          echo "TR2_STORE_PASSWORD=$TR2_STORE_PASSWORD" >> "$GITHUB_ENV"
+          echo "TR2_KEY_ALIAS=$TR2_KEY_ALIAS" >> "$GITHUB_ENV"
+          echo "TR2_KEY_PASSWORD=$TR2_KEY_PASSWORD" >> "$GITHUB_ENV"
+
+      - name: Unit tests
+        run: gradle testDebugUnitTest --stacktrace
+
+      - name: Build signed beta APK
+        run: gradle assembleRelease --stacktrace
+
+      - name: Verify APK signing certificate
+        run: |
+          APK=app/build/outputs/apk/release/app-release.apk
+          APKSIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
+          ACTUAL_SHA256=$("$APKSIGNER" verify --print-certs "$APK" | awk -F': ' '/Signer #1 certificate SHA-256 digest:/{print toupper($2); exit}' | sed 's/../&:/g;s/:$//')
+          test "$ACTUAL_SHA256" = "$TR2_EXPECTED_SHA256"
+
+      - name: Prepare beta artifact
+        run: |
+          VERSION=$(grep -m1 "versionName" app/build.gradle | sed -E "s/.*versionName[[:space:]]+'([^']+)'.*/\1/")
+          if ! printf '%s' "$VERSION" | grep -Eq '^[0-9]+([.][0-9]+){1,3}$'; then
+            echo "Beta workflow requires a clean numeric versionName, e.g. 0.8.1 or 0.8.1.1" >&2
+            exit 1
+          fi
+          APK_NAME="Trener2-v${VERSION}.apk"
+          cp app/build/outputs/apk/release/app-release.apk "$APK_NAME"
+          sha256sum "$APK_NAME" | awk '{print $1}' > "$APK_NAME.sha256"
+          echo "APK_NAME=$APK_NAME" >> "$GITHUB_ENV"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Upload beta APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Trener2-v${{ env.VERSION }}
+          path: |
+            ${{ env.APK_NAME }}
+            ${{ env.APK_NAME }}.sha256
+          retention-days: 30
+
+      - name: Publish beta prerelease for automatic updater
+        if: github.event_name != 'pull_request' && startsWith(github.ref, 'refs/heads/beta/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          TAG="v${VERSION}"
+          TITLE="Trener 2 ${VERSION}"
+          NOTES=$(cat <<'EOF'
+          - Automatyczny kanał testowy Trener 2.
+          - Przed instalacją następnych aktualizacji aplikacja zapisuje kopię danych.
+          - APK jest podpisane tym samym certyfikatem i publikowane jako prerelease.
+          EOF
+          )
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$APK_NAME" "$APK_NAME.sha256" --clobber
+            gh release edit "$TAG" --title "$TITLE" --notes "$NOTES" --prerelease
+          else
+            gh release create "$TAG" "$APK_NAME" "$APK_NAME.sha256" \
+              --target "$GITHUB_SHA" \
+              --title "$TITLE" \
+              --notes "$NOTES" \
+              --prerelease
+          fi
+
+

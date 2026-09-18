@@ -2,20 +2,31 @@ package pl.edwin.trener2;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.net.Uri;
+import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.PowerManager;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.util.Base64;
+import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
+import android.webkit.ValueCallback;
+import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -29,10 +40,14 @@ import com.google.zxing.BarcodeFormat;
 import com.google.zxing.MultiFormatWriter;
 import com.google.zxing.common.BitMatrix;
 
+import androidx.core.content.FileProvider;
+
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -44,6 +59,7 @@ public class MainActivity extends Activity {
     private static final int NOTIFICATION_PERMISSION_REQUEST = 101;
     private static final int BACKUP_EXPORT_REQUEST = 201;
     private static final int BACKUP_IMPORT_REQUEST = 202;
+    private static final int FILE_CHOOSER_REQUEST = 203;
     private static final int MAX_BACKUP_BYTES = 5 * 1024 * 1024;
     private static final String UPDATE_INFO_URL =
             "https://raw.githubusercontent.com/edwinkarolczyk/Trener-/main/update.json";
@@ -51,7 +67,20 @@ public class MainActivity extends Activity {
     private WebView webView;
     private LocalSessionManager localSession;
     private GmsBarcodeScanner qrScanner;
+    private GmsBarcodeScanner foodScanner;
+    private UpdateInstaller updateInstaller;
     private String pendingBackupJson;
+    private ValueCallback<Uri[]> fileChooserCallback;
+    private PowerManager.WakeLock workoutCpuWakeLock;
+    private PowerManager.WakeLock workoutScreenWakeLock;
+    private PowerManager.WakeLock hostNetworkWakeLock;
+    private WifiManager.WifiLock hostWifiLock;
+    private final Handler workoutScreenHandler = new Handler(Looper.getMainLooper());
+    private Runnable workoutWakeRunnable;
+    private boolean workoutSessionActive = false;
+    private boolean workoutScreenPinned = false;
+    private boolean workoutSharedActive = false;
+    private int workoutLocalAthlete = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,6 +89,8 @@ public class MainActivity extends Activity {
         getWindow().setNavigationBarColor(Color.rgb(9, 9, 9));
         createNotificationChannel();
         createQrScanner();
+        createFoodScanner();
+        updateInstaller = new UpdateInstaller(this, this::emitUpdateDownloadStatus);
 
         webView = new WebView(this);
         webView.setBackgroundColor(Color.rgb(9, 9, 9));
@@ -83,11 +114,59 @@ public class MainActivity extends Activity {
                 );
             }
         });
+        webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public boolean onShowFileChooser(
+                    WebView view,
+                    ValueCallback<Uri[]> filePathCallback,
+                    FileChooserParams fileChooserParams
+            ) {
+                if (fileChooserCallback != null) {
+                    fileChooserCallback.onReceiveValue(null);
+                }
+                fileChooserCallback = filePathCallback;
+
+                String mimeType = "*/*";
+                try {
+                    String[] acceptTypes = fileChooserParams == null ? null : fileChooserParams.getAcceptTypes();
+                    if (acceptTypes != null) {
+                        for (String accept : acceptTypes) {
+                            if (accept != null && !accept.trim().isEmpty()) {
+                                mimeType = accept.trim();
+                                break;
+                            }
+                        }
+                    }
+                } catch (Throwable ignored) {
+                    mimeType = "*/*";
+                }
+
+                Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
+                intent.setType(mimeType);
+                intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, false);
+                try {
+                    startActivityForResult(
+                            Intent.createChooser(intent, mimeType.startsWith("image/") ? "Wybierz zdjęcie" : "Wybierz plik"),
+                            FILE_CHOOSER_REQUEST
+                    );
+                    return true;
+                } catch (Exception e) {
+                    if (fileChooserCallback != null) {
+                        fileChooserCallback.onReceiveValue(null);
+                        fileChooserCallback = null;
+                    }
+                    Toast.makeText(MainActivity.this, "Nie udało się otworzyć wyboru pliku.", Toast.LENGTH_LONG).show();
+                    return false;
+                }
+            }
+        });
 
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setAllowFileAccess(true);
+        settings.setAllowContentAccess(true);
         settings.setDefaultTextEncodingName("UTF-8");
 
         localSession = new LocalSessionManager(new LocalSessionManager.Listener() {
@@ -143,6 +222,105 @@ public class MainActivity extends Activity {
                 ).show());
     }
 
+
+    private void createFoodScanner() {
+        try {
+            GmsBarcodeScannerOptions options = new GmsBarcodeScannerOptions.Builder()
+                    .setBarcodeFormats(
+                            Barcode.FORMAT_EAN_13,
+                            Barcode.FORMAT_EAN_8,
+                            Barcode.FORMAT_UPC_A,
+                            Barcode.FORMAT_UPC_E
+                    )
+                    .enableAutoZoom()
+                    .build();
+            foodScanner = GmsBarcodeScanning.getClient(this, options);
+        } catch (Throwable e) {
+            foodScanner = null;
+        }
+    }
+
+    private void startFoodScanner() {
+        if (foodScanner == null) {
+            Toast.makeText(this, "Skaner kodów produktów nie jest dostępny na tym telefonie.", Toast.LENGTH_LONG).show();
+            return;
+        }
+        foodScanner.startScan()
+                .addOnSuccessListener(barcode -> {
+                    String raw = barcode.getRawValue();
+                    if (raw == null || raw.trim().isEmpty()) {
+                        Toast.makeText(this, "Kod produktu jest pusty.", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    emitFoodBarcode(raw);
+                })
+                .addOnCanceledListener(() -> {
+                    // Użytkownik zamknął skaner.
+                })
+                .addOnFailureListener(e -> Toast.makeText(
+                        this,
+                        "Nie udało się uruchomić skanera produktu. Sprawdź Usługi Google Play.",
+                        Toast.LENGTH_LONG
+                ).show());
+    }
+
+    private String normalizeFoodBarcode(String raw) {
+        if (raw == null) return "";
+        return raw.replaceAll("[^0-9]", "");
+    }
+
+    private void lookupOpenFoodFactsNative(String rawBarcode) {
+        final String barcode = normalizeFoodBarcode(rawBarcode);
+        if (!barcode.matches("\\d{8,14}")) {
+            emitFoodLookup("error", "Nieprawidłowy kod kreskowy.");
+            return;
+        }
+
+        new Thread(() -> {
+            HttpURLConnection connection = null;
+            try {
+                String endpoint = "https://world.openfoodfacts.org/api/v2/product/"
+                        + barcode
+                        + ".json?fields=code,product_name,product_name_pl,brands,quantity,serving_size,serving_quantity,nutriments";
+                connection = (HttpURLConnection) new URL(endpoint).openConnection();
+                connection.setRequestMethod("GET");
+                connection.setConnectTimeout(8000);
+                connection.setReadTimeout(10000);
+                connection.setRequestProperty("Accept", "application/json");
+                connection.setRequestProperty("Accept-Language", "pl,en;q=0.8");
+                connection.setRequestProperty("User-Agent", "Trener2/0.8-beta.2 Android OpenFoodFacts");
+                connection.setRequestProperty("Cache-Control", "no-cache");
+
+                int code = connection.getResponseCode();
+                if (code == HttpURLConnection.HTTP_NOT_FOUND) {
+                    emitFoodLookup("not_found", barcode);
+                    return;
+                }
+                if (code != HttpURLConnection.HTTP_OK) {
+                    emitFoodLookup("error", "Open Food Facts: błąd " + code + ".");
+                    return;
+                }
+
+                StringBuilder body = new StringBuilder();
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+                        connection.getInputStream(), StandardCharsets.UTF_8))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        if (body.length() + line.length() > 524288) {
+                            throw new IllegalStateException("Odpowiedź Open Food Facts jest zbyt duża.");
+                        }
+                        body.append(line);
+                    }
+                }
+                emitFoodLookup("ok", body.toString());
+            } catch (Exception e) {
+                emitFoodLookup("error", "Nie udało się pobrać produktu. Sprawdź internet.");
+            } finally {
+                if (connection != null) connection.disconnect();
+            }
+        }, "Trener2-OpenFoodFacts").start();
+    }
+
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationManager manager = getSystemService(NotificationManager.class);
@@ -153,6 +331,63 @@ public class MainActivity extends Activity {
             );
             channel.setDescription("Przypomnienia o zaplanowanych treningach");
             manager.createNotificationChannel(channel);
+        }
+    }
+
+    private static final String SHARED_ALERT_CHANNEL_ID = "shared_workout_alerts_v08211";
+
+    private void showWorkoutAlertNative(String rawTitle, String rawText) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                    && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                requestNotificationPermissionIfNeeded();
+                return;
+            }
+
+            NotificationManager manager = getSystemService(NotificationManager.class);
+            if (manager == null) return;
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                NotificationChannel channel = new NotificationChannel(
+                        SHARED_ALERT_CHANNEL_ID,
+                        "Wspólny trening — ważne",
+                        NotificationManager.IMPORTANCE_HIGH
+                );
+                channel.setDescription("Ważne komunikaty wspólnego treningu i zmiany ćwiczeń");
+                channel.enableVibration(true);
+                manager.createNotificationChannel(channel);
+            }
+
+            Intent openApp = new Intent(this, MainActivityV077.class);
+            openApp.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            PendingIntent contentIntent = PendingIntent.getActivity(
+                    this,
+                    8211,
+                    openApp,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+            );
+
+            String title = rawTitle == null || rawTitle.trim().isEmpty() ? "Trener 2" : rawTitle.trim();
+            String text = rawText == null ? "" : rawText.trim();
+
+            Notification.Builder builder = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                    ? new Notification.Builder(this, SHARED_ALERT_CHANNEL_ID)
+                    : new Notification.Builder(this);
+
+            Notification notification = builder
+                    .setSmallIcon(android.R.drawable.ic_dialog_alert)
+                    .setContentTitle(title)
+                    .setContentText(text)
+                    .setStyle(new Notification.BigTextStyle().bigText(text))
+                    .setContentIntent(contentIntent)
+                    .setAutoCancel(true)
+                    .setCategory(Notification.CATEGORY_EVENT)
+                    .setPriority(Notification.PRIORITY_HIGH)
+                    .setDefaults(Notification.DEFAULT_ALL)
+                    .build();
+
+            manager.notify(8211, notification);
+        } catch (Exception ignored) {
         }
     }
 
@@ -167,6 +402,11 @@ public class MainActivity extends Activity {
         new Thread(() -> {
             HttpURLConnection connection = null;
             try {
+                if ("beta".equals(BuildConfig.UPDATE_CHANNEL)) {
+                    emitUpdateResult("ok", UpdateInstaller.fetchLatestBetaUpdateJson());
+                    return;
+                }
+
                 URL url = new URL(UPDATE_INFO_URL);
                 connection = (HttpURLConnection) url.openConnection();
                 connection.setRequestMethod("GET");
@@ -215,6 +455,228 @@ public class MainActivity extends Activity {
             startActivity(intent);
         } catch (Exception e) {
             Toast.makeText(this, "Nie udało się otworzyć aktualizacji.", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void setWorkoutScreenStateNative(
+            boolean workoutActive,
+            boolean keepScreenOn,
+            long wakeAtEpochMs,
+            boolean shared,
+            int localAthlete
+    ) {
+        runOnUiThread(() -> {
+            workoutSessionActive = workoutActive;
+            workoutSharedActive = shared;
+            workoutLocalAthlete = Math.max(0, localAthlete);
+
+            if (workoutWakeRunnable != null) {
+                workoutScreenHandler.removeCallbacks(workoutWakeRunnable);
+                workoutWakeRunnable = null;
+            }
+
+            if (workoutActive) {
+                ensureWorkoutCpuWakeLock();
+            } else {
+                releaseWorkoutCpuWakeLock();
+            }
+
+            if (!workoutActive) {
+                disableWorkoutScreenPin();
+                return;
+            }
+
+            if (keepScreenOn) {
+                enableWorkoutScreenPin(true);
+                return;
+            }
+
+            disableWorkoutScreenPin();
+            if (wakeAtEpochMs > System.currentTimeMillis()) {
+                scheduleWorkoutWake(wakeAtEpochMs);
+            }
+        });
+    }
+
+    private void ensureWorkoutCpuWakeLock() {
+        try {
+            if (workoutCpuWakeLock == null) {
+                PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+                if (pm != null) {
+                    workoutCpuWakeLock = pm.newWakeLock(
+                            PowerManager.PARTIAL_WAKE_LOCK,
+                            getPackageName() + ":workout-cpu"
+                    );
+                    workoutCpuWakeLock.setReferenceCounted(false);
+                }
+            }
+            if (workoutCpuWakeLock != null && !workoutCpuWakeLock.isHeld()) {
+                workoutCpuWakeLock.acquire(4L * 60L * 60L * 1000L);
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    private void releaseWorkoutCpuWakeLock() {
+        try {
+            if (workoutCpuWakeLock != null && workoutCpuWakeLock.isHeld()) {
+                workoutCpuWakeLock.release();
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    private void ensureHostNetworkLocks() {
+        try {
+            if (hostNetworkWakeLock == null) {
+                PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+                if (pm != null) {
+                    hostNetworkWakeLock = pm.newWakeLock(
+                            PowerManager.PARTIAL_WAKE_LOCK,
+                            getPackageName() + ":shared-host-network"
+                    );
+                    hostNetworkWakeLock.setReferenceCounted(false);
+                }
+            }
+            if (hostNetworkWakeLock != null && !hostNetworkWakeLock.isHeld()) {
+                hostNetworkWakeLock.acquire();
+            }
+        } catch (Exception ignored) {
+        }
+
+        try {
+            if (hostWifiLock == null) {
+                WifiManager wifi = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+                if (wifi != null) {
+                    hostWifiLock = wifi.createWifiLock(
+                            WifiManager.WIFI_MODE_FULL_HIGH_PERF,
+                            getPackageName() + ":shared-host-wifi"
+                    );
+                    hostWifiLock.setReferenceCounted(false);
+                }
+            }
+            if (hostWifiLock != null && !hostWifiLock.isHeld()) {
+                hostWifiLock.acquire();
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    private void releaseHostNetworkLocks() {
+        try {
+            if (hostWifiLock != null && hostWifiLock.isHeld()) {
+                hostWifiLock.release();
+            }
+        } catch (Exception ignored) {
+        }
+        try {
+            if (hostNetworkWakeLock != null && hostNetworkWakeLock.isHeld()) {
+                hostNetworkWakeLock.release();
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    private String hostNetworkLocksJson() {
+        try {
+            JSONObject json = new JSONObject();
+            json.put("wifiLockHeld", hostWifiLock != null && hostWifiLock.isHeld());
+            json.put("wakeLockHeld", hostNetworkWakeLock != null && hostNetworkWakeLock.isHeld());
+            return json.toString();
+        } catch (Exception ignored) {
+            return "{}";
+        }
+    }
+
+    private void scheduleWorkoutWake(long wakeAtEpochMs) {
+        long delay = Math.max(0L, wakeAtEpochMs - System.currentTimeMillis());
+        workoutWakeRunnable = () -> {
+            workoutWakeRunnable = null;
+            if (!workoutSessionActive) return;
+            enableWorkoutScreenPin(true);
+        };
+        workoutScreenHandler.postDelayed(workoutWakeRunnable, delay);
+    }
+
+    @SuppressWarnings("deprecation")
+    private void enableWorkoutScreenPin(boolean wakeNow) {
+        try {
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+                setShowWhenLocked(true);
+                setTurnScreenOn(true);
+            } else {
+                getWindow().addFlags(
+                        WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+                                | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+                );
+            }
+
+            if (wakeNow && !workoutScreenPinned) {
+                PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+                if (pm != null && !pm.isInteractive()) {
+                    workoutScreenWakeLock = pm.newWakeLock(
+                            PowerManager.SCREEN_BRIGHT_WAKE_LOCK
+                                    | PowerManager.ACQUIRE_CAUSES_WAKEUP
+                                    | PowerManager.ON_AFTER_RELEASE,
+                            getPackageName() + ":workout-screen"
+                    );
+                    workoutScreenWakeLock.setReferenceCounted(false);
+                    workoutScreenWakeLock.acquire(5000L);
+                }
+            }
+            workoutScreenPinned = true;
+        } catch (Exception ignored) {
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    private void disableWorkoutScreenPin() {
+        try {
+            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+                setTurnScreenOn(false);
+                setShowWhenLocked(false);
+            } else {
+                getWindow().clearFlags(
+                        WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+                                | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+                );
+            }
+        } catch (Exception ignored) {
+        }
+        workoutScreenPinned = false;
+    }
+
+    private void handleWorkoutNetworkWake(String message) {
+        if (!workoutSessionActive || !workoutSharedActive || message == null) return;
+        try {
+            JSONObject obj = new JSONObject(message);
+            if (!"BETA070_STATE".equals(obj.optString("type", ""))) return;
+            if (obj.optInt("turn", -1) != workoutLocalAthlete) return;
+
+            long wakeAt = obj.optLong("waitUntil", 0L);
+            JSONObject readyAt = obj.optJSONObject("readyAt");
+            if (readyAt != null) {
+                wakeAt = Math.max(wakeAt, readyAt.optLong(String.valueOf(workoutLocalAthlete), 0L));
+            }
+
+            final long target = wakeAt;
+            runOnUiThread(() -> {
+                if (!workoutSessionActive || !workoutSharedActive) return;
+                if (workoutWakeRunnable != null) {
+                    workoutScreenHandler.removeCallbacks(workoutWakeRunnable);
+                    workoutWakeRunnable = null;
+                }
+                if (target <= System.currentTimeMillis() + 250L) {
+                    enableWorkoutScreenPin(true);
+                } else {
+                    disableWorkoutScreenPin();
+                    scheduleWorkoutWake(target);
+                }
+            });
+        } catch (Exception ignored) {
         }
     }
 
@@ -279,6 +741,23 @@ public class MainActivity extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == FILE_CHOOSER_REQUEST) {
+            Uri[] result = null;
+            if (resultCode == RESULT_OK && data != null) {
+                if (data.getData() != null) {
+                    result = new Uri[]{data.getData()};
+                } else if (data.getClipData() != null && data.getClipData().getItemCount() > 0) {
+                    result = new Uri[]{data.getClipData().getItemAt(0).getUri()};
+                }
+            }
+            if (fileChooserCallback != null) {
+                fileChooserCallback.onReceiveValue(result);
+                fileChooserCallback = null;
+            }
+            return;
+        }
+
         if (requestCode == BACKUP_EXPORT_REQUEST) {
             if (resultCode != RESULT_OK || data == null || data.getData() == null) {
                 pendingBackupJson = null;
@@ -308,6 +787,59 @@ public class MainActivity extends Activity {
         }
     }
 
+    private void startSharedLogEmail(String json, String subject, String body, String suggestedName) {
+        try {
+            String payload = json == null ? "" : json;
+            byte[] bytes = payload.getBytes(StandardCharsets.UTF_8);
+            if (bytes.length == 0) {
+                Toast.makeText(this, "Brak wspólnego logu do wysłania.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            if (bytes.length > 4 * 1024 * 1024) {
+                Toast.makeText(this, "Log jest zbyt duży do wysłania mailem.", Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            File dir = new File(getCacheDir(), "shared-logs");
+            if (!dir.exists() && !dir.mkdirs()) {
+                throw new IllegalStateException("Nie udało się utworzyć katalogu logów");
+            }
+
+            String safeName = suggestedName == null ? "" : suggestedName.trim();
+            safeName = safeName.replaceAll("[^A-Za-z0-9._-]+", "-");
+            if (safeName.isEmpty()) safeName = "Trener2-wspolny-log.json";
+            if (!safeName.toLowerCase(java.util.Locale.ROOT).endsWith(".json")) safeName += ".json";
+
+            File file = new File(dir, safeName);
+            try (FileOutputStream out = new FileOutputStream(file, false)) {
+                out.write(bytes);
+                out.flush();
+            }
+
+            Uri uri = FileProvider.getUriForFile(
+                    this,
+                    BuildConfig.APPLICATION_ID + ".updateprovider",
+                    file
+            );
+
+            Intent send = new Intent(Intent.ACTION_SEND);
+            send.setType("application/json");
+            send.putExtra(Intent.EXTRA_SUBJECT, subject == null ? "Trener 2 — wspólny log diagnostyczny" : subject);
+            send.putExtra(Intent.EXTRA_TEXT, body == null ? "" : body);
+            send.putExtra(Intent.EXTRA_STREAM, uri);
+            send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            send.setClipData(ClipData.newRawUri("Trener 2 wspólny log", uri));
+
+            startActivity(Intent.createChooser(send, "Wyślij wspólny log mailem"));
+        } catch (Exception e) {
+            Toast.makeText(
+                    this,
+                    "Nie udało się przygotować maila z logiem: " + (e.getMessage() == null ? "błąd" : e.getMessage()),
+                    Toast.LENGTH_LONG
+            ).show();
+        }
+    }
+
     private void emitWifiStatus(String status, String detail) {
         if (webView == null) return;
         final String js = "window.TrenerWifi&&window.TrenerWifi.nativeStatus("
@@ -317,6 +849,7 @@ public class MainActivity extends Activity {
     }
 
     private void emitWifiMessage(String message) {
+        handleWorkoutNetworkWake(message);
         if (webView == null) return;
         final String js = "window.TrenerWifi&&window.TrenerWifi.nativeMessage("
                 + JSONObject.quote(message == null ? "" : message) + ");";
@@ -330,6 +863,22 @@ public class MainActivity extends Activity {
         runOnUiThread(() -> webView.evaluateJavascript(js, null));
     }
 
+
+    private void emitFoodBarcode(String payload) {
+        if (webView == null) return;
+        final String js = "window.TrenerOpenFoodFacts&&window.TrenerOpenFoodFacts.nativeBarcode("
+                + JSONObject.quote(payload == null ? "" : payload) + ");";
+        runOnUiThread(() -> webView.evaluateJavascript(js, null));
+    }
+
+    private void emitFoodLookup(String status, String payload) {
+        if (webView == null) return;
+        final String js = "window.TrenerOpenFoodFacts&&window.TrenerOpenFoodFacts.nativeLookup("
+                + JSONObject.quote(status == null ? "error" : status) + ","
+                + JSONObject.quote(payload == null ? "" : payload) + ");";
+        runOnUiThread(() -> webView.evaluateJavascript(js, null));
+    }
+
     private void emitUpdateResult(String status, String payload) {
         if (webView == null) return;
         final String js = "window.TrenerUpdate&&window.TrenerUpdate.nativeResult("
@@ -338,8 +887,38 @@ public class MainActivity extends Activity {
         runOnUiThread(() -> webView.evaluateJavascript(js, null));
     }
 
+    private void emitUpdateDownloadStatus(String status, String payload) {
+        if (webView == null) return;
+        final String js = "window.TrenerUpdate&&window.TrenerUpdate.nativeDownloadStatus("
+                + JSONObject.quote(status == null ? "error" : status) + ","
+                + JSONObject.quote(payload == null ? "" : payload) + ");";
+        runOnUiThread(() -> webView.evaluateJavascript(js, null));
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (updateInstaller != null) updateInstaller.resumePendingInstall();
+    }
+
     @Override
     protected void onDestroy() {
+        releaseHostNetworkLocks();
+        releaseWorkoutCpuWakeLock();
+        if (workoutWakeRunnable != null) {
+            workoutScreenHandler.removeCallbacks(workoutWakeRunnable);
+            workoutWakeRunnable = null;
+        }
+        try {
+            if (workoutScreenWakeLock != null && workoutScreenWakeLock.isHeld()) {
+                workoutScreenWakeLock.release();
+            }
+        } catch (Exception ignored) {
+        }
+        if (fileChooserCallback != null) {
+            fileChooserCallback.onReceiveValue(null);
+            fileChooserCallback = null;
+        }
         if (localSession != null) localSession.shutdown();
         if (webView != null) webView.destroy();
         super.onDestroy();
@@ -375,6 +954,40 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public boolean copyText(String text) {
+            try {
+                ClipboardManager clipboard = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
+                if (clipboard == null) return false;
+                clipboard.setPrimaryClip(ClipData.newPlainText("Trener 2 logi", text == null ? "" : text));
+                return true;
+            } catch (Exception e) {
+                return false;
+            }
+        }
+
+        @JavascriptInterface
+        public String getDeviceLabel() {
+            String manufacturer = Build.MANUFACTURER == null ? "" : Build.MANUFACTURER.trim();
+            String model = Build.MODEL == null ? "" : Build.MODEL.trim();
+            if (manufacturer.isEmpty()) return model.isEmpty() ? "Android" : model;
+            if (model.isEmpty()) return manufacturer;
+            if (model.toLowerCase(java.util.Locale.ROOT).startsWith(manufacturer.toLowerCase(java.util.Locale.ROOT))) {
+                return model;
+            }
+            return manufacturer + " " + model;
+        }
+
+        @JavascriptInterface
+        public void emailSharedLog(String json, String subject, String body, String suggestedName) {
+            runOnUiThread(() -> startSharedLogEmail(json, subject, body, suggestedName));
+        }
+
+        @JavascriptInterface
+        public void showWorkoutAlert(String title, String text) {
+            runOnUiThread(() -> showWorkoutAlertNative(title, text));
+        }
+
+        @JavascriptInterface
         public void vibrate(int milliseconds) {
             Vibrator vibrator = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
             if (vibrator == null || !vibrator.hasVibrator()) return;
@@ -388,11 +1001,15 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void wifiHost(String code) {
-            if (localSession != null) localSession.host(code);
+            if (localSession != null) {
+                if (!"—".equals(localSession.getLocalIp())) ensureHostNetworkLocks();
+                localSession.host(code);
+            }
         }
 
         @JavascriptInterface
         public void wifiJoin(String hostIp, String code) {
+            releaseHostNetworkLocks();
             if (localSession != null) localSession.join(hostIp, code);
         }
 
@@ -403,7 +1020,13 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void wifiDisconnect() {
+            releaseHostNetworkLocks();
             if (localSession != null) localSession.disconnect();
+        }
+
+        @JavascriptInterface
+        public String hostNetworkLocks() {
+            return hostNetworkLocksJson();
         }
 
         @JavascriptInterface
@@ -420,6 +1043,12 @@ public class MainActivity extends Activity {
         public boolean wifiHosting() {
             return localSession != null && localSession.isHosting();
         }
+
+        @JavascriptInterface
+        public String wifiDiagnostics() {
+            return localSession == null ? "{}" : localSession.diagnosticsJson();
+        }
+
 
         @JavascriptInterface
         public String wifiQr(String payload) {
@@ -450,13 +1079,89 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public void scanFoodBarcode() {
+            runOnUiThread(() -> startFoodScanner());
+        }
+
+        @JavascriptInterface
+        public void lookupOpenFoodFacts(String barcode) {
+            lookupOpenFoodFactsNative(barcode);
+        }
+
+        @JavascriptInterface
         public String getAppVersion() {
             return appVersionName();
         }
 
         @JavascriptInterface
+        public void setWorkoutScreenState(
+                boolean workoutActive,
+                boolean keepScreenOn,
+                long wakeAtEpochMs,
+                boolean shared,
+                int localAthlete
+        ) {
+            setWorkoutScreenStateNative(
+                    workoutActive,
+                    keepScreenOn,
+                    wakeAtEpochMs,
+                    shared,
+                    localAthlete
+            );
+        }
+
+        @JavascriptInterface
         public void checkForUpdate() {
             checkForUpdateNative();
+        }
+
+        @JavascriptInterface
+        public boolean savePreUpdateBackup(String json, String targetVersion) {
+            return PreUpdateBackupStore.save(
+                    context,
+                    json,
+                    appVersionName(),
+                    targetVersion == null ? "" : targetVersion
+            );
+        }
+
+        @JavascriptInterface
+        public boolean hasPreUpdateBackup() {
+            return PreUpdateBackupStore.hasBackup(context);
+        }
+
+        @JavascriptInterface
+        public void importLatestPreUpdateBackup() {
+            String json = PreUpdateBackupStore.latestJson(context);
+            if (json == null || json.trim().isEmpty()) {
+                runOnUiThread(() -> Toast.makeText(
+                        MainActivity.this,
+                        "Brak kopii sprzed aktualizacji.",
+                        Toast.LENGTH_SHORT
+                ).show());
+                return;
+            }
+            emitBackupImport(json);
+        }
+
+        @JavascriptInterface
+        public void exportLatestPreUpdateBackup() {
+            String json = PreUpdateBackupStore.latestJson(context);
+            if (json == null || json.trim().isEmpty()) {
+                runOnUiThread(() -> Toast.makeText(
+                        MainActivity.this,
+                        "Brak kopii sprzed aktualizacji.",
+                        Toast.LENGTH_SHORT
+                ).show());
+                return;
+            }
+            String name = PreUpdateBackupStore.latestExportName(context);
+            runOnUiThread(() -> startBackupExport(json, name));
+        }
+
+        @JavascriptInterface
+        public void downloadAndInstallUpdate(String url, String sha256) {
+            if (updateInstaller != null) updateInstaller.downloadAndInstall(url, sha256);
         }
 
         @JavascriptInterface
