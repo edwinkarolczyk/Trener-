@@ -250,7 +250,7 @@
 
   function fatalReason(detail){
     const s=String(detail||'')+' '+String(net?.lastError||'');
-    return /Niezgodna wersja|Błędny kod|Sesja jest pełna|DENY|FULL/i.test(s);
+    return /Niezgodna wersja|Błędny kod|Sesja jest pełna|Kod sesji musi mieć 6 cyfr|różnych sieciach|Połącz ten telefon z tym samym Wi-Fi|Włącz Wi-Fi albo hotspot|DENY|FULL/i.test(s);
   }
   function canReconnectGuest(){
     return roleNow()==='guest'&&(runtime.everConnected||runtime.initialJoinArmed)&&
