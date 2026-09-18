@@ -33,6 +33,7 @@
     prevRunning:false,
     prevShared:false,
     prevQueueKey:'',
+    prevMessageKey:'',
     prevConnectionKey:'',
     hostPeerBeats:{},
     booted:false
@@ -201,7 +202,9 @@
     if(s.events.length>MAX_EVENTS)s.events=s.events.slice(-MAX_EVENTS);
     s.updatedAt=t;
     flush(!!important);
-    try{window.TrenerDiagnostics?.log?.('SHARED',String(event||''),data||{})}catch(e){}
+    if(important||/ERROR|TIMEOUT|RECONNECT|CONNECTED|DISCONNECT|WORKOUT_(START|END)|SESSION_CLOSE/.test(String(event||''))){
+      try{window.TrenerDiagnostics?.log?.('SHARED',String(event||''),data||{})}catch(e){}
+    }
   }
 
   function closeSession(reason){
@@ -372,8 +375,8 @@
     if(!m||!m.type)return;
     if(m.type==='V0825_PING'||m.type==='V0825_PONG')return;
     const key=messageKey(m);
-    if(key&&key===runtime.prevQueueKey)return;
-    if(key)runtime.prevQueueKey=key;
+    if(key&&key===runtime.prevMessageKey)return;
+    if(key)runtime.prevMessageKey=key;
     log(direction+'_'+String(m.type),summarizeMessage(m),false);
   }
 
