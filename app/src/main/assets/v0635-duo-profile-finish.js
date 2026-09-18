@@ -180,11 +180,18 @@
       ev.preventDefault();ev.stopImmediatePropagation();
 
       if(net.active&&net.role==='guest'){
-        if(!confirm('Zakończyć swój trening? Wykonane serie zostaną zapisane jako zakończony trening.'))return;
-        const own=records.filter(r=>r.athlete===net.localAthlete);
-        net.done[net.localAthlete]=true;
-        wifiSend({type:'DONE',sessionId:net.sessionId,athlete:net.localAthlete,records:own});
-        finishWorkout(false,true);
+        try{
+          window.TrenerSharedBlackbox0825?.log?.('LEGACY_GUEST_STOP_REDIRECTED',{
+            source:'v0635',
+            sessionId:String(net.sessionId||''),
+            athlete:Number(net.localAthlete)||0
+          },true);
+        }catch(e){}
+        if(window.TrenerHostAuthority0829?.requestFinish){
+          window.TrenerHostAuthority0829.requestFinish();
+        }else{
+          toast('Tylko HOST może zakończyć wspólny trening.');
+        }
         return;
       }
 
