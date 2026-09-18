@@ -37,10 +37,14 @@ import com.google.zxing.BarcodeFormat;
 import com.google.zxing.MultiFormatWriter;
 import com.google.zxing.common.BitMatrix;
 
+import androidx.core.content.FileProvider;
+
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -658,6 +662,59 @@ public class MainActivity extends Activity {
         }
     }
 
+    private void startSharedLogEmail(String json, String subject, String body, String suggestedName) {
+        try {
+            String payload = json == null ? "" : json;
+            byte[] bytes = payload.getBytes(StandardCharsets.UTF_8);
+            if (bytes.length == 0) {
+                Toast.makeText(this, "Brak wspólnego logu do wysłania.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            if (bytes.length > 4 * 1024 * 1024) {
+                Toast.makeText(this, "Log jest zbyt duży do wysłania mailem.", Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            File dir = new File(getCacheDir(), "shared-logs");
+            if (!dir.exists() && !dir.mkdirs()) {
+                throw new IllegalStateException("Nie udało się utworzyć katalogu logów");
+            }
+
+            String safeName = suggestedName == null ? "" : suggestedName.trim();
+            safeName = safeName.replaceAll("[^A-Za-z0-9._-]+", "-");
+            if (safeName.isEmpty()) safeName = "Trener2-wspolny-log.json";
+            if (!safeName.toLowerCase(java.util.Locale.ROOT).endsWith(".json")) safeName += ".json";
+
+            File file = new File(dir, safeName);
+            try (FileOutputStream out = new FileOutputStream(file, false)) {
+                out.write(bytes);
+                out.flush();
+            }
+
+            Uri uri = FileProvider.getUriForFile(
+                    this,
+                    BuildConfig.APPLICATION_ID + ".updateprovider",
+                    file
+            );
+
+            Intent send = new Intent(Intent.ACTION_SEND);
+            send.setType("application/json");
+            send.putExtra(Intent.EXTRA_SUBJECT, subject == null ? "Trener 2 — wspólny log diagnostyczny" : subject);
+            send.putExtra(Intent.EXTRA_TEXT, body == null ? "" : body);
+            send.putExtra(Intent.EXTRA_STREAM, uri);
+            send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            send.setClipData(ClipData.newRawUri("Trener 2 wspólny log", uri));
+
+            startActivity(Intent.createChooser(send, "Wyślij wspólny log mailem"));
+        } catch (Exception e) {
+            Toast.makeText(
+                    this,
+                    "Nie udało się przygotować maila z logiem: " + (e.getMessage() == null ? "błąd" : e.getMessage()),
+                    Toast.LENGTH_LONG
+            ).show();
+        }
+    }
+
     private void emitWifiStatus(String status, String detail) {
         if (webView == null) return;
         final String js = "window.TrenerWifi&&window.TrenerWifi.nativeStatus("
@@ -780,6 +837,23 @@ public class MainActivity extends Activity {
             } catch (Exception e) {
                 return false;
             }
+        }
+
+        @JavascriptInterface
+        public String getDeviceLabel() {
+            String manufacturer = Build.MANUFACTURER == null ? "" : Build.MANUFACTURER.trim();
+            String model = Build.MODEL == null ? "" : Build.MODEL.trim();
+            if (manufacturer.isEmpty()) return model.isEmpty() ? "Android" : model;
+            if (model.isEmpty()) return manufacturer;
+            if (model.toLowerCase(java.util.Locale.ROOT).startsWith(manufacturer.toLowerCase(java.util.Locale.ROOT))) {
+                return model;
+            }
+            return manufacturer + " " + model;
+        }
+
+        @JavascriptInterface
+        public void emailSharedLog(String json, String subject, String body, String suggestedName) {
+            runOnUiThread(() -> startSharedLogEmail(json, subject, body, suggestedName));
         }
 
         @JavascriptInterface
