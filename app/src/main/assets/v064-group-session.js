@@ -51,11 +51,11 @@
   }
 
   function installUi(){
-    installCss();if($('duoBtn'))$('duoBtn').textContent='2+ osoby';
+    installCss();if($('duoBtn'))$('duoBtn').textContent='WSPÓLNY 2–4';
     const name=$('nameA');
     if(name&&!$('v064GroupBox')){
       const box=document.createElement('div');box.id='v064GroupBox';box.className='hidden';
-      box.innerHTML=`<div class="v064Head"><b>WSPÓLNY TRENING 2+</b><span>maks. ${MAX_PARTICIPANTS} osoby</span></div><label class="v064Switch"><input id="v064SharedEquipment" type="checkbox"><span><b>Wspólny sprzęt</b><br>Jedno obciążenie dla danego ćwiczenia, ale osobny cel powtórzeń i osobna rekomendacja dla każdej osoby.</span></label><div id="v064Roster" class="v064Roster"></div>`;
+      box.innerHTML=`<div class="v064Head"><b>WSPÓLNY TRENING 2–4</b><span>maks. ${MAX_PARTICIPANTS} osoby</span></div><label class="v064Switch"><input id="v064SharedEquipment" type="checkbox"><span><b>Wspólny sprzęt</b><br>Jedno obciążenie dla danego ćwiczenia, ale osobny cel powtórzeń i osobna rekomendacja dla każdej osoby.</span></label><div id="v064Roster" class="v064Roster"></div>`;
       const anchor=$('v0635PartnerIdentity')||name;anchor.insertAdjacentElement('afterend',box);const cb=$('v064SharedEquipment');cb.checked=state.sharedEquipment;cb.addEventListener('change',()=>{state.sharedEquipment=cb.checked;saveCfg();refreshAll();});
     }
     const training=$('training');
@@ -114,7 +114,7 @@
     window.TrenerWifi.nativeMessage=function(raw){
       let m=null;try{m=JSON.parse(raw);}catch(e){}if(!m||!m.type){originalMessage(raw);return;}
       try{
-        if(m.type==='GROUP_PROFILE'){receiveGroupProfile(m);return;}if(m.type==='GROUP_STATE'){receiveGroupState(m);return;}if(m.type==='GROUP_SNAPSHOT'&&net.role==='guest'){applyGroupSnapshot(m);return;}if(m.type==='GROUP_REJECT'&&m.targetDeviceId===state.deviceId){toast(m.reason||'Nie można dołączyć do sesji.');return;}
+        if(m.type==='GROUP_PROFILE'){receiveGroupProfile(m);return;}if(m.type==='GROUP_STATE'){receiveGroupState(m);return;}if(m.type==='GROUP_SNAPSHOT'&&net.role==='guest'){applyGroupSnapshot(m);return;}if(m.type==='GROUP_REJECT'&&m.targetDeviceId===state.deviceId){const reason=m.reason||'Nie można dołączyć do sesji.';toast(reason);try{net.lastError=reason;net.detail=reason;net.status='error';if(typeof updateWifiUi==='function')updateWifiUi();setTimeout(()=>{if(typeof disconnectWifi==='function')disconnectWifi(true);},80);}catch(e){}return;}
         if(m.type==='GROUP_LOAD'&&(!m.sessionId||m.sessionId===net.sessionId)){state.sharedLoads[m.exId]=Number(m.kg)||0;if(net.role==='host'&&!m.relayed)send(Object.assign({},m,{relayed:true}));applySharedLoadToCurrent();refreshWorkoutUi();return;}
         if(m.type==='GROUP_EXTRA'&&(!m.sessionId||m.sessionId===net.sessionId)){if(!state.extraSets[m.deviceId])state.extraSets[m.deviceId]={};state.extraSets[m.deviceId][m.exId]=Math.max(0,Math.min(3,Number(m.extra)||0));if(net.role==='host'&&!m.relayed)send(Object.assign({},m,{relayed:true}));refreshWorkoutUi();renderLivePanel();return;}
         if(m.type==='GROUP_POSITION'&&m.sessionId===net.sessionId){state.positions[Number(m.athlete)||0]={ex:Number(m.ex)||0,set:Number(m.set)||0,done:!!m.done};if(net.role==='host'&&!m.relayed)send(Object.assign({},m,{relayed:true}));renderLivePanel();return;}

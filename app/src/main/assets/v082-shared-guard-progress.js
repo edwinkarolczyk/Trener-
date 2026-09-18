@@ -52,16 +52,21 @@
         reason:mismatchReason(remote)
       });
     }catch(e){saveError(e,'rejectRemote');}
-    toastMsg('Nie łączę wspólnego treningu — różne wersje aplikacji.');
+    toastMsg(mismatchReason(remote));
   }
 
   function disconnectMismatch(remote){
     state.incompatible=true;
     state.lastMismatch=String(remote||'');
-    toastMsg(mismatchReason(remote));
+    const reason=mismatchReason(remote);
+    toastMsg(reason);
+    try{
+      net.lastError=reason;net.detail=reason;net.status='error';net.connected=false;
+      if(typeof updateWifiUi==='function')updateWifiUi();
+    }catch(e){}
     setTimeout(()=>{
       try{
-        if(typeof disconnectWifi==='function')disconnectWifi();
+        if(typeof disconnectWifi==='function')disconnectWifi(true);
         else if(window.Android&&Android.wifiDisconnect)Android.wifiDisconnect();
       }catch(e){saveError(e,'disconnectMismatch');}
     },100);
