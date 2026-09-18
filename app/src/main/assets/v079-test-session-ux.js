@@ -11,6 +11,7 @@
   let touch=null;
   let deckIndex=0;
   let draftContext='';
+  let lastRestSkipAt=0;
 
   function safe(raw,fallback){try{return JSON.parse(raw||'')||fallback}catch(e){return fallback}}
   function nowIso(){return new Date().toISOString()}
@@ -27,7 +28,7 @@
     try{series=(Number(setIdx)+1)+'/'+(currentPlan?.ex?.[exIdx]?.sets||'?')}catch(e){}
     try{rest=Math.max(0,Number(restEnd||0)-Date.now())}catch(e){}
     try{network=(typeof net!=='undefined'&&net)?String(net.status||((net.connected)?'connected':'offline')):''}catch(e){}
-    return {screen:document.querySelector('.screen.show')?.id||'',exercise:exName,series,context:readContext(),weight:$('weight')?.value||'',reps:$('reps')?.value||'',restMs:rest,network,visible:document.visibilityState};
+    return {screen:document.querySelector('.screen.show')?.id||'',exercise:exName,series,context:readContext(),weight:$('weight')?.value||'',reps:$('reps')?.value||'',restMs:rest,network,visible:document.visibilityState,scrollY:Math.round(window.scrollY||0),viewportHeight:Math.round(window.innerHeight||0),progressSeries:$('v082SeriesText')?.textContent||'',progressWorkout:$('v082WorkoutText')?.textContent||''};
   }
 
   function reports(){const v=safe(localStorage.getItem(REPORTS_KEY),[]);return Array.isArray(v)?v:[]}
@@ -69,10 +70,18 @@
     let rest=false;try{rest=Number(restEnd||0)>Date.now()+100}catch(e){}
     const ns=networkState(),water=hydrationToday();
     if(run&&!prev.running)beginSession();
+    if(active&&recs.length>prev.records){
+      for(let i=prev.records;i<recs.length;i++){
+        const r=recs[i]||{};
+        addEvent('SET',{exercise:r.name||r.id||'',kg:Number(r.kg)||0,reps:Number(r.reps)||0,athlete:Number(r.athlete)||0,ex:Number(r.ex)||0,set:Number(r.set)||0});
+      }
+    }
     if(run&&active){
-      if(recs.length>prev.records){for(let i=prev.records;i<recs.length;i++){const r=recs[i]||{};addEvent('SET',{exercise:r.name||r.id||'',kg:Number(r.kg)||0,reps:Number(r.reps)||0,athlete:Number(r.athlete)||0,ex:Number(r.ex)||0,set:Number(r.set)||0});}}
       if(pause!==prev.paused)addEvent(pause?'PAUSE':'RESUME',currentSnapshot());
-      if(rest!==prev.rest)addEvent(rest?'REST_START':'REST_END',currentSnapshot());
+      if(rest!==prev.rest){
+        if(rest)addEvent('REST_START',currentSnapshot());
+        else if(Date.now()-lastRestSkipAt>700)addEvent('REST_END',currentSnapshot());
+      }
       if(ctx&&ctx!==prev.context)addEvent('CONTEXT',currentSnapshot());
       if(ns!==prev.net)addEvent('NETWORK',{status:ns});
       if(water!==null&&prev.water!==null&&water!==prev.water)addEvent('WATER',{from:prev.water,to:water,delta:water-prev.water});
@@ -158,6 +167,15 @@
     },{passive:true});
   }
 
+  function installRestSkipCapture(){
+    document.addEventListener('click',e=>{
+      if(!e.target?.closest?.('#skipRestBtn'))return;
+      if(!active||!readRunning())return;
+      lastRestSkipAt=Date.now();
+      addEvent('REST_SKIP',currentSnapshot());
+    },true);
+  }
+
   function installProblemButton(){
     if($('v079ProblemBtn'))return;const controls=$('training')?.querySelector('.controls');if(!controls)return;const b=document.createElement('button');b.id='v079ProblemBtn';b.className='secondary';b.type='button';b.textContent='⚑ PROBLEM';controls.appendChild(b);
     b.addEventListener('click',()=>{if(!active&&readRunning())beginSession();addEvent('PROBLEM',currentSnapshot());showProblemAck();});
@@ -182,7 +200,7 @@
   function installErrorCapture(){window.addEventListener('error',e=>{if(active)addEvent('JS_ERROR',{message:String(e.message||''),file:String(e.filename||''),line:Number(e.lineno)||0});});window.addEventListener('unhandledrejection',e=>{if(active)addEvent('PROMISE_ERROR',{message:String(e.reason?.message||e.reason||'')});});}
 
   function boot(){
-    installCss();installDeck();installAutosave();installSwipe();installProblemButton();installReportCard();installErrorCapture();
+    installCss();installDeck();installAutosave();installSwipe();installRestSkipCapture();installProblemButton();installReportCard();installErrorCapture();
     const recovered=safe(localStorage.getItem(ACTIVE_KEY),null);if(recovered&&recovered.id&&!recovered.endedAt)active=recovered;
     prev={running:readRunning(),paused:readPaused(),rest:false,records:readRecords().length,context:readContext(),net:networkState(),water:hydrationToday()};
     if(readRunning()&&!active)beginSession();
