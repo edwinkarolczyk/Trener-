@@ -2,7 +2,7 @@ name: Build Trener APK
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'feature/**']
   workflow_dispatch:
 
 concurrency:
@@ -134,7 +134,7 @@ jobs:
           echo "VERSION_CODE=$VERSION_CODE" >> "$GITHUB_ENV"
 
       - name: Publish version release
-        if: steps.signing.outputs.ready == 'true'
+        if: steps.signing.outputs.ready == 'true' && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -156,7 +156,7 @@ jobs:
           exit 1
 
       - name: Update updater metadata
-        if: steps.signing.outputs.ready == 'true'
+        if: steps.signing.outputs.ready == 'true' && github.ref == 'refs/heads/main'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
