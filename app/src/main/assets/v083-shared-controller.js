@@ -398,9 +398,18 @@
         toastMsg('Wykryto starszy telefon — wracam do KAŻDY NA SWOIM.');
       }
       if(state.mode==='single-controller')ensureController();
+      if(state.mode==='single-controller'&&!net?.connected&&state.controllerDeviceId&&state.controllerDeviceId!==localDeviceId()){
+        const host=hostParticipant();
+        if(host&&supportsSingle(host))applyControllerHost(host.deviceId,'controller-offline-fallback');
+      }
       const sid=String(net?.sessionId||'');
       if(sid&&sid!==state.lastSessionId){state.lastSessionId=sid;state.rev++;broadcast(true);}
       else broadcast(false);
+    }else if(net?.role==='guest'&&state.mode==='single-controller'){
+      const list=participants();
+      if(list.length&&list.some(p=>protocolOf(p)<PROTOCOL_VERSION)){
+        state.mode='per-device';state.controllerDeviceId='';state.pending=null;saveCfg();
+      }
     }
     updateInputOwnership();
     render();
