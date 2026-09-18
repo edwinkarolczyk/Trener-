@@ -377,9 +377,16 @@ function setPausedState(value){
 function stopWorkout(){
   if(!running)return;
   if(net.active&&net.role==='guest'){
-    if(confirm('Opuścić wspólny trening? Twoje wykonane serie zostaną zapisane na tym telefonie.')){
-      wifiSend({type:'LEAVE',sessionId:net.sessionId,athlete:net.localAthlete});
-      finishWorkout(true,true);
+    try{
+      window.TrenerSharedBlackbox0825?.log?.('BASE_GUEST_STOP_REDIRECTED',{
+        sessionId:String(net.sessionId||''),
+        athlete:Number(net.localAthlete)||0
+      },true);
+    }catch(e){}
+    if(window.TrenerHostAuthority0829?.requestFinish){
+      window.TrenerHostAuthority0829.requestFinish();
+    }else{
+      toast('Zakończenie wspólnego treningu wymaga zgody HOSTA.');
     }
     return;
   }
@@ -398,10 +405,23 @@ function finishSharedForAll(interrupted){
 
 function finishWorkout(interrupted,fromNetwork=false){
   if(!running)return;
+  if(net.active&&!fromNetwork&&net.role==='guest'){
+    try{
+      window.TrenerSharedBlackbox0825?.log?.('BASE_GUEST_FINISH_BLOCKED',{
+        sessionId:String(net.sessionId||''),
+        interrupted:!!interrupted
+      },true);
+    }catch(e){}
+    if(window.TrenerHostAuthority0829?.requestFinish){
+      window.TrenerHostAuthority0829.requestFinish();
+    }else{
+      toast('Tylko HOST może zakończyć wspólny trening.');
+    }
+    return;
+  }
   const duration=elapsedMs();
   if(net.active&&!fromNetwork){
     if(net.role==='host')wifiSend({type:'FINISH',sessionId:net.sessionId,interrupted:!!interrupted,records:[...records]});
-    else wifiSend({type:'LEAVE',sessionId:net.sessionId,athlete:net.localAthlete});
   }
   running=false;paused=false;restEnd=0;restPaused=0;
   if(tickHandle){clearInterval(tickHandle);tickHandle=null;}
