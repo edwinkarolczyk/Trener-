@@ -187,7 +187,7 @@
     const p=participantForAthlete(athlete);
     const expectedId=String(p?.deviceId||'');
     const receivedId=String(deviceId||'');
-    if(receivedId&&expectedId&&receivedId!==expectedId)return {ok:false,reason:'Telefon nie pasuje do uczestnika'};
+    if(expectedId&&receivedId!==expectedId)return {ok:false,reason:'Telefon nie pasuje do uczestnika'};
 
     const now=Date.now();
     const ready=Number(state.readyAt[athlete]||0);
