@@ -48,8 +48,16 @@
     if(tab==='diet')return card.dataset.v084Key||'';
     if(card.id)return card.id;
     if(card.dataset.v085Key)return card.dataset.v085Key;
-    const siblings=Array.from(card.parentElement.children).filter(c=>c.classList.contains('card'));
-    return tab+'-card-'+siblings.indexOf(card);
+    const heading=Array.from(card.children).find(c=>c.tagName==='H2')?.textContent?.trim()||
+      Array.from(card.children).find(c=>c.classList.contains('eyebrow'))?.textContent?.trim()||'kafel';
+    const slug=heading.toLocaleLowerCase('pl-PL').replace(/[^a-z0-9ąćęłńóśźż]+/gi,'-')
+      .replace(/^-|-$/g,'').slice(0,50)||'kafel';
+    const peers=Array.from(card.parentElement.children).filter(c=>
+      c.classList.contains('card')&&
+      (Array.from(c.children).find(x=>x.tagName==='H2')?.textContent?.trim()||
+       Array.from(c.children).find(x=>x.classList.contains('eyebrow'))?.textContent?.trim()||
+       'kafel')===heading);
+    return tab+'-'+slug+'-'+peers.indexOf(card);
   }
   function order(actual,saved){
     const known=Array.isArray(saved)?saved:[];
