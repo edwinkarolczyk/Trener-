@@ -20,6 +20,51 @@ function storeCache(q,source,foods){
 }
 function complete(p){return p&&p.name&&['kcal100','protein100','carbs100','fat100']
   .some(k=>p[k]!==null&&p[k]!==undefined);}
+
+const QUERY_PL_EN={
+  'jajko':'egg','jajka':'egg','jajecznica':'scrambled eggs',
+  'pierś kurczaka':'chicken breast','pierś z kurczaka':'chicken breast',
+  'piers kurczaka':'chicken breast','kurczak':'chicken','kurczaka':'chicken',
+  'udko kurczaka':'chicken thigh','indyk':'turkey',
+  'ryż':'rice','ryz':'rice','makaron':'pasta','chleb':'bread','bułka':'roll',
+  'mintaj':'pollock','łosoś':'salmon','losos':'salmon','tuńczyk':'tuna',
+  'mleko':'milk','masło':'butter','maslo':'butter','ser':'cheese',
+  'wołowina':'beef','wolowina':'beef','wieprzowina':'pork',
+  'ziemniaki':'potatoes','ziemniak':'potato','puree ziemniaczane':'mashed potatoes',
+  'banan':'banana','jabłko':'apple','jablko':'apple','pomidor':'tomato',
+  'ogórek':'cucumber','ogorek':'cucumber','marchew':'carrot',
+  'pizza':'pizza','owsianka':'oatmeal','płatki owsiane':'oats',
+  'oliwa':'olive oil','olej':'oil','mąka':'flour','maka':'flour'
+};
+const NAME_PL={
+  pizza:'pizza',chicken:'kurczak',breast:'pierś',breasts:'piersi',
+  thigh:'udko',turkey:'indyk',egg:'jajko',eggs:'jajka',scrambled:'jajecznica',
+  rice:'ryż',bread:'chleb',pasta:'makaron',roll:'bułka',rolls:'bułki',
+  fish:'ryba',pollock:'mintaj',salmon:'łosoś',tuna:'tuńczyk',
+  beef:'wołowina',pork:'wieprzowina',milk:'mleko',butter:'masło',
+  cheese:'ser',potato:'ziemniak',potatoes:'ziemniaki',
+  banana:'banan',bananas:'banany',apple:'jabłko',apples:'jabłka',
+  tomato:'pomidor',tomatoes:'pomidory',cucumber:'ogórek',carrot:'marchew',
+  raw:'surowy',cooked:'gotowany',boiled:'gotowany',fried:'smażony',
+  baked:'pieczony',roasted:'pieczony',roast:'pieczony',grilled:'grillowany',
+  skinless:'bez skóry',boneless:'bez kości',white:'biały',brown:'brązowy',
+  whole:'cały',fresh:'świeży',frozen:'mrożony',mashed:'puree',ground:'mielony',
+  oats:'płatki owsiane',oatmeal:'owsianka',olive:'oliwkowy',oil:'olej'
+};
+function usdaQuery(q){
+  const normalized=String(q||'').trim().toLocaleLowerCase('pl-PL').replace(/\s+/g,' ');
+  return QUERY_PL_EN[normalized]||q;
+}
+function displayPl(original){
+  const text=String(original||'').trim();
+  let count=0;
+  const translated=text.toLowerCase().replace(/[a-z]+/g,word=>{
+    if(!Object.prototype.hasOwnProperty.call(NAME_PL,word))return word;
+    count++;return NAME_PL[word];
+  });
+  return count?translated.charAt(0).toLocaleUpperCase('pl-PL')+translated.slice(1):text;
+}
+
 function off(p){
   const n=p.nutriments||{},nget=k=>num(n[k]);let kcal=nget('energy-kcal_100g');
   const joules=nget('energy_100g');if(kcal===null&&joules!==null)kcal=rnd(joules/4.184);
@@ -36,7 +81,8 @@ function usda(p){
   const protein=val([1003]),carbs=val([1005]),fat=val([1004]);
   let kcal=val([1008,2047,2048]);
   if(kcal===null&&protein!==null&&carbs!==null&&fat!==null)kcal=rnd(protein*4+carbs*4+fat*9);
-  return {id:'usda:'+String(p.fdcId||''),name:String(p.description||'').slice(0,90),
+  const originalName=String(p.description||'').slice(0,100);
+  return {id:'usda:'+String(p.fdcId||''),name:displayPl(originalName).slice(0,90),originalName,
     source:'USDA FoodData Central',kcal100:kcal,protein100:protein,carbs100:carbs,fat100:fat,
     servingGrams:String(p.servingSizeUnit||'').toLowerCase()==='g'?num(p.servingSize):null,
     gramsPerPiece:null,gramsPerMl:null};
@@ -46,7 +92,8 @@ function render(){
  const x=$('v083Results');if(!x)return;
  x.innerHTML=state.found.length?state.found.slice(0,50).map((p,i)=>`
  <div class="foodItem"><strong>${esc(p.name)}</strong>
- <small>${esc(p.source)} • ${fmt(p.kcal100)} kcal • B ${fmt(p.protein100)} • W ${fmt(p.carbs100)} • T ${fmt(p.fat100)} / 100 g</small>
+ <small>${esc(p.source)}${p.originalName&&p.originalName.toLocaleLowerCase('pl-PL')!==p.name.toLocaleLowerCase('pl-PL')?' • oryg.: '+esc(p.originalName):''}</small>
+ <small>${fmt(p.kcal100)} kcal • B ${fmt(p.protein100)} • W ${fmt(p.carbs100)} • T ${fmt(p.fat100)} / 100 g</small>
  <button class="secondary" type="button" data-food="pick" data-index="${i}">WYBIERZ</button>
  ${p.source==='Własny produkt'?`<button class="secondary" type="button" data-food="delete" data-index="${i}">USUŃ</button>`:''}</div>`).join(''):
  '<p class="foodMeta">Brak wyników. Możesz dodać własny produkt.</p>';
@@ -73,7 +120,7 @@ function search(){
    const key=source==='usda'?(localStorage.getItem(USDA_KEY)||''):'';
    if(source==='usda'&&!key)return;
    state.waiting++;
-   try{Android.searchFoodCatalog(source,query,key,state.requestId);}
+   try{Android.searchFoodCatalog(source,source==='usda'?usdaQuery(query):query,key,state.requestId);}
    catch(e){state.waiting--;state.lastError='Błąd połączenia z bazą.';}
  });
  status(state.waiting?'Szukam w bazach…':'Wyniki lokalne. Dodaj klucz USDA, aby rozszerzyć wyszukiwanie.');
@@ -87,9 +134,14 @@ function nativeResult(source,result,payload,requestId){
        .filter(complete).slice(0,20);
      storeCache(state.query,source,items);merge(items);
    }catch(e){state.lastError='Otrzymano niepoprawne dane.';}
- }else state.lastError=(source==='usda'?'USDA: ':'Open Food Facts: ')+String(payload||'Błąd połączenia.');
+ }else{
+   const unavailable=/\b(502|503|504)\b/.test(String(payload));
+   state.lastError=source==='off'&&unavailable
+      ? 'Open Food Facts chwilowo niedostępne. Wyniki USDA i własne produkty nadal działają.'
+      : (source==='usda'?'USDA: ':'Open Food Facts: ')+String(payload||'Błąd połączenia.');
+ }
  status(state.waiting?'Pobrano '+state.found.length+' wyników. Sprawdzam drugą bazę…':
-   'Znaleziono '+state.found.length+' produktów. '+state.lastError,!!state.lastError);
+   'Znaleziono '+state.found.length+' produktów.'+(state.lastError?' '+state.lastError:''),!!state.lastError);
 }
 function pick(p){
  state.picked={...p};$('v083Editor').classList.remove('foodHidden');
@@ -171,7 +223,7 @@ function install(){
  <div class="foodRow"><div><label>Produkt</label><input id="v083Query" maxlength="90"
  placeholder="np. jajko, kurczak, ryż, mintaj"></div>
  <button id="v083Search" type="button" class="primary">SZUKAJ</button></div>
- <p class="foodMeta">Własne produkty → Open Food Facts → USDA. Sprawdzaj wartości z etykietą.</p>
+ <p class="foodMeta">Własne produkty → Open Food Facts → USDA. Nazwy USDA są tłumaczone pomocniczo; oryginał pozostaje widoczny. Sprawdzaj wartości z etykietą.</p>
  <div id="v083Status" class="foodStatus" role="status">Wpisz nazwę lub dodaj własny produkt.</div>
  <div id="v083Results" class="foodResults"></div>
  <div class="foodActions"><button id="v083New" type="button" class="secondary">+ NOWY WŁASNY</button>
@@ -231,7 +283,7 @@ function install(){
  return true;
 }
 function boot(){let tries=0;const t=setInterval(()=>{tries++;if(install()||tries>=60)clearInterval(t);},100);}
-window.TrenerFoodCatalog={nativeResult,parseOff:off,parseUsda:usda,
+window.TrenerFoodCatalog={nativeResult,parseOff:off,parseUsda:usda,usdaQuery,displayPl,
   calculate:(p,amount,unit,gPiece,gMl)=>{const k=unit==='g'?1:unit==='szt'?gPiece:unit==='ml'?gMl:null;
     if(!(k>0)||!(amount>0))return null;const grams=amount*k,out={grams};
     ['kcal100','protein100','carbs100','fat100'].forEach(f=>out[f]=p[f]===null?null:rnd(p[f]*grams/100));return out;}};
