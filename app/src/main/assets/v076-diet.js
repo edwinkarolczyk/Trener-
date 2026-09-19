@@ -3,7 +3,7 @@
 
   const KEY='trainer3.diet.v076';
   const $=id=>document.getElementById(id);
-  const state={date:''};
+  const state={date:'',editId:null};
 
   function safe(raw,fallback){try{return JSON.parse(raw||'')||fallback;}catch(e){return fallback;}}
   function clone(v){try{return JSON.parse(JSON.stringify(v));}catch(e){return v;}}
@@ -92,6 +92,7 @@
           <div><label>Tłuszcze [g]</label><input id="v076Fat" type="number" min="0" step="0.1" inputmode="decimal" placeholder="np. 20"></div>
         </div>
         <button id="v076AddMeal" class="primary bigBtn" type="button">DODAJ POSIŁEK</button>
+        <button id="v076CancelEdit" class="secondary bigBtn hidden" type="button">ANULUJ EDYCJĘ</button>
         <div class="v076Info">Kalorie możesz przepisać z etykiety. Jeżeli zostawisz kcal puste, aplikacja policzy je z makro: 4 kcal/g białka + 4 kcal/g węglowodanów + 9 kcal/g tłuszczu.</div>
       </div>
 
@@ -123,6 +124,7 @@
     $('v076Prev').onclick=()=>{state.date=shiftKey(state.date,-1);render();};
     $('v076Next').onclick=()=>{const next=shiftKey(state.date,1);if(next<=localKey()){state.date=next;render();}};
     $('v076AddMeal').onclick=addMeal;
+    $('v076CancelEdit').onclick=clearMealEdit;
     $('v076SaveTargets').onclick=saveTargets;
     $('v076ShopAdd').onclick=addShopping;
     $('v076ShopName').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addShopping();}});
@@ -146,9 +148,16 @@
     $('v076Next').disabled=state.date>=localKey();
   }
 
+  function clearMealEdit(){
+    state.editId=null;
+    $('v076AddMeal').textContent='DODAJ POSIŁEK';
+    $('v076CancelEdit')?.classList.add('hidden');
+    ['v076MealName','v076Kcal','v076Protein','v076Carbs','v076Fat','v077Portion'].forEach(id=>{if($(id))$(id).value='';});
+  }
+
   function renderMeals(d){
     const rows=(d.meals||[]).filter(m=>m.date===state.date).sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0));
-    $('v076Meals').innerHTML=rows.length?rows.map(m=>`<div class="v076MealRow"><div><strong>${esc(m.name||mealTypeLabel(m.type))}</strong><span>${mealTypeLabel(m.type)} • ${fmt(m.kcal)} kcal • B ${fmt(m.protein,1)} g • W ${fmt(m.carbs,1)} g • T ${fmt(m.fat,1)} g</span></div><button class="danger" type="button" data-diet-action="delete-meal" data-id="${esc(m.id)}">×</button></div>`).join(''):'<p class="hint">Brak posiłków w tym dniu.</p>';
+    $('v076Meals').innerHTML=rows.length?rows.map(m=>`<div class="v076MealRow"><div><strong>${esc(m.name||mealTypeLabel(m.type))}</strong><span>${mealTypeLabel(m.type)} • ${fmt(m.kcal)} kcal • B ${fmt(m.protein,1)} g • W ${fmt(m.carbs,1)} g • T ${fmt(m.fat,1)} g</span></div><div style="display:flex;gap:6px"><button class="secondary" type="button" aria-label="Edytuj posiłek" title="Edytuj" data-diet-action="edit-meal" data-id="${esc(m.id)}">✎</button><button class="danger" type="button" aria-label="Usuń posiłek" data-diet-action="delete-meal" data-id="${esc(m.id)}">×</button></div></div>`).join(''):'<p class="hint">Brak posiłków w tym dniu.</p>';
   }
 
   function renderTargets(d){
@@ -188,9 +197,18 @@
     let kcal=num($('v076Kcal').value);if(!kcal&&(protein||carbs||fat))kcal=round(protein*4+carbs*4+fat*9,0);
     const name=String($('v076MealName').value||'').trim().slice(0,60),type=$('v076MealType').value||'other';
     if(!kcal&&!protein&&!carbs&&!fat){try{toast('Wpisz kalorie albo przynajmniej jedno makro.');}catch(e){}return;}
-    d.meals.push({id:uid('m'),date:state.date,type,name:name||mealTypeLabel(type),kcal,protein,carbs,fat,createdAt:Date.now()});save(d);
-    ['v076MealName','v076Kcal','v076Protein','v076Carbs','v076Fat'].forEach(id=>{if($(id))$(id).value='';});
-    render();try{toast('Posiłek zapisany.');}catch(e){}
+    const editing=!!state.editId;
+    if(editing){
+      const old=(d.meals||[]).find(m=>m.id===state.editId);
+      if(!old){clearMealEdit();try{toast('Posiłek nie istnieje.');}catch(e){}return;}
+      Object.assign(old,{type,name:name||mealTypeLabel(type),kcal,protein,carbs,fat});
+      if($('v077Portion'))old.portion=String($('v077Portion').value||'').trim().slice(0,30);
+      $('v076AddMeal').dataset.v077SkipPortion='1';
+    }else{
+      d.meals.push({id:uid('m'),date:state.date,type,name:name||mealTypeLabel(type),kcal,protein,carbs,fat,createdAt:Date.now()});
+    }
+    save(d);clearMealEdit();
+    render();try{toast(editing?'Zmiany posiłku zapisane.':'Posiłek zapisany.');}catch(e){}
   }
 
   function saveTargets(){
@@ -206,16 +224,28 @@
 
   function handleAction(ev){
     const el=ev.target?.closest?.('[data-diet-action]');if(!el)return;const action=el.dataset.dietAction,id=el.dataset.id;
+    if(action==='edit-meal'){
+      const meal=(load().meals||[]).find(m=>m.id===id);if(!meal)return;
+      state.editId=meal.id;state.date=meal.date;
+      $('v076MealType').value=meal.type||'other';
+      [['v076MealName','name'],['v076Kcal','kcal'],['v076Protein','protein'],
+       ['v076Carbs','carbs'],['v076Fat','fat'],['v077Portion','portion']]
+        .forEach(([field,key])=>{if($(field))$(field).value=meal[key]??'';});
+      $('v076AddMeal').textContent='ZAPISZ ZMIANY';
+      $('v076CancelEdit')?.classList.remove('hidden');
+      $('v076AddMeal').scrollIntoView({behavior:'smooth',block:'center'});
+      return;
+    }
     if(action==='delete-meal'){
       const d=load();const meal=(d.meals||[]).find(m=>m.id===id);if(!meal)return;
       if(!confirm('Usunąć posiłek „'+String(meal.name||'Posiłek')+'”?'))return;
-      d.meals=d.meals.filter(m=>m.id!==id);save(d);render();return;
+      d.meals=d.meals.filter(m=>m.id!==id);save(d);if(state.editId===id)clearMealEdit();render();return;
     }
     if(action==='delete-shop'){
       const d=load();d.shopping=d.shopping.filter(x=>x.id!==id);save(d);renderShopping(d);return;
     }
     if(action==='open-day'){
-      state.date=el.dataset.date||localKey();render();try{$('diet')?.scrollIntoView({block:'start'});}catch(e){}return;
+      clearMealEdit();state.date=el.dataset.date||localKey();render();try{$('diet')?.scrollIntoView({block:'start'});}catch(e){}return;
     }
   }
 
