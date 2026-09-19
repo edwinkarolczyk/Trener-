@@ -35,7 +35,7 @@ assert.equal(calls.length,1,'unchanged macros should not create extra widget bro
 assert.equal(calls[0].fat,59.2);
 api.sync(true);
 assert.equal(calls.length,2,'force refresh should write widget even without data change');
-stored.meals.pop();
+stored.meals.shift();
 api.sync();
 assert.equal(calls.length,3);
 stored.targets.mode='reduce';
