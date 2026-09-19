@@ -58,7 +58,18 @@ function usdaQuery(q){
 function displayPl(original){
   const text=String(original||'').trim();
   let count=0;
-  const translated=text.toLowerCase().replace(/[a-z]+/g,word=>{
+  const phrases=[
+    [/chicken breasts?/g,'pierś z kurczaka'],
+    [/chicken thighs?/g,'udko kurczaka'],
+    [/scrambled eggs?/g,'jajecznica'],
+    [/mashed potatoes/g,'puree ziemniaczane'],
+    [/olive oil/g,'oliwa z oliwek']
+  ];
+  let normalized=text.toLowerCase();
+  for(const [pattern,label] of phrases){
+    normalized=normalized.replace(pattern,()=>{count++;return label;});
+  }
+  const translated=normalized.replace(/[a-z]+/g,word=>{
     if(!Object.prototype.hasOwnProperty.call(NAME_PL,word))return word;
     count++;return NAME_PL[word];
   });
