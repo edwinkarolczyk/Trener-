@@ -116,7 +116,7 @@ function installTransferUi(){
   '<label>Osoba</label><select id="v086Person"></select>'+
   '<button id="v086Export" class="primary bigBtn" type="button">EKSPORTUJ WYNIK OSOBY JSON</button>'+
   '<label class="secondary fileBtn" style="margin-top:14px">IMPORTUJ WYNIK DO MOJEGO PROFILU'+
-  '<input id="v086Import" type="file" accept="application/json,.json" hidden></label>'+
+  '<input id="v086Import" type="file" accept="application/json" hidden></label>'+
   '<p id="v086TransferStatus" class="hint">Import nie nadpisuje historii innych osób.</p>';
  history.appendChild(card);
  $('v086Session').onchange=renderPeople;
@@ -164,7 +164,7 @@ function exportPerson(){
  if(!h||!p){message('Wybierz trening i osobę.');return;}
  const bundle=transferFor(h,p);
  if(!bundle.session.records.length){message('Ta osoba nie zapisała żadnej serii.');return;}
- const name='Trener2-'+p.name.replace(/[^a-z0-9ąćęłńóśźż_-]+/gi,'-').slice(0,30)+'-'+h.sessionId+'.json';
+ const name='Trener2-'+p.name.replace(/[^a-z0-9ąćęłńóśźż_-]+/gi,'-').slice(0,30)+'-'+h.sessionId.replace(/[^a-z0-9_-]+/gi,'-')+'.json';
  try{
   if(window.Android?.exportBackup){Android.exportBackup(JSON.stringify(bundle,null,2),name);
     message('Wybierz miejsce zapisania pliku, a potem prześlij go uczestnikowi.');return;}
