@@ -106,28 +106,33 @@ public final class NearbyProfileManager {
         }catch(Exception ignored){return null;}
     }
     private Socket connect(Peer p)throws IOException{
-        // A mobile-data default route can pick the wrong interface even after mDNS
-        // found the peer on Wi-Fi. Bind the TCP socket to that exact Wi-Fi network.
-        Socket socket=new Socket();
-        boolean bound=false;
-        try{
-            ConnectivityManager c=connectivity();
-            Network n=wifiNetwork();
-            if(n!=null&&sameWifiSubnet(p.host)){
-                n.bindSocket(socket);
-                bound=true;
+        // mDNS can return IPv6 and an alternate IPv4 TXT address on multi-homed
+        // phones. Try the advertised Wi-Fi IPv4 first, then the resolved host.
+        // Failure to reach either endpoint is not permission to skip pairing.
+        List<InetAddress> candidates=new ArrayList<>();
+        candidates.add(p.host);
+        if(p.resolvedHost!=null&&!p.resolvedHost.equals(p.host))candidates.add(p.resolvedHost);
+        IOException last=null;
+        Network wifi=wifiNetwork();
+        for(InetAddress host:candidates){
+            Socket socket=new Socket();
+            try{
+                boolean preferWifi=wifi!=null&&(sameWifiSubnet(host)||host instanceof Inet6Address);
+                if(preferWifi)wifi.bindSocket(socket);
+                lastEndpoint=host.getHostAddress()+":"+p.port;
+                lastNetwork=preferWifi?"Wi-Fi (wymuszona trasa)":
+                    (wifi==null?"brak aktywnego Wi-Fi":"trasa domyślna");
+                socket.connect(new InetSocketAddress(host,p.port),4800);
+                lastNetwork+=" • źródło "+socket.getLocalAddress().getHostAddress();
+                socket.setSoTimeout(76000);
+                return socket;
+            }catch(IOException | RuntimeException e){
+                try{socket.close();}catch(IOException ignored){}
+                last=e instanceof IOException?(IOException)e:
+                    new IOException("Błąd wyboru sieci: "+e.getClass().getSimpleName(),e);
             }
-            lastEndpoint=p.host.getHostAddress()+":"+p.port;
-            lastNetwork=bound?"Wi-Fi (wymuszona trasa)":
-                (n==null?"brak aktywnego Wi-Fi":"trasa domyślna");
-            socket.connect(new InetSocketAddress(p.host,p.port),4800);
-            socket.setSoTimeout(76000);
-            return socket;
-        }catch(IOException | RuntimeException e){
-            try{socket.close();}catch(IOException ignored){}
-            if(e instanceof IOException)throw (IOException)e;
-            throw new IOException("Błąd wyboru sieci: "+e.getClass().getSimpleName(),e);
         }
+        throw last==null?new IOException("Brak adresu drugiego telefonu."):last;
     }
     public String diagnostics(){
         String address=wifiIpv4();
