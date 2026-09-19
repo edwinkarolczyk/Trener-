@@ -215,6 +215,7 @@ function nativeEvent(raw){
   let ok=false;
   try{
    if(!peer||!safeId(peer.alias))throw Error('Nieznany profil źródłowy.');
+   if(peer.outgoing&&peer.alias!==ownId())throw Error('To nie jest wynik właściciela tego telefonu.');
    const result=window.TrenerOnePhone086?.receive?.(event.bundle,
      {trustedSourceId:peer.id,expectedOriginId:peer.alias});
    if(!result||result.cancelled)throw Error('Import anulowany.');
