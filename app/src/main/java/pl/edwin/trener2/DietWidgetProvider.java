@@ -61,6 +61,13 @@ public class DietWidgetProvider extends AppWidgetProvider {
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
 
+        Intent addWater100 = new Intent(context, HydrationReceiver.class)
+                .setAction(HydrationReceiver.ACTION_ADD_100);
+        PendingIntent addWater100Pending = PendingIntent.getBroadcast(
+                context, 772, addWater100,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
         Intent addWater = new Intent(context, HydrationReceiver.class).setAction(HydrationReceiver.ACTION_ADD_250);
         PendingIntent addWaterPending = PendingIntent.getBroadcast(
                 context,
@@ -83,6 +90,7 @@ public class DietWidgetProvider extends AppWidgetProvider {
             v.setProgressBar(R.id.widgetWaterProgress, waterMax, Math.min(water, waterMax), false);
             v.setOnClickPendingIntent(R.id.widgetRoot, pending);
             v.setOnClickPendingIntent(R.id.widgetOpen, pending);
+            v.setOnClickPendingIntent(R.id.widgetWaterAdd100, addWater100Pending);
             v.setOnClickPendingIntent(R.id.widgetWaterAdd, addWaterPending);
             manager.updateAppWidget(id, v);
         }
