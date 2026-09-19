@@ -80,7 +80,8 @@ public final class NearbyProfileManager {
             if(!key.startsWith("secret."))continue;
             String id=key.substring(7);if(!valid(id))continue;
             try{arr.put(new JSONObject().put("id",id).put("name",p.getString("name."+id,""))
-                .put("alias",p.getString("alias."+id,"")));}catch(Exception ignored){}
+                .put("alias",p.getString("alias."+id,""))
+                .put("outgoing",p.getBoolean("outgoing."+id,false)));}catch(Exception ignored){}
         }
         return arr.toString();
     }
@@ -229,9 +230,10 @@ public final class NearbyProfileManager {
             return key.length==32?key:null;
         }catch(Exception e){return null;}
     }
-    private void savePair(String id,String display,String alias,byte[] key){
+    private void savePair(String id,String display,String alias,byte[] key,boolean outgoing){
         pref().edit().putString("secret."+id,b64(key))
-            .putString("name."+id,display).putString("alias."+id,alias).apply();
+            .putString("name."+id,display).putString("alias."+id,alias)
+            .putBoolean("outgoing."+id,outgoing).apply();
         try{event(new JSONObject().put("type","paired").put("id",id)
             .put("name",display).put("alias",alias));}catch(Exception ignored){}
     }
@@ -261,7 +263,7 @@ public final class NearbyProfileManager {
                     !MessageDigest.isEqual(un64(ack.optString("proof")),
                       un64(proof(key,"responder|"+id+"|"+self))))
                     throw new IOException("Druga osoba nie potwierdziła powiązania.");
-                savePair(id,clip(reply.optString("name"),40),alias,key);
+                savePair(id,clip(reply.optString("name"),40),alias,key,true);
             }catch(Exception e){status("Nie powiązano profili: "+clip(e.getMessage(),65));}
         });
     }
@@ -289,7 +291,7 @@ public final class NearbyProfileManager {
               un64(proof(key,"initiator|"+sender+"|"+self))))return;
         write(out,new JSONObject().put("kind","PAIRED")
             .put("proof",proof(key,"responder|"+self+"|"+sender)));
-        savePair(sender,display,alias,key);
+        savePair(sender,display,alias,key,false);
     }
     private static String encrypt(byte[] key,String plain,String from,String to)throws Exception{
         byte[] iv=new byte[12];new SecureRandom().nextBytes(iv);
