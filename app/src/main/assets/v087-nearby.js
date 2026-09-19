@@ -409,6 +409,7 @@ function boot(){
  if(localStorage.getItem(ENABLED)==='1')setTimeout(beginDiscovery,150);
 }
 window.TrenerNearby087={nativeEvent,selectedRoster,queueFor,jobKey,sessionSaved,
+ get diagnostics(){return diagnosticsText();},
  get people(){return known();},get pairs(){return state.pairs.slice();}};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});
 else boot();
