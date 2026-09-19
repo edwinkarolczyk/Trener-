@@ -265,7 +265,8 @@ function installUi(){
   renderPeople();renderOnline();
  }
  if(setup&&$('v086Count')){
-  $('v086Count').closest('label')?.classList.add('v087Legacy');
+  if($('v086Count').previousElementSibling?.tagName==='LABEL')
+   $('v086Count').previousElementSibling.classList.add('v087Legacy');
   $('v086Count').classList.add('v087Legacy');
   $('v086People')?.classList.add('v087Legacy');
   $('v086SavePeople')?.classList.add('v087Legacy');
