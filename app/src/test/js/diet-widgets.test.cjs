@@ -59,13 +59,13 @@ assert(tags.every(t=>['LinearLayout','TextView','ProgressBar'].includes(t)),
   'AppWidget must only inflate supported RemoteViews classes: '+tags.join(', '));
 assert.equal((dietXml.match(/android:importantForAccessibility="no"/g)||[]).length,4);
 
-assert.equal((dietXml.match(/android:layout_height="wrap_content"\\s+android:orientation="horizontal"/g)||[]).length,2,
+assert.equal((dietXml.match(/android:layout_height="wrap_content"\s+android:orientation="horizontal"/g)||[]).length,2,
   'macro rows must wrap content rather than stretch to widget height');
-assert.equal((dietXml.match(/android:layout_height="wrap_content"\\s+android:layout_marginLeft/g)||[]).length,4,
+assert.equal((dietXml.match(/android:layout_height="wrap_content"\s+android:layout_marginLeft/g)||[]).length,4,
   'all four macro cards must wrap content instead of growing vertically');
-assert.equal((dietXml.match(/android:layout_height="10dp"\\s+android:text=""/g)||[]).length,4,
+assert.equal((dietXml.match(/android:layout_height="10dp"\s+android:text=""/g)||[]).length,4,
   'all four progress bars must have fixed, compact spacing');
-assert(!/android:layout_height="0dp"\\s+android:layout_weight="1"/.test(dietXml),
+assert(!/android:layout_height="0dp"\s+android:layout_weight="1"/.test(dietXml),
   'vertical layout weights stretch macros into oversized empty tiles');
 
 
