@@ -73,6 +73,21 @@
             android:textSize="11sp" />
 
         <TextView
+            android:id="@+id/widgetWaterAdd100"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="5dp"
+            android:paddingLeft="8dp"
+            android:paddingTop="5dp"
+            android:paddingRight="8dp"
+            android:paddingBottom="5dp"
+            android:text="+100 ml"
+            android:textColor="#FFFFFF"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:background="@drawable/diet_widget_button" />
+
+        <TextView
             android:id="@+id/widgetWaterAdd"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
