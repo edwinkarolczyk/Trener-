@@ -113,7 +113,7 @@ function refreshPairs(){
  const peers=state.pairs;
  for(const pair of peers){
   const alias=state.pairIntent[pair.id]||personList().find(p=>p.peerId===pair.id)?.id||
-    (pair.alias===ownId()?pair.id:pair.id);
+    (pair.outgoing&&safeId(pair.alias)&&pair.alias!==ownId()?pair.alias:pair.id);
   if(alias===ownId())continue;
   const existing=personList().find(p=>p.id===alias);
   savePerson({id:alias,name:pair.name||existing?.name||'Osoba',peerId:pair.id});
