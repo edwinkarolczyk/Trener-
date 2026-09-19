@@ -1,3 +1,13 @@
+## 0.8.3
+- dodano wyszukiwanie po nazwie w Diecie, łączące własną bazę produktów z Open Food Facts i opcjonalną USDA FoodData Central,
+- wyszukiwanie online działa przez natywny, asynchroniczny moduł HTTP Androida; czas oczekiwania i wielkość odpowiedzi są ograniczone,
+- USDA wymaga indywidualnego darmowego klucza API wpisanego na telefonie; klucz nie trafia do repozytorium ani eksportowanej kopii,
+- dodano przeliczanie g/szt./ml z masą jednej sztuki lub gęstością g/ml zamiast domyślnego, błędnego przelicznika dla wszystkich płynów,
+- można zapisać i usunąć własne produkty oraz poprawić kcal i makro / 100 g; własne produkty są objęte eksportem/importem danych,
+- nowe produkty wstawiają przeliczone wartości do istniejącego formularza Diety bez zmiany formatu poprzednich posiłków,
+- dodano edycję zapisanych posiłków, zachowując ich identyfikator, datę i historię; szybkie dodawanie nie nadpisuje edytowanej porcji,
+- skaner EAN/UPC i dotychczasowe dane działają jak dotychczas; wersja 0.8.3, versionCode 67.
+
 # Zmiany
 
 ## 0.8.2.12
