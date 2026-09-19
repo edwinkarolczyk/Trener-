@@ -23,4 +23,23 @@ assert.equal(food.calculate(usda,3,'szt',null,null),null);
 const incomplete={kcal100:50,protein100:null,carbs100:0,fat100:0};
 assert.equal(food.calculate(incomplete,100,'g',null,null).protein100,null);
 assert.equal(food.parseOff({code:'0123456789012',product_name:'Without nutrients',nutriments:{}}).protein100,null);
-console.log('Food catalog tests: 8 assertions passed');
+assert.equal(food.usdaQuery('jajka'),'egg');
+assert.equal(food.usdaQuery('pierś z kurczaka'),'chicken breast');
+assert.equal(food.usdaQuery('mintaj'),'pollock');
+assert.equal(food.usdaQuery('PIZZA'),'PIZZA');
+assert.equal(food.displayPl('CHICKEN BREAST, RAW'),'Pierś z kurczaka, surowy');
+assert.equal(food.displayPl('PIZZA, CHEESE'),'Pizza, ser');
+assert.equal(food.parseUsda({fdcId:4,description:'CHICKEN BREAST, RAW',
+  foodNutrients:[{nutrientId:1008,unitName:'KCAL',value:120}]}).originalName,'CHICKEN BREAST, RAW');
+const layoutCode=fs.readFileSync('app/src/main/assets/v084-diet-cards.js','utf8');
+const cardWindow={};
+vm.runInNewContext(layoutCode,{window:cardWindow,document,localStorage},{timeout:2000,filename:'v084-diet-cards.js'});
+const cards=cardWindow.TrenerDietCards084;
+assert(cards,'diet card controls missing');
+assert.equal(cards.orderedKeys(['summary','hydration','catalog'],['catalog','summary','hydration']).join(','),
+ 'catalog,summary,hydration');
+assert.equal(cards.moveKeys(['summary','hydration','catalog'],'catalog',-1).join(','),
+ 'summary,catalog,hydration');
+assert.equal(cards.moveKeys(['summary','hydration','catalog'],'summary',-1).join(','),
+ 'summary,hydration,catalog');
+console.log('Food and diet layout tests: 18 assertions passed');
