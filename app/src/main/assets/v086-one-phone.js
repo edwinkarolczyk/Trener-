@@ -199,14 +199,18 @@ function sanitizeBundle(data){
   duration:Math.max(0,Math.min(86400,Number(session.duration)||0)),
   interrupted:!!session.interrupted,records};
 }
-function receive(data){
+function receive(data,paired){
  if(typeof running!=='undefined'&&running)throw Error('Zakończ trening przed importem historii.');
  const b=sanitizeBundle(data),own=ownId();
+ if(paired&&(!paired.trustedSourceId||!paired.expectedOriginId||
+    paired.expectedOriginId!==b.originParticipantId)){
+  throw Error('Wynik nie pasuje do powiązanego profilu.');
+ }
  if(!own)throw Error('Brak identyfikatora profilu. Otwórz ponownie aplikację.');
  const links=read(LINKS,{});
  const current=safeName($('nameA')?.value)||'Twój profil';
  if(b.originParticipantId!==own&&links[b.originParticipantId]!==own){
-  if(!confirm('Powiązać wyniki osoby „'+b.originName+'” z profilem „'+current+
+  if(!paired&&!confirm('Powiązać wyniki osoby „'+b.originName+'” z profilem „'+current+
    '” na tym telefonie? Nie importuj wyniku innej osoby.'))return {cancelled:true};
   links[b.originParticipantId]=own;
   localStorage.setItem(LINKS,JSON.stringify(links));
@@ -255,13 +259,20 @@ function importFile(e){
 }
 function validateSetup(){
  if(net.connected||net.active){toast('Rozłącz sesję Wi-Fi przed treningiem na jednym telefonie.');return null;}
- const names=loadInputNames();
- if(!validatePeople(names)){toast('Wpisz różne imiona 2–4 uczestników.');return null;}
+ const selected=window.TrenerNearby087?.selectedRoster?.();
+ const members=Array.isArray(selected)?selected:null;
+ if(members&&(!members.length||members.length<2||members.length>4)){
+  toast('Wybierz od 2 do 4 osób.');return null;
+ }
+ const names=members?members.map(p=>p.name):loadInputNames();
+ if(!validatePeople(names)){toast('Wybierz 2–4 różne profile.');return null;}
  const plan=getPlan($('planSelect')?.value);
  if(!plan?.ex?.length){toast('Najpierw wybierz trening.');return null;}
- const members=rosterFor(names.length,names);
- if(!members[0].id){toast('Nie udało się ustalić profilu. Uruchom aplikację ponownie.');return null;}
- return {members,plan};
+ const chosen=members||rosterFor(names.length,names);
+ if(new Set(chosen.map(p=>p.id)).size!==chosen.length||!chosen[0].id){
+  toast('Profile mają nieprawidłowe identyfikatory.');return null;
+ }
+ return {members:chosen,plan};
 }
 function begin(ev){
  if(!state.selected||running)return;
@@ -338,6 +349,7 @@ function finishLocal(interrupted,duration){
  state.lastHistoryId=h?.id||'';
  $('v086Workout')?.classList.add('hidden');
  renderTransfers();
+ try{window.TrenerNearby087?.sessionSaved?.(h);}catch(e){}
  try{renderHistory();renderProgress();}catch(e){}
  return out;
 }
@@ -444,7 +456,8 @@ function boot(){
    if(state.active)checkpoint();}},1000);
  document.querySelector('.tab[data-tab="history"]')?.addEventListener('click',()=>setTimeout(renderTransfers,0));
 }
-window.TrenerOnePhone086={rosterFor,transferFor,sanitizeBundle,receive,get active(){return state.active;},
+window.TrenerOnePhone086={rosterFor,transferFor,sanitizeBundle,receive,
+  getStored:stored,saveRoster,get active(){return state.active;},
   get participants(){return state.participants.slice();}};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});
 else boot();
