@@ -151,7 +151,25 @@ function queueFor(h,people,pairs,already){
  return result;
 }
 function pending(){const q=read(OUTBOX,[]);return Array.isArray(q)?q:[];}
-function sessionSaved(){renderQueue();}
+function sessionSaved(h){
+ renderQueue();
+ if(!h?.onePhone)return;
+ const waiting=queueFor(h,personList(),state.pairs,new Set(read(SENT,[])));
+ if(!waiting.length)return;
+ const root=$('v086Setup');if(!root)return;
+ let banner=$('v087Finished');
+ if(!banner){
+  banner=document.createElement('div');banner.id='v087Finished';
+  banner.className='v087Finished';
+  root.insertBefore(banner,root.firstChild);
+ }
+ banner.innerHTML='<b>Trening zapisany</b><p>'+waiting.length+
+  ' wyników uczestników do przekazania na ich telefony.</p>'+
+  '<button id="v087SendFinished" class="primary" type="button">WYŚLIJ WYNIKI</button> '+
+  '<button id="v087Later" class="secondary" type="button">PÓŹNIEJ</button>';
+ $('v087SendFinished').onclick=()=>{scheduleSession(h);banner.remove();};
+ $('v087Later').onclick=()=>banner.remove();
+}
 function renderQueue(){
  const q=pending();
  if($('v087Pending'))$('v087Pending').textContent=q.length?('Do przesłania: '+q.length):'Brak oczekujących transferów.';
@@ -163,6 +181,9 @@ function scheduleFromSelected(){
  const id=$('v086Session')?.value;
  const history=read('trainer3.history',[]);
  const h=Array.isArray(history)?history.find(x=>x.sessionId===id):null;
+ scheduleSession(h);
+}
+function scheduleSession(h){
  if(!h){status('Najpierw wybierz trening.');return;}
  const sent=new Set(read(SENT,[]));
  const items=queueFor(h,personList(),state.pairs,sent);
@@ -320,7 +341,9 @@ function boot(){
   '.v087Person small{font-size:10px;color:#888}.v087Peer{border:1px solid #373737;border-radius:10px;padding:10px;margin:8px 0}'+
   '.v087Peer small{display:block;color:#aaa;font-size:10px;margin-top:4px}'+
   '.v087Peer select{font-size:11px}.v087Peer button{margin-top:7px}.v087Ok{color:#44d28a;font-size:11px}'+
-  '#v087Advanced{border-top:1px solid #383838;padding:10px 0;margin-top:10px}';
+  '#v087Advanced{border-top:1px solid #383838;padding:10px 0;margin-top:10px}'+
+  '.v087Finished{border:1px solid #277c4c;border-radius:12px;background:#10241a;padding:12px;margin:10px 0}'+
+  '.v087Finished p{font-size:12px;color:#c9d6cf}.v087Finished button{margin:4px 5px 2px 0}';
  document.head.appendChild(s);
  installUi();refreshPairs();
  document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>setTimeout(installUi,40)));
