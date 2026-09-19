@@ -42,4 +42,19 @@ assert.equal(cards.moveKeys(['summary','hydration','catalog'],'catalog',-1).join
  'summary,catalog,hydration');
 assert.equal(cards.moveKeys(['summary','hydration','catalog'],'summary',-1).join(','),
  'summary,hydration,catalog');
-console.log('Food and diet layout tests: 21 assertions passed');
+const layout85Code=fs.readFileSync('app/src/main/assets/v085-drag-layout.js','utf8');
+const layout85Window={};
+const trainingStub={classList:{contains(value){return value==='hidden';}}};
+const layout85Document={readyState:'loading',addEventListener(){},
+ getElementById(id){return id==='training'?trainingStub:null;}};
+vm.runInNewContext(layout85Code,{window:layout85Window,document:layout85Document,
+ localStorage},{timeout:2000,filename:'v085-drag-layout.js'});
+const drag85=layout85Window.TrenerCardLayout085;
+assert(drag85,'general drag layout missing');
+assert.equal(drag85.HOLD_MS,1000);
+assert.equal(drag85.order(['a','b','c'],['c','a','b']).join(','),'c,a,b');
+assert.equal(drag85.order(['a','b','c'],['b']).join(','),'b,a,c');
+assert.equal(drag85.trainingActive(),false);
+trainingStub.classList.contains=()=>false;
+assert.equal(drag85.trainingActive(),true);
+console.log('Food and layout tests: 26 assertions passed');
