@@ -317,6 +317,10 @@ public final class NearbyProfileManager {
         byte[] key=savedSecret(from);if(key==null)return;
         JSONObject bundle=new JSONObject(decrypt(key,req.optString("payload"),from,to));
         if(!pref().getString("alias."+from,"").equals(bundle.optString("originParticipantId")))return;
+        // A phone that initiated pairing may hold an alias for another person.
+        // It must not silently import that person's sets into its own progress.
+        if(pref().getBoolean("outgoing."+from,false)
+            && !self.equals(bundle.optString("originParticipantId")))return;
         CountDownLatch latch=new CountDownLatch(1);
         synchronized(waits){waits.put(job,latch);accepted.put(job,false);}
         try{
