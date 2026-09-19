@@ -121,8 +121,8 @@
       </div>
     </div>`;
 
-    $('v076Prev').onclick=()=>{state.date=shiftKey(state.date,-1);render();};
-    $('v076Next').onclick=()=>{const next=shiftKey(state.date,1);if(next<=localKey()){state.date=next;render();}};
+    $('v076Prev').onclick=()=>{clearMealEdit();state.date=shiftKey(state.date,-1);render();};
+    $('v076Next').onclick=()=>{const next=shiftKey(state.date,1);if(next<=localKey()){clearMealEdit();state.date=next;render();}};
     $('v076AddMeal').onclick=addMeal;
     $('v076CancelEdit').onclick=clearMealEdit;
     $('v076SaveTargets').onclick=saveTargets;
