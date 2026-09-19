@@ -71,5 +71,17 @@ assert.match(java,/alias\."\+from/);
 assert.match(java,/outgoing\."\+from,false/);
 assert.match(java,/KODY ZGODNE/);
 assert.match(java,/new ServerSocket\(0\)/);
+assert.match(java,/NetworkCapabilities\.TRANSPORT_WIFI/);
+assert.match(java,/wifi\.bindSocket\(socket\)/);
+assert.match(java,/List<InetAddress> candidates/);
+assert.match(java,/sameWifiSubnet\(advertised\)/);
+assert.match(java,/info\.setAttribute\("ip4",ip\)/);
+assert.match(java,/public String diagnostics\(\)/);
+const activity=fs.readFileSync('app/src/main/java/pl/edwin/trener2/MainActivity.java','utf8');
+assert.match(activity,/public String nearbyDiagnostics\(\)/);
+near.nativeEvent(JSON.stringify({type:'status',text:'Nie powiązano profili: test połączenia.'}));
+assert.match(near.diagnostics,/Nie powiązano profili/);
+assert.match(near.diagnostics,/Nearby LAN/);
+
 assert.match(fs.readFileSync('app/src/main/AndroidManifest.xml','utf8'),/CHANGE_WIFI_MULTICAST_STATE/);
 console.log('Nearby paired profile, queue, authenticated import checks passed');
