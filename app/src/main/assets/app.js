@@ -528,7 +528,7 @@ function renderHistory(){
     const own=(h.records||[]).filter(r=>(r.athlete||0)===localIndex);
     const volume=Math.round(own.reduce((a,r)=>a+(Number(r.kg)||0)*(Number(r.reps)||0),0));
     const details=groupHistory(h);
-    const modeLabel=h.shared?'Wi‑Fi • wspólny':(h.mode===2?'2 osoby':'solo');
+    const modeLabel=h.onePhone?'Jeden telefon • '+(h.onePhone.participants?.length||h.mode)+' osób':(h.onePhoneImport?'Przeniesiony • jeden telefon':h.shared?'Wi‑Fi • wspólny':(h.mode===2?'2 osoby':'solo'));
     return `<details class="historyItem"><summary><span class="title">${escapeHtml(h.plan||'Trening')}</span><div class="meta">${escapeHtml(h.date||'')} • ${modeLabel} • ${formatTime((h.duration||0)*1000)} • ${own.length} Twoich serii${h.interrupted?' • przerwany':''}</div></summary><div class="meta" style="margin-top:8px">Twoja objętość: ${volume} kg·powt.</div>${details}</details>`;
   }).join('');
 }
