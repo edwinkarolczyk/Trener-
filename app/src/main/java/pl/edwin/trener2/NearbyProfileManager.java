@@ -136,10 +136,21 @@ public final class NearbyProfileManager {
     }
     public String diagnostics(){
         String address=wifiIpv4();
-        return "Lokalne Wi-Fi: "+(address.isEmpty()?"niedostępne":address)+
-            "\nOstatni cel: "+(lastEndpoint.isEmpty()?"—":lastEndpoint)+
-            "\nPołączenie: "+(lastNetwork.isEmpty()?"—":lastNetwork)+
-            "\nWykrywanie: "+(active?"włączone":"wyłączone");
+        StringBuilder out=new StringBuilder();
+        out.append("Lokalne Wi-Fi: ").append(address.isEmpty()?"niedostępne":address);
+        out.append("\nOstatni cel: ").append(lastEndpoint.isEmpty()?"—":lastEndpoint);
+        out.append("\nPołączenie: ").append(lastNetwork.isEmpty()?"—":lastNetwork);
+        out.append("\nWykrywanie: ").append(active?"włączone":"wyłączone");
+        synchronized(online){
+            out.append("\nWykryte telefony: ").append(online.size());
+            for(Peer peer:online.values()){
+                out.append("\n- ").append(clip(peer.name,36)).append(": ")
+                   .append(peer.host.getHostAddress()).append(':').append(peer.port);
+                if(peer.resolvedHost!=null&&!peer.resolvedHost.equals(peer.host))
+                    out.append(" / ").append(peer.resolvedHost.getHostAddress());
+            }
+        }
+        return out.toString();
     }
 
     private static class Peer {
