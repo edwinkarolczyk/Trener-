@@ -1117,6 +1117,11 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public String nearbyDiagnostics() {
+            return nearbyProfiles == null ? "Wykrywanie LAN niedostępne." : nearbyProfiles.diagnostics();
+        }
+
+        @JavascriptInterface
         public String nearbyPairs() {
             return nearbyProfiles == null ? "[]" : nearbyProfiles.pairs();
         }
