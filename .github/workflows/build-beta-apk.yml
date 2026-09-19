@@ -44,6 +44,9 @@ jobs:
       - name: Nearby profile pairing and history queue tests
         run: node app/src/test/js/nearby.test.cjs
 
+      - name: Diet macros and hydration widget tests
+        run: node app/src/test/js/diet-widgets.test.cjs
+
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
