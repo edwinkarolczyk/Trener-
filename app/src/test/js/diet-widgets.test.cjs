@@ -53,8 +53,8 @@ for(const id of ['waterWidgetRoot','waterWidget100','waterWidget250','waterWidge
  assert(waterXml.includes('android:id="@+id/'+id+'"'),'missing water view '+id);
 }
 assert.equal((dietXml.match(/@drawable\/diet_macro_card/g)||[]).length,4);
-assert(!/<Space\\b/.test(dietXml),'AppWidget RemoteViews must not inflate Space; Xiaomi launcher can reject the widget');
-const tags=[...dietXml.matchAll(/<([A-Z][A-Za-z]*)\\b/g)].map(m=>m[1]);
+assert(!/<Space/.test(dietXml),'AppWidget RemoteViews must not inflate Space; Xiaomi launcher can reject the widget');
+const tags=[...dietXml.matchAll(/<([A-Z][A-Za-z]*)/g)].map(m=>m[1]);
 assert(tags.every(t=>['LinearLayout','TextView','ProgressBar'].includes(t)),
   'AppWidget must only inflate supported RemoteViews classes: '+tags.join(', '));
 assert.equal((dietXml.match(/android:importantForAccessibility="no"/g)||[]).length,4);
