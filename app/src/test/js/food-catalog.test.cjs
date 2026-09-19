@@ -42,4 +42,4 @@ assert.equal(cards.moveKeys(['summary','hydration','catalog'],'catalog',-1).join
  'summary,catalog,hydration');
 assert.equal(cards.moveKeys(['summary','hydration','catalog'],'summary',-1).join(','),
  'summary,hydration,catalog');
-console.log('Food and diet layout tests: 18 assertions passed');
+console.log('Food and diet layout tests: 21 assertions passed');
