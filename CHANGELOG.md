@@ -1,3 +1,12 @@
+## 0.8.6
+- Widget Diety Android: przycisk +100 ml obok +250 ml. Osobny PendingIntent i istniejący HydrationStore, dzięki czemu aktualizacja wody działa bez otwierania aplikacji.
+- Nowy niezależny tryb „WSPÓLNY 2–4 • JEDEN TELEFON” bez Wi-Fi i bez roli HOST/GOŚĆ.
+- Stabilny identyfikator każdego uczestnika, osobny ciężar, powtórzenia i liczba serii; wspólna kolejka z odpoczynkiem per osoba i przejściem do następnego ćwiczenia, gdy wszyscy ukończą aktualne.
+- Zapis niedokończonej sesji i opcja wznowienia; zapisane serie przypięte do participantId i sessionId.
+- Po treningu w Historii eksport wyniku konkretnej osoby do JSON, import na jej telefonie z jawnym potwierdzeniem powiązania tożsamości oraz ochroną przed ponownym dodaniem tej samej sesji.
+- Przesłanie pliku to import po treningu, nie synchronizacja na żywo. Historie innych osób nie nadpisują historii właściciela telefonu.
+- Wersja 0.8.6, versionCode 71.
+
 ## 0.8.5.1
 - W Diecie dodano szybkie +100 ml wody obok +250, +330 i +500 ml.
 - W powiadomieniu treningowym ŁYK WODY dodano +100 ml obok istniejących +150 i +250 ml.
