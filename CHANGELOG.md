@@ -1,3 +1,10 @@
+## 0.8.5.1
+- W Diecie dodano szybkie +100 ml wody obok +250, +330 i +500 ml.
+- W powiadomieniu treningowym ŁYK WODY dodano +100 ml obok istniejących +150 i +250 ml.
+- Użyto dotychczasowego mechanizmu zapisu nawodnienia, bez zmian formatu danych.
+- Trening 2–4 osób na jednym telefonie pozostaje osobnym zadaniem: bieżący lokalny tryb obsługuje dwie osoby, natomiast pełna kolejka 2–4 należy do trybu sieciowego.
+- Wersja 0.8.5.1, versionCode 70.
+
 ## 0.8.5
 - Zamiast strzałek ↑/↓ w Diecie: uchwyt ⠿. Przytrzymaj go 1 sekundę, po czym przeciągnij i puść; podnoszenie kafla, płynne rozsuwanie innych kart i autoscroll przy brzegu ekranu.
 - Mechanizm dotyczy kafli wszystkich sześciu głównych zakładek, bez przeciągania pomiędzy zakładkami; każda przechowuje osobną kolejność i stan zwinięcia.
