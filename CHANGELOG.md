@@ -1,3 +1,11 @@
+## 0.8.8
+- Oddzielono dwa widgety Androida: duży „Kalorie i makro” i mały „Woda”. Nie trzeba tworzyć kolejnego widgetu wody w samej aplikacji.
+- „Kalorie i makro” odtwarza bilans dnia z Diety: cztery kafle 2×2 (kalorie, białko, węglowodany, tłuszcze), wartości, cele, pozostałą ilość lub przekroczenie i zielone paski. Pokazuje lokalną datę i tryb: Utrzymanie / Redukcja / Masa. Kliknięcie otwiera Dietę.
+- „Woda” ma osobny stan i przyciski +100 / +250 / +500 ml. Kliknięcie przycisku aktualizuje nawodnienie bez uruchamiania aplikacji; dotknięcie tła otwiera Dietę.
+- Synchronizacja Androida obejmuje komplet czterech makr i cele, nie tylko kalorie/białko. Aktualizacja po zapisie, edycji/usunięciu posiłku, zmianie celu i na nowy dzień; poza aplikacją systemowy widget odświeża się także okresowo i po zmianie daty.
+- Dotychczasowa dieta, historia i konfiguracja wody zachowane. Istniejący diet widget zmienia wygląd na makro, osobny widget wody dodaje się przez ekran główny Androida.
+- Wersja 0.8.8, versionCode 74.
+
 ## 0.8.7.1
 - Naprawa sytuacji „telefon wykryty, ale połączenie na porcie TCP nie działa”: gniazdo powiązania i transferu używa właściwej trasy Wi-Fi zamiast domyślnej trasy danych komórkowych, gdy adres należy do sieci Wi-Fi.
 - Usługi mDNS/NSD reklamują lokalny adres IPv4 telefonu i nadal zachowują oryginalny adres zwrócony przez Androida; próba TCP obejmuje oba adresy, jeżeli się różnią.
