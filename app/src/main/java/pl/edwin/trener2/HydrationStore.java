@@ -32,7 +32,7 @@ public final class HydrationStore {
         String key = DAY_PREFIX + LocalDate.now();
         int next = Math.max(0, Math.min(15000, p.getInt(key, 0) + amount));
         p.edit().putInt(key, next).putLong("updated_at", System.currentTimeMillis()).apply();
-        DietWidgetProvider.updateAll(context);
+        WaterWidgetProvider.updateAll(context);
         return next;
     }
 
@@ -63,7 +63,7 @@ public final class HydrationStore {
                 .putString("workout_frequency", freq)
                 .putLong("updated_at", System.currentTimeMillis())
                 .apply();
-        DietWidgetProvider.updateAll(context);
+        WaterWidgetProvider.updateAll(context);
     }
 
     public static boolean remindersEnabled(Context context) {
