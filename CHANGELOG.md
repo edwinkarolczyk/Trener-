@@ -1,3 +1,10 @@
+## 0.8.5
+- Zamiast strzałek ↑/↓ w Diecie: uchwyt ⠿. Przytrzymaj go 1 sekundę, po czym przeciągnij i puść; podnoszenie kafla, płynne rozsuwanie innych kart i autoscroll przy brzegu ekranu.
+- Mechanizm dotyczy kafli wszystkich sześciu głównych zakładek, bez przeciągania pomiędzy zakładkami; każda przechowuje osobną kolejność i stan zwinięcia.
+- W czasie aktywnego treningu przestawianie kafli jest wyłączone na każdym ekranie. Przeciąganie działa wyłącznie z osobnego uchwytu, nie z pól treningowych czy nazwy sekcji.
+- Migracja wcześniejszej kolejności Diety 0.8.4, zachowanie poprzednich posiłków, skanera i pozostałych danych; układ zapisuje się pod trainer3.cardLayout.v085 i jest objęty kopią.
+- Wersja 0.8.5, versionCode 69.
+
 ## 0.8.4
 - Polskie zapytania do USDA dla popularnych składników i pomocnicze polskie etykiety z zachowaniem pełnej nazwy oryginalnej.
 - Przy odpowiedzi OFF 502/503/504 jednokrotne ponowienie zapytania i czytelny komunikat; wyniki USDA oraz własne produkty nadal dostępne.
