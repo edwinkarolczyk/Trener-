@@ -1,3 +1,14 @@
+## 0.8.7
+- Nowe, opcjonalne wykrywanie innych Trenerów 2 w tej samej sieci Wi-Fi lub na hotspocie (Android NSD/mDNS); brak skanowania QR, ręcznego IP i wpisywania imion przy kolejnych treningach.
+- Powiązanie profili za zgodą obu telefonów: dwa ekrany pokazują ten sam sześciocyfrowy kod do porównania (bez przepisywania), identyfikator profilu nie zależy od wyświetlanego imienia.
+- W zakładce Start tryb „Wspólny 2–4 • jeden telefon” wybiera zapamiętanych uczestników z listy, zamiast wpisywać imiona ponownie. Nowy profil z pobliskiego telefonu dodaje się po powiązaniu; osoba bez telefonu pozostaje opcją ręczną.
+- Po zakończeniu wspólnego treningu: Historia → Wyślij wyniki powiązanym osobom. Wyniki oczekują lokalnie, jeśli drugi telefon jest offline, i podejmują wysyłkę ponownie po wykryciu go w sieci.
+- Osobny kanał sieciowy od trwającej sesji Wi-Fi; wyniki szyfrowane AES-GCM kluczem z jednorazowego powiązania ECDH i przypięte do sesji + uczestnika. Odbiorca potwierdza zapis; ponowne dostarczenie nie duplikuje treningu.
+- Dane do ręcznego JSON pozostają w szczegółach jako awaryjna metoda. Sekrety parowania są przechowywane w prywatnej pamięci Androida, nie w eksporcie treningów; po przeniesieniu aplikacji może być konieczne ponowne powiązanie.
+- Automatyczne wykrywanie wymaga działającej aplikacji na obu telefonach, wspólnej sieci lokalnej i uprzedniego włączenia funkcji. Sieci z izolacją urządzeń mogą blokować mDNS.
+- Ochrona przed przypisaniem wyników innej osoby do profilu właściciela telefonu, także przy transferze w odwrotną stronę.
+- Wersja 0.8.7, versionCode 72.
+
 ## 0.8.6
 - Widget Diety Android: przycisk +100 ml obok +250 ml. Osobny PendingIntent i istniejący HydrationStore, dzięki czemu aktualizacja wody działa bez otwierania aplikacji.
 - Nowy niezależny tryb „WSPÓLNY 2–4 • JEDEN TELEFON” bez Wi-Fi i bez roli HOST/GOŚĆ.
