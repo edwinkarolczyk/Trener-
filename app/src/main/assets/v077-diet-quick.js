@@ -83,12 +83,8 @@
     if($('v077Portion'))$('v077Portion').value='';renderQuick('recent');
   }
 
-  function syncWidget(d=diet()){
-    try{
-      const today=dayKey(),total=(d.meals||[]).filter(m=>m.date===today).reduce((a,m)=>{a.kcal+=num(m.kcal);a.protein+=num(m.protein);return a;},{kcal:0,protein:0});
-      const t=d.targets||{};const payload={kcal:Math.round(total.kcal),protein:Math.round(total.protein*10)/10,targetKcal:Math.round(num(t.kcal)),targetProtein:Math.round(num(t.protein)*10)/10,updatedAt:Date.now()};
-      if(window.Android&&Android.syncDietWidget)Android.syncDietWidget(JSON.stringify(payload));
-    }catch(e){}
+  function syncWidget(){
+    try{window.TrenerWidget077?.sync?.(true);}catch(e){}
   }
 
   function boot(){installCss();let tries=0;const t=setInterval(()=>{tries++;installUi();if($('v077QuickCard')||tries>40)clearInterval(t);},100);}
