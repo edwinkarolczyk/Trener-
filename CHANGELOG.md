@@ -1,3 +1,11 @@
+## 0.8.7.1
+- Naprawa sytuacji „telefon wykryty, ale połączenie na porcie TCP nie działa”: gniazdo powiązania i transferu używa właściwej trasy Wi-Fi zamiast domyślnej trasy danych komórkowych, gdy adres należy do sieci Wi-Fi.
+- Usługi mDNS/NSD reklamują lokalny adres IPv4 telefonu i nadal zachowują oryginalny adres zwrócony przez Androida; próba TCP obejmuje oba adresy, jeżeli się różnią.
+- Ponowne włączenie „Szukaj telefonów” uruchamia świeży nasłuch i ogłoszenie usługi na nowym porcie, zamiast trzymać stary adres po przełączeniu Wi-Fi/hotspotu.
+- Po błędzie przycisk „POŁĄCZ” jest aktywny ponownie. Dodano ekran „Nie łączy? Diagnostyka połączenia” z lokalnym adresem Wi-Fi, celem/portem, źródłem połączenia i możliwością skopiowania raportu. Log starej sesji treningowej nie obejmuje tego osobnego kanału powiązania profili.
+- Uporządkowano przestarzałą wzmiankę o ręcznym pliku JSON na ekranie wspólnego treningu. Powiązania i historie pozostają bez migracji ani resetowania danych.
+- Wersja 0.8.7.1, versionCode 73.
+
 ## 0.8.7
 - Nowe, opcjonalne wykrywanie innych Trenerów 2 w tej samej sieci Wi-Fi lub na hotspocie (Android NSD/mDNS); brak skanowania QR, ręcznego IP i wpisywania imion przy kolejnych treningach.
 - Powiązanie profili za zgodą obu telefonów: dwa ekrany pokazują ten sam sześciocyfrowy kod do porównania (bez przepisywania), identyfikator profilu nie zależy od wyświetlanego imienia.
