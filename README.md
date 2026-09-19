@@ -49,3 +49,22 @@ Moduł jest obecnie tylko zaprojektowany wizualnie. Kalorie, białko, tłuszcze 
 ## Prywatność
 
 Historia, masa ciała i zdjęcia sylwetki pozostają lokalnie na urządzeniu. Zdjęcia nie są przesyłane podczas synchronizacji Wi-Fi, na GitHub ani do chmury. Wspólna sesja przesyła jedynie dane treningowe potrzebne do pokazania bieżącego postępu.
+
+
+## Baza żywności (0.8.3)
+
+Dieta → „Znajdź produkt po nazwie”: wpisz np. „kurczak”, „jajko” albo „ryż” i naciśnij SZUKAJ.
+Wyszukiwarka pokazuje własne produkty oraz wyniki Open Food Facts. Aby włączyć USDA
+(żywność bez kodu kreskowego), pobierz indywidualny darmowy klucz z
+https://fdc.nal.usda.gov/api-key-signup i wpisz go w sekcji „USDA — produkty bez kodów”.
+Klucz jest przechowywany lokalnie na urządzeniu i nie trafia do eksportu kopii.
+Wybierz produkt, sprawdź wartości na 100 g, ustaw ilość w g, szt. lub ml.
+Dla sztuk należy podać wagę jednej sztuki; dla ml — g/ml, bo nie wszystkie płyny
+ważą tyle samo. „WSTAW DO POSIŁKU” przepisuje dane do istniejącego formularza;
+„DODAJ POSIŁEK” zapisuje wpis. Można zapisać własny produkt, np. domowe puree.
+Aby poprawić już zapisany posiłek, użyj ikony ✎ w jego wierszu.
+Dane Open Food Facts są społecznościowe (ODbL) i mogą być niepełne.
+
+Test manualny: wyszukanie i zapis własnego produktu offline, wybór OFF online,
+wyszukiwanie USDA z kluczem i błędnym kluczem, 200 g / 3 szt. / 250 ml,
+edycja i usunięcie posiłku, ponowne uruchomienie, eksport/import oraz skan EAN.
