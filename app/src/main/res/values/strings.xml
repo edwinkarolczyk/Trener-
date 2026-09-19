@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Trener 2</string>
-    <string name="diet_widget_description">Dzisiejsze kalorie i białko w Trener 2</string>
+    <string name="diet_widget_description">Kalorie, białko, węglowodany i tłuszcze — bilans dnia Trener 2</string>
+    <string name="water_widget_description">Woda na dziś i szybkie dodawanie 100, 250 lub 500 ml</string>
     <string name="workout_widget_description">Aktywny trening, seria, czas i odpoczynek w Trener 2</string>
 </resources>
