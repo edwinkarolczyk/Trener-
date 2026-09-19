@@ -54,14 +54,12 @@
     </LinearLayout>
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
+        android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:layout_marginTop="8dp">
         <LinearLayout
             android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
+            android:layout_height="wrap_content"
             android:layout_marginLeft="3dp"
             android:layout_marginRight="3dp"
             android:orientation="vertical"
@@ -97,8 +95,7 @@
                 android:ellipsize="end" />
             <TextView
                 android:layout_width="1dp"
-                android:layout_height="0dp"
-                android:layout_weight="1"
+                android:layout_height="10dp"
                 android:text=""
                 android:importantForAccessibility="no" />
             <ProgressBar
@@ -113,8 +110,7 @@
         </LinearLayout>
         <LinearLayout
             android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
+            android:layout_height="wrap_content"
             android:layout_marginLeft="3dp"
             android:layout_marginRight="3dp"
             android:orientation="vertical"
@@ -150,8 +146,7 @@
                 android:ellipsize="end" />
             <TextView
                 android:layout_width="1dp"
-                android:layout_height="0dp"
-                android:layout_weight="1"
+                android:layout_height="10dp"
                 android:text=""
                 android:importantForAccessibility="no" />
             <ProgressBar
@@ -167,14 +162,12 @@
     </LinearLayout>
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
+        android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:layout_marginTop="6dp">
         <LinearLayout
             android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
+            android:layout_height="wrap_content"
             android:layout_marginLeft="3dp"
             android:layout_marginRight="3dp"
             android:orientation="vertical"
@@ -210,8 +203,7 @@
                 android:ellipsize="end" />
             <TextView
                 android:layout_width="1dp"
-                android:layout_height="0dp"
-                android:layout_weight="1"
+                android:layout_height="10dp"
                 android:text=""
                 android:importantForAccessibility="no" />
             <ProgressBar
@@ -226,8 +218,7 @@
         </LinearLayout>
         <LinearLayout
             android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
+            android:layout_height="wrap_content"
             android:layout_marginLeft="3dp"
             android:layout_marginRight="3dp"
             android:orientation="vertical"
@@ -263,8 +254,7 @@
                 android:ellipsize="end" />
             <TextView
                 android:layout_width="1dp"
-                android:layout_height="0dp"
-                android:layout_weight="1"
+                android:layout_height="10dp"
                 android:text=""
                 android:importantForAccessibility="no" />
             <ProgressBar
