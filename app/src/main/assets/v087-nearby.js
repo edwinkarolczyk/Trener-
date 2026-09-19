@@ -24,8 +24,44 @@ function nativePairs(){
   return Array.isArray(list)?list.filter(p=>safeId(p.id)&&safeId(p.alias)):[];
  }catch(e){return [];}
 }
-function status(txt){state.lastMessage=txt;if($('v087Status'))$('v087Status').textContent=txt;
- if($('v087SendStatus'))$('v087SendStatus').textContent=txt;}
+function status(txt){
+ state.lastMessage=String(txt||'');
+ if($('v087Status'))$('v087Status').textContent=state.lastMessage;
+ if($('v087SendStatus'))$('v087SendStatus').textContent=state.lastMessage;
+}
+function diagnosticsText(){
+ let nativeState='';
+ try{nativeState=Android.nearbyDiagnostics?.()||'';}catch(e){}
+ let version='';
+ try{version=Android.getAppVersion?.()||'';}catch(e){}
+ return 'Trener 2 '+version+' • Nearby LAN\n'+nativeState+
+  '\nOstatni komunikat: '+state.lastMessage+
+  '\nUwaga: zwykły log wspólnego treningu Wi-Fi nie obejmuje powiązania profili.';
+}
+function refreshDiagnostics(){
+ if($('v087DiagText'))$('v087DiagText').textContent=diagnosticsText();
+}
+function installDiagnostics(container){
+ if(!container||container.querySelector('[data-v087-diag]'))return;
+ const details=document.createElement('details');
+ details.setAttribute('data-v087-diag','1');
+ details.id='v087Trouble';
+ details.innerHTML='<summary>Nie łączy? Diagnostyka połączenia</summary>'+
+   '<p class="v087Help">Włącz wykrywanie na obu telefonach. Sprawdź, czy oba mają wersję 0.8.7.1 i działają w tej samej sieci. Sieć gościnna, izolacja klientów lub VPN mogą blokować połączenie.</p>'+
+   '<button class="secondary" type="button" data-v087-restart>PONÓW WYKRYWANIE</button>'+
+   '<button class="secondary" type="button" data-v087-copy>KOPIUJ DIAGNOSTYKĘ LAN</button>'+
+   '<pre class="v087Diag" id="v087DiagText"></pre>';
+ container.appendChild(details);
+ details.ontoggle=()=>{if(details.open)refreshDiagnostics();};
+ details.querySelector('[data-v087-restart]').onclick=beginDiscovery;
+ details.querySelector('[data-v087-copy]').onclick=()=>{
+  const content=diagnosticsText();
+  try{
+   if(Android.copyText?.(content)){status('Skopiowano diagnostykę LAN.');return;}
+  }catch(e){}
+  status('Nie udało się skopiować diagnostyki.');
+ };
+}
 function known(){
  const main={id:ownId(),name:ownName(),owner:true};
  const old=window.TrenerOnePhone086?.getStored?.()||[];
@@ -212,7 +248,15 @@ function flush(){
 }
 function nativeEvent(raw){
  let event;try{event=JSON.parse(raw);}catch(e){return;}
- if(event.type==='status'){status(event.text||'Stan sieci zmieniony.');return;}
+ if(event.type==='status'){
+  status(event.text||'Stan sieci zmieniony.');
+  if(/Nie powiązano|Nie połączono|Nie udało|sieć lokaln/i.test(String(event.text||''))){
+   renderOnline();
+   const details=$('v087Trouble');
+   if(details){details.open=true;refreshDiagnostics();}
+  }
+  return;
+ }
  if(event.type==='online'){
   state.peers=Array.isArray(event.peers)?event.peers.filter(p=>safeId(p.id)&&p.id!==ownId()):[];
   updatePairNames();renderOnline();flush();return;
@@ -274,6 +318,7 @@ function installUi(){
    '<button id="v087Disable" type="button" class="secondary">WYŁĄCZ WYKRYWANIE</button>'+
    '<div id="v087Online"></div><p id="v087Status" class="v087Help">Otwórz Trenera 2 na drugim telefonie.</p>';
   setup.insertBefore(box,setup.firstChild);
+  installDiagnostics(box);
   $('v087Enable').onclick=beginDiscovery;
   $('v087Disable').onclick=stopDiscovery;
   $('v087AddOffline').onclick=()=>{
@@ -287,6 +332,11 @@ function installUi(){
   renderPeople();renderOnline();
  }
  if(setup&&$('v086Count')){
+  setup.querySelectorAll(':scope > .v086Note').forEach((note,i)=>{
+   note.textContent=i===0
+    ?'Jedna kolejka, osobne serie i odpoczynek każdej osoby. Wyniki wyślesz z aplikacji, bez pliku JSON.'
+    :'Osoby bez telefonu pozostają na liście. Powiązany profil nie zależy od imienia.';
+  });
   if($('v086Count').previousElementSibling?.tagName==='LABEL')
    $('v086Count').previousElementSibling.classList.add('v087Legacy');
   $('v086Count').classList.add('v087Legacy');
@@ -344,6 +394,10 @@ function boot(){
   '#v087Advanced{border-top:1px solid #383838;padding:10px 0;margin-top:10px}'+
   '.v087Finished{border:1px solid #277c4c;border-radius:12px;background:#10241a;padding:12px;margin:10px 0}'+
   '.v087Finished p{font-size:12px;color:#c9d6cf}.v087Finished button{margin:4px 5px 2px 0}';
+ s.textContent+='.v087Help{overflow-wrap:anywhere;word-break:break-word}'+
+   '.v087Diag{white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;'+
+   'font-size:11px;line-height:1.45;padding:9px;border-radius:8px;background:#101010;color:#ddd}'+
+   '#v087Trouble{border-top:1px solid #383838;margin-top:12px;padding-top:10px}';
  document.head.appendChild(s);
  installUi();refreshPairs();
  document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>setTimeout(installUi,40)));
