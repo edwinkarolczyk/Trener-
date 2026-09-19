@@ -73,6 +73,10 @@
   }
 
   function afterManualAdd(){
+    if($('v076AddMeal')?.dataset.v077SkipPortion==='1'){
+      delete $('v076AddMeal').dataset.v077SkipPortion;
+      syncWidget(diet());renderQuick('recent');return;
+    }
     const portion=String($('v077Portion')?.value||'').trim().slice(0,30),d=diet();
     const newest=[...(d.meals||[])].sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0))[0];
     if(newest&&Date.now()-Number(newest.createdAt||0)<3000&&portion){newest.portion=portion;saveDiet(d);}else syncWidget(d);
