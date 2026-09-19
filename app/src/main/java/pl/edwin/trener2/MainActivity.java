@@ -66,6 +66,7 @@ public class MainActivity extends Activity {
 
     private WebView webView;
     private LocalSessionManager localSession;
+    private NearbyProfileManager nearbyProfiles;
     private GmsBarcodeScanner qrScanner;
     private GmsBarcodeScanner foodScanner;
     private UpdateInstaller updateInstaller;
@@ -181,6 +182,7 @@ public class MainActivity extends Activity {
             }
         });
 
+        nearbyProfiles = new NearbyProfileManager(this, this::emitNearbyEvent);
         webView.addJavascriptInterface(new AndroidBridge(this), "Android");
         webView.loadUrl("file:///android_asset/index.html");
         setContentView(webView);
@@ -924,6 +926,15 @@ public class MainActivity extends Activity {
         }
     }
 
+    private void emitNearbyEvent(String json) {
+        if (webView == null) return;
+        final String js = "window.TrenerNearby087&&window.TrenerNearby087.nativeEvent("
+                + JSONObject.quote(json == null ? "{}" : json) + ");";
+        runOnUiThread(() -> {
+            if (webView != null) webView.evaluateJavascript(js, null);
+        });
+    }
+
     private void emitWifiStatus(String status, String detail) {
         if (webView == null) return;
         final String js = "window.TrenerWifi&&window.TrenerWifi.nativeStatus("
@@ -1014,6 +1025,7 @@ public class MainActivity extends Activity {
             fileChooserCallback.onReceiveValue(null);
             fileChooserCallback = null;
         }
+        if (nearbyProfiles != null) nearbyProfiles.shutdown();
         if (localSession != null) localSession.shutdown();
         if (webView != null) webView.destroy();
         super.onDestroy();
@@ -1092,6 +1104,36 @@ public class MainActivity extends Activity {
             } else {
                 vibrator.vibrate(duration);
             }
+        }
+
+        @JavascriptInterface
+        public void nearbyStart(String profileId, String profileName) {
+            if (nearbyProfiles != null) nearbyProfiles.start(profileId, profileName);
+        }
+
+        @JavascriptInterface
+        public void nearbyStop() {
+            if (nearbyProfiles != null) nearbyProfiles.stop();
+        }
+
+        @JavascriptInterface
+        public String nearbyPairs() {
+            return nearbyProfiles == null ? "[]" : nearbyProfiles.pairs();
+        }
+
+        @JavascriptInterface
+        public void nearbyPair(String profileId, String localParticipantId) {
+            if (nearbyProfiles != null) nearbyProfiles.pair(profileId, localParticipantId);
+        }
+
+        @JavascriptInterface
+        public void nearbySend(String peerId, String json, String jobId) {
+            if (nearbyProfiles != null) nearbyProfiles.send(peerId, json, jobId);
+        }
+
+        @JavascriptInterface
+        public void nearbyAck(String jobId, boolean accepted) {
+            if (nearbyProfiles != null) nearbyProfiles.ack(jobId, accepted);
         }
 
         @JavascriptInterface
