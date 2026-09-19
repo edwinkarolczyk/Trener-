@@ -13,14 +13,17 @@ public class HydrationReceiver extends BroadcastReceiver {
     public static final String ACTION_REMIND = "pl.edwin.trener2.HYDRATION_REMIND";
     public static final String ACTION_ADD_100 = "pl.edwin.trener2.HYDRATION_ADD_100";
     public static final String ACTION_ADD_250 = "pl.edwin.trener2.HYDRATION_ADD_250";
+    public static final String ACTION_ADD_500 = "pl.edwin.trener2.HYDRATION_ADD_500";
     private static final String CHANNEL_ID = "hydration_reminders";
     private static final int NOTIFICATION_ID = 7802;
 
     @Override
     public void onReceive(Context context, Intent intent) {
         String action = intent == null ? "" : String.valueOf(intent.getAction());
-        if (ACTION_ADD_100.equals(action) || ACTION_ADD_250.equals(action)) {
-            int amount = ACTION_ADD_100.equals(action) ? 100 : 250;
+        if (ACTION_ADD_100.equals(action) || ACTION_ADD_250.equals(action)
+                || ACTION_ADD_500.equals(action)) {
+            int amount = ACTION_ADD_100.equals(action) ? 100
+                    : ACTION_ADD_500.equals(action) ? 500 : 250;
             int total = HydrationStore.addWater(context, amount);
             NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
             if (manager != null) manager.cancel(NOTIFICATION_ID);
