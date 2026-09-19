@@ -31,8 +31,7 @@
   }
   function trainingActive(){
     const training=$('training');
-    return !!(training&&!training.classList.contains('hidden')&&
-      (!training.closest('.screen')||training.closest('.screen').classList.contains('show')));
+    return !!(training&&!training.classList.contains('hidden'));
   }
   function canDrag(tab){
     return TABS.includes(tab)&&!trainingActive()&&!drag&&!press;
