@@ -321,6 +321,70 @@ public class MainActivity extends Activity {
         }, "Trener2-OpenFoodFacts").start();
     }
 
+
+    private void searchFoodCatalogNative(String source, String query, String apiKey, int requestId) {
+        final String provider = "usda".equals(source) ? "usda" : "off";
+        final String text = query == null ? "" : query.trim();
+        if (!"off".equals(source) && !"usda".equals(source)) {
+            emitFoodCatalog(provider, "error", "Nieznane źródło.", requestId);
+            return;
+        }
+        if (text.length() < 2 || text.length() > 90) {
+            emitFoodCatalog(provider, "error", "Wpisz 2–90 znaków.", requestId);
+            return;
+        }
+        final String key = apiKey == null ? "" : apiKey.trim();
+        if ("usda".equals(provider) && !key.matches("[A-Za-z0-9_-]{8,128}")) {
+            emitFoodCatalog(provider, "error", "Podaj poprawny klucz API USDA.", requestId);
+            return;
+        }
+        new Thread(() -> {
+            HttpURLConnection connection = null;
+            try {
+                final String term = java.net.URLEncoder.encode(text, "UTF-8");
+                final String endpoint = "off".equals(provider)
+                        ? "https://world.openfoodfacts.org/cgi/search.pl?search_terms=" + term
+                            + "&search_simple=1&action=process&json=1&page_size=20"
+                            + "&fields=code,product_name,product_name_pl,nutriments,serving_quantity,brands"
+                        : "https://api.nal.usda.gov/fdc/v1/foods/search?query=" + term
+                            + "&pageSize=15&dataType=Foundation,SR%20Legacy,Branded"
+                            + "&api_key=" + java.net.URLEncoder.encode(key, "UTF-8");
+                connection = (HttpURLConnection) new URL(endpoint).openConnection();
+                connection.setRequestMethod("GET");
+                connection.setConnectTimeout(8000);
+                connection.setReadTimeout(12000);
+                connection.setRequestProperty("Accept", "application/json");
+                connection.setRequestProperty("Accept-Language", "pl,en;q=0.8");
+                connection.setRequestProperty("User-Agent", "Trener2/0.8.3 Android food-search");
+                int status = connection.getResponseCode();
+                if (status != HttpURLConnection.HTTP_OK) {
+                    String detail = status == 401 || status == 403
+                            ? "Odmowa dostępu — sprawdź klucz API i limity."
+                            : status == 429 ? "Limit zapytań — spróbuj później."
+                            : "Błąd HTTP " + status + ".";
+                    emitFoodCatalog(provider, "error", detail, requestId);
+                    return;
+                }
+                StringBuilder body = new StringBuilder();
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+                        connection.getInputStream(), StandardCharsets.UTF_8))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        if (body.length() + line.length() > 1250000) {
+                            throw new IllegalStateException("Odpowiedź jest zbyt duża.");
+                        }
+                        body.append(line);
+                    }
+                }
+                emitFoodCatalog(provider, "ok", body.toString(), requestId);
+            } catch (Exception e) {
+                emitFoodCatalog(provider, "error", "Błąd połączenia. Sprawdź internet.", requestId);
+            } finally {
+                if (connection != null) connection.disconnect();
+            }
+        }, "Trener2-food-" + provider).start();
+    }
+
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationManager manager = getSystemService(NotificationManager.class);
@@ -879,6 +943,17 @@ public class MainActivity extends Activity {
         runOnUiThread(() -> webView.evaluateJavascript(js, null));
     }
 
+
+    private void emitFoodCatalog(String provider, String status, String payload, int requestId) {
+        if (webView == null) return;
+        final String js = "window.TrenerFoodCatalog&&window.TrenerFoodCatalog.nativeResult("
+                + JSONObject.quote(provider) + ","
+                + JSONObject.quote(status) + ","
+                + JSONObject.quote(payload == null ? "" : payload) + ","
+                + requestId + ");";
+        runOnUiThread(() -> webView.evaluateJavascript(js, null));
+    }
+
     private void emitUpdateResult(String status, String payload) {
         if (webView == null) return;
         final String js = "window.TrenerUpdate&&window.TrenerUpdate.nativeResult("
@@ -1086,6 +1161,11 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void lookupOpenFoodFacts(String barcode) {
             lookupOpenFoodFactsNative(barcode);
+        }
+
+        @JavascriptInterface
+        public void searchFoodCatalog(String source, String query, String apiKey, int requestId) {
+            searchFoodCatalogNative(source, query, apiKey, requestId);
         }
 
         @JavascriptInterface
