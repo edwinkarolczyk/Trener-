@@ -1,3 +1,10 @@
+## 0.8.4
+- Polskie zapytania do USDA dla popularnych składników i pomocnicze polskie etykiety z zachowaniem pełnej nazwy oryginalnej.
+- Przy odpowiedzi OFF 502/503/504 jednokrotne ponowienie zapytania i czytelny komunikat; wyniki USDA oraz własne produkty nadal dostępne.
+- Karty Diety zwijane po kliknięciu nazwy; przyciski góra/dół zmieniają ich kolejność; układ zapisywany lokalnie i w kopii danych.
+- Długa lista wyników ma niezależne przewijanie.
+- Wersja 0.8.4, versionCode 68.
+
 ## 0.8.3
 - dodano wyszukiwanie po nazwie w Diecie, łączące własną bazę produktów z Open Food Facts i opcjonalną USDA FoodData Central,
 - wyszukiwanie online działa przez natywny, asynchroniczny moduł HTTP Androida; czas oczekiwania i wielkość odpowiedzi są ograniczone,
