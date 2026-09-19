@@ -42,6 +42,7 @@
     ['0.8.4','v084-diet-cards.js'],
     ['0.8.5','v085-drag-layout.js'],
     ['0.8.6','v086-one-phone.js'],
+    ['0.8.7','v087-nearby.js'],
     ['0.8.2','v082-shared-guard-progress.js'],
     ['0.8.2.1','v0821-workout-ux.js'],
     ['0.8.2.3','v0823-diagnostics.js'],
