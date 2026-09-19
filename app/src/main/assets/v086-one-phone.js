@@ -26,7 +26,7 @@ function saveRoster(p){
 }
 const state={selected:false,active:false,participants:[],readyAt:{},exercise:0,turn:0,
   lastTurn:-1,sessionId:'',plan:null,lastWeights:{},startAt:0,
-  baseFinish:null,lastHistoryId:''};
+  baseFinish:null,lastHistoryId:'',renderedKey:''};
 function validatePeople(names){
  const nonEmpty=names.every(x=>safeName(x));
  const uniq=new Set(names.map(x=>safeName(x).toLocaleLowerCase('pl-PL'))).size===names.length;
@@ -200,6 +200,7 @@ function sanitizeBundle(data){
   interrupted:!!session.interrupted,records};
 }
 function receive(data){
+ if(typeof running!=='undefined'&&running)throw Error('Zakończ trening przed importem historii.');
  const b=sanitizeBundle(data),own=ownId();
  if(!own)throw Error('Brak identyfikatora profilu. Otwórz ponownie aplikację.');
  const links=read(LINKS,{});
@@ -211,6 +212,10 @@ function receive(data){
   localStorage.setItem(LINKS,JSON.stringify(links));
  }
  const h=readHistory();
+ if(h.some(x=>x.sessionId===b.sessionId&&x.onePhone&&
+   x.participantId===own&&b.originParticipantId===own)){
+  return {imported:false,sets:b.records.length};
+ }
  const existing=h.find(x=>x.sessionId===b.sessionId&&
    x.onePhoneImport?.originParticipantId===b.originParticipantId);
  const id='import:'+b.sessionId+':'+b.originParticipantId;
@@ -265,7 +270,7 @@ function begin(ev){
  const p=setup.members;saveRoster(p);saveSettings();
  state.participants=p;state.plan=clone(setup.plan);state.sessionId='one:'+uid();
  state.exercise=0;state.lastTurn=-1;state.turn=0;state.readyAt={};
- state.lastWeights={};state.active=true;state.startAt=Date.now();
+ state.lastWeights={};state.renderedKey='';state.active=true;state.startAt=Date.now();
  planKey=$('planSelect').value;currentPlan=clone(setup.plan);mode=1;
  resetWorkoutState();net.active=false;net.sessionId='';athleteIdx=0;
  startedAt=Date.now();running=true;paused=false;
@@ -299,13 +304,17 @@ function chooseTurn(){
   if(!ex){finishWorkout(false);return;}
  }
  const next=nextCandidate();if(!next)return;
- const changed=state.turn!==next.index||exIdx!==state.exercise;
+ const renderedKey=state.exercise+':'+next.id;
+ const changed=state.renderedKey!==renderedKey;
  state.turn=next.index;exIdx=state.exercise;
  setIdx=exerciseRows(next.index,state.exercise).length;
  athleteIdx=next.index;
- if(changed)$('reps').value='';
- const previous=state.lastWeights[next.id+':'+(ex.id||ex.n)];
- $('weight').value=previous===undefined?'':String(previous);
+ if(changed){
+  state.renderedKey=renderedKey;
+  $('reps').value='';
+  const previous=state.lastWeights[next.id+':'+(ex.id||ex.n)];
+  $('weight').value=previous===undefined?'':String(previous);
+ }
 }
 function finishLocal(interrupted,duration){
  const members=clone(state.participants);
@@ -402,7 +411,7 @@ function resume(){
  state.selected=true;state.active=true;state.participants=snapshot.participants;
  state.sessionId=snapshot.sessionId;state.plan=snapshot.plan;state.exercise=snapshot.exercise||0;
  state.turn=snapshot.turn||0;state.lastTurn=snapshot.lastTurn??-1;
- state.readyAt=snapshot.readyAt||{};state.lastWeights=snapshot.lastWeights||{};
+ state.readyAt=snapshot.readyAt||{};state.lastWeights=snapshot.lastWeights||{};state.renderedKey='';
  mode=1;net.active=false;net.sessionId='';planKey=snapshot.planKey||'custom';
  currentPlan=clone(snapshot.plan);resetWorkoutState();
  records=Array.isArray(snapshot.records)?snapshot.records:[];startedAt=Date.now()-Math.max(0,snapshot.elapsed||0);
