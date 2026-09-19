@@ -349,18 +349,38 @@ public class MainActivity extends Activity {
                         : "https://api.nal.usda.gov/fdc/v1/foods/search?query=" + term
                             + "&pageSize=15&dataType=Foundation,SR%20Legacy,Branded"
                             + "&api_key=" + java.net.URLEncoder.encode(key, "UTF-8");
-                connection = (HttpURLConnection) new URL(endpoint).openConnection();
-                connection.setRequestMethod("GET");
-                connection.setConnectTimeout(8000);
-                connection.setReadTimeout(12000);
-                connection.setRequestProperty("Accept", "application/json");
-                connection.setRequestProperty("Accept-Language", "pl,en;q=0.8");
-                connection.setRequestProperty("User-Agent", "Trener2/0.8.3 Android food-search");
-                int status = connection.getResponseCode();
+                int status = -1;
+                // OFF bywa tymczasowo niedostępne (502/503/504). Jedno ponowienie,
+                // bez pętli agresywnych żądań i bez blokowania wyników USDA.
+                final int maxAttempts = "off".equals(provider) ? 2 : 1;
+                for (int attempt = 0; attempt < maxAttempts; attempt++) {
+                    if (connection != null) {
+                        connection.disconnect();
+                        connection = null;
+                    }
+                    connection = (HttpURLConnection) new URL(endpoint).openConnection();
+                    connection.setRequestMethod("GET");
+                    connection.setConnectTimeout(8000);
+                    connection.setReadTimeout(12000);
+                    connection.setRequestProperty("Accept", "application/json");
+                    connection.setRequestProperty("Accept-Language", "pl,en;q=0.8");
+                    connection.setRequestProperty("User-Agent", "Trener2/0.8.4 Android food-search");
+                    status = connection.getResponseCode();
+                    if ("off".equals(provider) && attempt == 0
+                            && (status == 502 || status == 503 || status == 504)) {
+                        connection.disconnect();
+                        connection = null;
+                        Thread.sleep(1200L);
+                        continue;
+                    }
+                    break;
+                }
                 if (status != HttpURLConnection.HTTP_OK) {
-                    String detail = status == 401 || status == 403
+                    final String detail = status == 401 || status == 403
                             ? "Odmowa dostępu — sprawdź klucz API i limity."
                             : status == 429 ? "Limit zapytań — spróbuj później."
+                            : status == 503 || status == 502 || status == 504
+                            ? "Serwis chwilowo niedostępny (HTTP " + status + ")."
                             : "Błąd HTTP " + status + ".";
                     emitFoodCatalog(provider, "error", detail, requestId);
                     return;
