@@ -40,13 +40,13 @@
       #diet .v078WaterTop{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end}
       #diet .v078WaterValue{font-size:28px;font-weight:950;line-height:1}.v078WaterValue small{font-size:12px;color:#999;font-weight:800}
       #diet .v078WaterBar{height:9px;background:#242424;border-radius:999px;overflow:hidden;margin:10px 0 12px}.v078WaterBar i{display:block;height:100%;background:#4fc3f7;border-radius:999px}
-      #diet .v078QuickWater{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.v078QuickWater button{margin:0!important}
+      #diet .v078QuickWater{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}.v078QuickWater button{margin:0!important;padding:12px 4px!important;font-size:12px!important;min-width:0!important}
       #diet .v078HydrationGrid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}.v078HydrationGrid .wide{grid-column:1/-1}
       #diet .v078History{margin-top:12px}.v078WaterHistoryRow{display:grid;grid-template-columns:78px 1fr auto;gap:8px;align-items:center;padding:8px 0;border-top:1px solid #292929}.v078WaterHistoryRow:first-child{border-top:0}.v078WaterHistoryRow span{font-size:10px;color:#aaa}.v078WaterHistoryRow b{font-size:12px}.v078WaterHistoryRow small{font-size:9px;color:#777}
       #diet .v078HydrationNote{font-size:10px;color:#8f8f8f;line-height:1.45;margin-top:9px}
       #v078WaterPrompt{position:fixed;left:12px;right:12px;bottom:96px;z-index:130;background:#0d1b21;border:1px solid #4fc3f7;border-radius:16px;padding:12px;box-shadow:0 10px 34px rgba(0,0,0,.45);display:none}
       #v078WaterPrompt.show{display:block}#v078WaterPrompt strong{display:block;font-size:15px}#v078WaterPrompt span{display:block;color:#a8cbd8;font-size:10px;margin-top:3px}
-      #v078WaterPrompt .v078PromptButtons{display:grid;grid-template-columns:1fr 1fr auto;gap:7px;margin-top:9px}#v078WaterPrompt button{margin:0!important;padding:9px!important}
+      #v078WaterPrompt .v078PromptButtons{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) auto;gap:7px;margin-top:9px}#v078WaterPrompt button{margin:0!important;padding:9px!important}
       @media(max-width:390px){#diet .v078HydrationGrid{grid-template-columns:1fr}.v078HydrationGrid .wide{grid-column:auto}}
     `;document.head.appendChild(s);
   }
@@ -59,7 +59,7 @@
       <div class="eyebrow">NAWODNIENIE</div>
       <div class="v078WaterTop"><div><h2 style="margin-bottom:5px">Woda dzisiaj</h2><div id="v078WaterValue" class="v078WaterValue">0 <small>/ 2500 ml</small></div></div><button id="v078UndoWater" class="secondary" type="button">−250</button></div>
       <div class="v078WaterBar"><i id="v078WaterProgress" style="width:0%"></i></div>
-      <div class="v078QuickWater"><button type="button" class="primary" data-water-add="250">+250 ml</button><button type="button" class="primary" data-water-add="330">+330 ml</button><button type="button" class="primary" data-water-add="500">+500 ml</button></div>
+      <div class="v078QuickWater"><button type="button" class="primary" data-water-add="100">+100 ml</button><button type="button" class="primary" data-water-add="250">+250 ml</button><button type="button" class="primary" data-water-add="330">+330 ml</button><button type="button" class="primary" data-water-add="500">+500 ml</button></div>
       <div class="v078HydrationGrid">
         <div><label>Cel dzienny [ml]</label><input id="v078WaterTarget" type="number" min="500" max="6000" step="100" inputmode="numeric"></div>
         <div><label>Przypomnienie co</label><select id="v078WaterInterval"><option value="60">60 min</option><option value="90">90 min</option><option value="120">120 min</option></select></div>
@@ -85,7 +85,7 @@
   function installWorkoutPrompt(){
     if($('v078WaterPrompt'))return;
     const box=document.createElement('div');box.id='v078WaterPrompt';
-    box.innerHTML=`<strong>💧 ŁYK WODY</strong><span>Krótka przerwa na nawodnienie. Możesz od razu dopisać ilość.</span><div class="v078PromptButtons"><button class="primary" type="button" data-prompt-water="150">+150 ml</button><button class="primary" type="button" data-prompt-water="250">+250 ml</button><button id="v078WaterPromptClose" class="secondary" type="button">×</button></div>`;
+    box.innerHTML=`<strong>💧 ŁYK WODY</strong><span>Krótka przerwa na nawodnienie. Możesz od razu dopisać ilość.</span><div class="v078PromptButtons"><button class="primary" type="button" data-prompt-water="100">+100 ml</button><button class="primary" type="button" data-prompt-water="150">+150 ml</button><button class="primary" type="button" data-prompt-water="250">+250 ml</button><button id="v078WaterPromptClose" class="secondary" type="button">×</button></div>`;
     document.body.appendChild(box);
     box.querySelectorAll('[data-prompt-water]').forEach(b=>b.addEventListener('click',()=>{addWater(Number(b.dataset.promptWater)||0);hidePrompt();}));
     $('v078WaterPromptClose').addEventListener('click',hidePrompt);
