@@ -1,3 +1,10 @@
+## 0.8.8.1
+- Naprawa systemowego „Nie można wczytać widżetu” na części launcherów (zgłoszenie: Xiaomi). W czterech kaflach „Kalorie i makro” zastąpiono widoki Space bezpiecznymi dla Android RemoteViews elementami TextView.
+- Pozostają układ 2×2, cele, wartości oraz paski makro. Zapis danych diety i innych widgetów bez zmian.
+- Dodano test wszystkich klas widoków w układzie widgetu: dozwolone wyłącznie LinearLayout, TextView i ProgressBar.
+- Nie odinstalowywać aplikacji ani nie czyścić jej danych; jeśli launcher zachowa błędną instancję widgetu, usunąć wyłącznie widget z pulpitu i dodać go ponownie.
+- Wersja 0.8.8.1, versionCode 75.
+
 ## 0.8.8
 - Oddzielono dwa widgety Androida: duży „Kalorie i makro” i mały „Woda”. Nie trzeba tworzyć kolejnego widgetu wody w samej aplikacji.
 - „Kalorie i makro” odtwarza bilans dnia z Diety: cztery kafle 2×2 (kalorie, białko, węglowodany, tłuszcze), wartości, cele, pozostałą ilość lub przekroczenie i zielone paski. Pokazuje lokalną datę i tryb: Utrzymanie / Redukcja / Masa. Kliknięcie otwiera Dietę.
