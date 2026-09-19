@@ -3,6 +3,11 @@ package pl.edwin.trener2;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.net.ConnectivityManager;
+import android.net.LinkAddress;
+import android.net.LinkProperties;
+import android.net.Network;
+import android.net.NetworkCapabilities;
 import android.net.nsd.NsdManager;
 import android.net.nsd.NsdServiceInfo;
 import android.net.wifi.WifiManager;
@@ -40,14 +45,107 @@ public final class NearbyProfileManager {
     private WifiManager.MulticastLock multicast;
     private volatile boolean active=false;
     private volatile String self="",name="";
+    private volatile String lastEndpoint="",lastNetwork="";
+    private ConnectivityManager connectivity(){
+        return (ConnectivityManager)ctx.getSystemService(Context.CONNECTIVITY_SERVICE);
+    }
+    private Network wifiNetwork(){
+        ConnectivityManager c=connectivity();
+        if(c==null)return null;
+        for(Network n:c.getAllNetworks()){
+            NetworkCapabilities cap=c.getNetworkCapabilities(n);
+            if(cap!=null&&cap.hasTransport(NetworkCapabilities.TRANSPORT_WIFI))return n;
+        }
+        return null;
+    }
+    private static boolean isSameSubnet(InetAddress a,InetAddress b,int prefix){
+        if(a==null||b==null||prefix<1)return false;
+        byte[] left=a.getAddress(),right=b.getAddress();
+        if(left.length!=4||right.length!=4)return false;
+        int bits=prefix;
+        for(int i=0;i<4&&bits>0;i++){
+            int mask=(0xff<<(8-Math.min(8,bits)))&0xff;
+            if(((left[i]^right[i])&mask)!=0)return false;
+            bits-=8;
+        }
+        return true;
+    }
+    private boolean sameWifiSubnet(InetAddress target){
+        if(!(target instanceof Inet4Address))return false;
+        ConnectivityManager c=connectivity();
+        Network n=wifiNetwork();
+        if(n==null||c==null)return false;
+        LinkProperties lp=c.getLinkProperties(n);
+        if(lp==null)return false;
+        for(LinkAddress addr:lp.getLinkAddresses()){
+            if(isSameSubnet(addr.getAddress(),target,addr.getPrefixLength()))return true;
+        }
+        return false;
+    }
+    private String wifiIpv4(){
+        ConnectivityManager c=connectivity();
+        Network n=wifiNetwork();
+        if(n==null||c==null)return "";
+        LinkProperties lp=c.getLinkProperties(n);
+        if(lp==null)return "";
+        for(LinkAddress addr:lp.getLinkAddresses())
+            if(addr.getAddress() instanceof Inet4Address&&!addr.getAddress().isLoopbackAddress())
+                return addr.getAddress().getHostAddress();
+        return "";
+    }
+    private static InetAddress advertisedIpv4(NsdServiceInfo info){
+        try{
+            byte[] raw=info.getAttributes().get("ip4");
+            if(raw==null)return null;
+            String ip=new String(raw,StandardCharsets.UTF_8);
+            if(!ip.matches("(?:[0-9]{1,3}\\.){3}[0-9]{1,3}"))return null;
+            InetAddress addr=InetAddress.getByName(ip);
+            if(!(addr instanceof Inet4Address)||addr.isLoopbackAddress()||
+               addr.isAnyLocalAddress()||addr.isMulticastAddress())return null;
+            return addr;
+        }catch(Exception ignored){return null;}
+    }
+    private Socket connect(Peer p)throws IOException{
+        // A mobile-data default route can pick the wrong interface even after mDNS
+        // found the peer on Wi-Fi. Bind the TCP socket to that exact Wi-Fi network.
+        Socket socket=new Socket();
+        boolean bound=false;
+        try{
+            ConnectivityManager c=connectivity();
+            Network n=wifiNetwork();
+            if(n!=null&&sameWifiSubnet(p.host)){
+                n.bindSocket(socket);
+                bound=true;
+            }
+            lastEndpoint=p.host.getHostAddress()+":"+p.port;
+            lastNetwork=bound?"Wi-Fi (wymuszona trasa)":
+                (n==null?"brak aktywnego Wi-Fi":"trasa domyślna");
+            socket.connect(new InetSocketAddress(p.host,p.port),4800);
+            socket.setSoTimeout(76000);
+            return socket;
+        }catch(IOException | RuntimeException e){
+            try{socket.close();}catch(IOException ignored){}
+            if(e instanceof IOException)throw (IOException)e;
+            throw new IOException("Błąd wyboru sieci: "+e.getClass().getSimpleName(),e);
+        }
+    }
+    public String diagnostics(){
+        String address=wifiIpv4();
+        return "Lokalne Wi-Fi: "+(address.isEmpty()?"niedostępne":address)+
+            "\nOstatni cel: "+(lastEndpoint.isEmpty()?"—":lastEndpoint)+
+            "\nPołączenie: "+(lastNetwork.isEmpty()?"—":lastNetwork)+
+            "\nWykrywanie: "+(active?"włączone":"wyłączone");
+    }
 
     private static class Peer {
         final String id,name;
         final InetAddress host;
+        final InetAddress resolvedHost;
         final int port;
         final String instance;
-        Peer(String id,String name,InetAddress host,int port,String instance){
-            this.id=id;this.name=name;this.host=host;this.port=port;this.instance=instance;
+        Peer(String id,String name,InetAddress host,InetAddress resolvedHost,int port,String instance){
+            this.id=id;this.name=name;this.host=host;this.resolvedHost=resolvedHost;
+            this.port=port;this.instance=instance;
         }
     }
     public NearbyProfileManager(Context c,Listener l){
@@ -89,7 +187,9 @@ public final class NearbyProfileManager {
         if(!valid(id)){status("Brak identyfikatora profilu.");return;}
         display=clip(display,40);
         if(display.isEmpty())display="Trener 2";
-        if(active&&self.equals(id)&&name.equals(display)){onlineEvent();return;}
+        // Explicit retry must refresh the listener/port after hotspot or Wi-Fi changes.
+        // Previously start() returned early, leaving stale mDNS endpoints indefinitely.
+        if(active&&self.equals(id)&&name.equals(display))stop();
         if(active)stop();
         if(nsd==null){listener.onEvent("{\"type\":\"status\",\"text\":\"Brak wykrywania LAN.\"}");return;}
         self=id;name=display;active=true;
@@ -120,6 +220,8 @@ public final class NearbyProfileManager {
                 Math.min(12,self.replaceAll("[^A-Za-z0-9]","").length())));
             info.setServiceType(SERVICE);info.setPort(port);
             info.setAttribute("pid",self);info.setAttribute("name",name);
+            String ip=wifiIpv4();
+            if(!ip.isEmpty())info.setAttribute("ip4",ip);
             registration=new NsdManager.RegistrationListener(){
                 public void onRegistrationFailed(NsdServiceInfo i,int c){status("Nie można udostępnić profilu w sieci.");}
                 public void onUnregistrationFailed(NsdServiceInfo i,int c){}
@@ -144,7 +246,11 @@ public final class NearbyProfileManager {
                                 if(!valid(id)||id.equals(self)||i.getHost()==null||i.getPort()<1)return;
                                 byte[] label=i.getAttributes().get("name");
                                 String text=label==null?"Trener 2":clip(new String(label,StandardCharsets.UTF_8),40);
-                                synchronized(online){online.put(id,new Peer(id,text,i.getHost(),i.getPort(),i.getServiceName()));}
+                                InetAddress advertised=advertisedIpv4(i);
+                                InetAddress preferred=advertised!=null&&sameWifiSubnet(advertised)
+                                    ? advertised:i.getHost();
+                                synchronized(online){online.put(id,new Peer(id,text,preferred,
+                                    i.getHost(),i.getPort(),i.getServiceName()));}
                                 onlineEvent();
                             }catch(Exception ignored){}
                         }
@@ -242,9 +348,7 @@ public final class NearbyProfileManager {
         io.execute(()->{
             Peer p;synchronized(online){p=online.get(id);}
             if(p==null){status("Drugi telefon nie jest teraz dostępny.");return;}
-            try(Socket socket=new Socket()){
-                socket.connect(new InetSocketAddress(p.host,p.port),6000);
-                socket.setSoTimeout(76000);
+            try(Socket socket=connect(p)){
                 BufferedReader in=new BufferedReader(new InputStreamReader(socket.getInputStream(),StandardCharsets.UTF_8));
                 BufferedWriter out=new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(),StandardCharsets.UTF_8));
                 KeyPair mine=pairKey();
@@ -264,7 +368,11 @@ public final class NearbyProfileManager {
                       un64(proof(key,"responder|"+id+"|"+self))))
                     throw new IOException("Druga osoba nie potwierdziła powiązania.");
                 savePair(id,clip(reply.optString("name"),40),alias,key,true);
-            }catch(Exception e){status("Nie powiązano profili: "+clip(e.getMessage(),65));}
+            }catch(Exception e){
+                String reason=clip(e.getMessage(),105);
+                status("Nie powiązano profili. "+reason+
+                    " • "+lastEndpoint+" • "+lastNetwork);
+            }
         });
     }
     private void serve(Socket socket){
@@ -348,8 +456,7 @@ public final class NearbyProfileManager {
             Peer p;synchronized(online){p=online.get(id);}
             if(p==null){sent(id,job,false,"Telefon poza siecią.");return;}
             byte[] key=savedSecret(id);if(key==null){sent(id,job,false,"Najpierw powiąż profile.");return;}
-            try(Socket socket=new Socket()){
-                socket.connect(new InetSocketAddress(p.host,p.port),6000);
+            try(Socket socket=connect(p)){
                 socket.setSoTimeout(49000);
                 BufferedReader in=new BufferedReader(new InputStreamReader(socket.getInputStream(),StandardCharsets.UTF_8));
                 BufferedWriter out=new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(),StandardCharsets.UTF_8));
