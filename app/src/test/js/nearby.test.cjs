@@ -68,6 +68,7 @@ assert.match(java,/AES\/GCM\/NoPadding/);
 assert.match(java,/ECDH/);
 assert.match(java,/MessageDigest\.isEqual/);
 assert.match(java,/alias\."\+from/);
+assert.match(java,/outgoing\."\+from,false/);
 assert.match(java,/KODY ZGODNE/);
 assert.match(java,/new ServerSocket\(0\)/);
 assert.match(fs.readFileSync('app/src/main/AndroidManifest.xml','utf8'),/CHANGE_WIFI_MULTICAST_STATE/);
