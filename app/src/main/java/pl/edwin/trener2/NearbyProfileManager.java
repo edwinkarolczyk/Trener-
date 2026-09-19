@@ -67,7 +67,10 @@ public final class NearbyProfileManager {
     private void onlineEvent(){
         JSONArray arr=new JSONArray();
         synchronized(online){
-            for(Peer p:online.values())arr.put(new JSONObject().put("id",p.id).put("name",p.name));
+            for(Peer p:online.values()){
+                try{arr.put(new JSONObject().put("id",p.id).put("name",p.name));}
+                catch(Exception ignored){}
+            }
         }
         try{event(new JSONObject().put("type","online").put("peers",arr));}catch(Exception ignored){}
     }
@@ -76,8 +79,8 @@ public final class NearbyProfileManager {
         for(String key:p.getAll().keySet()){
             if(!key.startsWith("secret."))continue;
             String id=key.substring(7);if(!valid(id))continue;
-            arr.put(new JSONObject().put("id",id).put("name",p.getString("name."+id,""))
-                .put("alias",p.getString("alias."+id,"")));
+            try{arr.put(new JSONObject().put("id",id).put("name",p.getString("name."+id,""))
+                .put("alias",p.getString("alias."+id,"")));}catch(Exception ignored){}
         }
         return arr.toString();
     }
