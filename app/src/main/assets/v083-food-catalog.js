@@ -310,7 +310,7 @@ function install(){
  return true;
 }
 function boot(){let tries=0;const t=setInterval(()=>{tries++;if(install()||tries>=60)clearInterval(t);},100);}
-window.TrenerFoodCatalog={nativeResult,parseOff:off,parseUsda:usda,usdaQuery,displayPl,
+window.TrenerFoodCatalog={nativeResult,parseOff:off,parseUsda:usda,offQuery,usdaQuery,displayPl,
   calculate:(p,amount,unit,gPiece,gMl)=>{const k=unit==='g'?1:unit==='szt'?gPiece:unit==='ml'?gMl:null;
     if(!(k>0)||!(amount>0))return null;const grams=amount*k,out={grams};
     ['kcal100','protein100','carbs100','fat100'].forEach(f=>out[f]=p[f]===null?null:rnd(p[f]*grams/100));return out;}};
