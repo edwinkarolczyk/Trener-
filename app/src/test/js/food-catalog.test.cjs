@@ -26,6 +26,10 @@ assert.equal(food.parseOff({code:'0123456789012',product_name:'Without nutrients
 assert.equal(food.usdaQuery('jajka'),'egg');
 assert.equal(food.usdaQuery('pierś z kurczaka'),'chicken breast');
 assert.equal(food.usdaQuery('mintaj'),'pollock');
+assert.equal(food.usdaQuery('Winogron owoc'),'grapes');
+assert.equal(food.usdaQuery('winogrona surowe'),'grapes');
+assert.equal(food.offQuery('Winogron owoc'),'winogrona');
+assert.equal(food.offQuery('Jabłko owoc'),'jabłko');
 assert.equal(food.usdaQuery('PIZZA'),'pizza');
 assert.equal(food.displayPl('CHICKEN BREAST, RAW'),'Pierś z kurczaka, surowy');
 assert.equal(food.displayPl('PIZZA, CHEESE'),'Pizza, ser');
