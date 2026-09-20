@@ -3,7 +3,7 @@
 const LIB='trainer3.foodCatalog.v083', CACHE='trainer3.foodSearchCache.v083',
       USDA_KEY='foodCatalog.usdaKey.local';
 const $=id=>document.getElementById(id);
-const state={picked:null,found:[],query:'',requestId:0,waiting:0,lastError:''};
+const state={picked:null,found:[],query:'',requestId:0,waiting:0,lastError:'',offRetried:false};
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const num=v=>{if(v===null||v===undefined||String(v).trim()==='')return null;
   const n=Number(String(v).replace(',','.'));return Number.isFinite(n)&&n>=0?n:null;};
@@ -34,7 +34,8 @@ const QUERY_PL_EN={
   'banan':'banana','jabłko':'apple','jablko':'apple','pomidor':'tomato',
   'ogórek':'cucumber','ogorek':'cucumber','marchew':'carrot',
   'pizza':'pizza','owsianka':'oatmeal','płatki owsiane':'oats',
-  'oliwa':'olive oil','olej':'oil','mąka':'flour','maka':'flour'
+  'oliwa':'olive oil','olej':'oil','mąka':'flour','maka':'flour',
+  'winogrona':'grapes','winogrono':'grapes','winogron':'grapes','winogrona owoc':'grapes'
 };
 const NAME_PL={
   pizza:'pizza',chicken:'kurczak',breast:'pierś',breasts:'piersi',
@@ -51,9 +52,18 @@ const NAME_PL={
   whole:'cały',fresh:'świeży',frozen:'mrożony',mashed:'puree',ground:'mielony',
   oats:'płatki owsiane',oatmeal:'owsianka',olive:'oliwkowy',oil:'olej'
 };
+function cleanQuery(q){
+  return String(q||'').trim().toLocaleLowerCase('pl-PL').replace(/\s+/g,' ')
+    .replace(/\b(owoc|owoce|warzywo|warzywa|surowy|surowe|świeży|świeże)\b/g,'')
+    .replace(/\s+/g,' ').trim();
+}
+function offQuery(q){
+  const cleaned=cleanQuery(q);
+  return /^winogron(?:o|a)?$/.test(cleaned)?'winogrona':(cleaned||q);
+}
 function usdaQuery(q){
-  const normalized=String(q||'').trim().toLocaleLowerCase('pl-PL').replace(/\s+/g,' ');
-  return QUERY_PL_EN[normalized]||q;
+  const cleaned=cleanQuery(q);
+  return QUERY_PL_EN[cleaned]||cleaned||q;
 }
 function displayPl(original){
   const text=String(original||'').trim();
@@ -117,7 +127,7 @@ function merge(items){
 function search(){
  const query=String($('v083Query').value||'').trim().slice(0,90);
  if(query.length<2){status('Wpisz co najmniej 2 znaki.',true);return;}
- state.query=query;state.requestId++;state.lastError='';state.waiting=0;
+ state.query=query;state.requestId++;state.lastError='';state.waiting=0;state.offRetried=false;
  state.found=own().filter(p=>p.name.toLocaleLowerCase('pl-PL').includes(query.toLocaleLowerCase('pl-PL')));
  $('v083Editor').classList.add('foodHidden');
  const cache=cached();
@@ -131,10 +141,10 @@ function search(){
    const key=source==='usda'?(localStorage.getItem(USDA_KEY)||''):'';
    if(source==='usda'&&!key)return;
    state.waiting++;
-   try{Android.searchFoodCatalog(source,source==='usda'?usdaQuery(query):query,key,state.requestId);}
+   try{Android.searchFoodCatalog(source,source==='usda'?usdaQuery(query):offQuery(query),key,state.requestId);}
    catch(e){state.waiting--;state.lastError='Błąd połączenia z bazą.';}
  });
- status(state.waiting?'Szukam w bazach…':'Wyniki lokalne. Dodaj klucz USDA, aby rozszerzyć wyszukiwanie.');
+ status(state.waiting?'Szukam w bazach…':'Wyniki lokalne. USDA wymaga klucza API.');
 }
 function nativeResult(source,result,payload,requestId){
  if(Number(requestId)!==state.requestId||!state.query)return;
@@ -143,6 +153,11 @@ function nativeResult(source,result,payload,requestId){
    try{const raw=JSON.parse(payload);
      const items=(source==='off'?(raw.products||[]).map(off):(raw.foods||[]).map(usda))
        .filter(complete).slice(0,20);
+     if(source==='off'&&!items.length&&!state.offRetried&&/^winogrona$/i.test(offQuery(state.query))){
+       state.offRetried=true;state.waiting++;
+       try{Android.searchFoodCatalog('off','winogron','',state.requestId);}
+       catch(e){state.waiting--;state.lastError='Nie udało się ponowić wyszukiwania.';}
+     }
      storeCache(state.query,source,items);merge(items);
    }catch(e){state.lastError='Otrzymano niepoprawne dane.';}
  }else{
@@ -152,7 +167,8 @@ function nativeResult(source,result,payload,requestId){
       : (source==='usda'?'USDA: ':'Open Food Facts: ')+String(payload||'Błąd połączenia.');
  }
  status(state.waiting?'Pobrano '+state.found.length+' wyników. Sprawdzam drugą bazę…':
-   'Znaleziono '+state.found.length+' produktów.'+(state.lastError?' '+state.lastError:''),!!state.lastError);
+   'Znaleziono '+state.found.length+' produktów.'+(state.lastError?' '+state.lastError:'')+
+   (!state.found.length&&!localStorage.getItem(USDA_KEY)?' Dla zwykłych owoców i warzyw baza Open Food Facts może nie mieć wpisu. Rozwiń USDA i dodaj klucz API.':''),!!state.lastError);
 }
 function pick(p){
  state.picked={...p};$('v083Editor').classList.remove('foodHidden');
@@ -230,11 +246,11 @@ function install(){
  document.head.appendChild(style);
  const card=document.createElement('div');card.id='v083FoodCard';card.className='card';
  card.innerHTML=`
- <div class="eyebrow">BAZA ŻYWNOŚCI • 0.8.3</div><h2>Znajdź produkt po nazwie</h2>
+ <div class="eyebrow">BAZA ŻYWNOŚCI</div><h2>Znajdź produkt po nazwie</h2>
  <div class="foodRow"><div><label>Produkt</label><input id="v083Query" maxlength="90"
  placeholder="np. jajko, kurczak, ryż, mintaj"></div>
  <button id="v083Search" type="button" class="primary">SZUKAJ</button></div>
- <p class="foodMeta">Własne produkty → Open Food Facts → USDA. Nazwy USDA są tłumaczone pomocniczo; oryginał pozostaje widoczny. Sprawdzaj wartości z etykietą.</p>
+ <p class="foodMeta">Open Food Facts zawiera głównie produkty z etykietami. Surowe owoce, warzywa i produkty bez kodów wyszukuj także w USDA (wymaga klucza API). Nazwy USDA są tłumaczone pomocniczo; sprawdzaj wartości z etykietą.</p>
  <div id="v083Status" class="foodStatus" role="status">Wpisz nazwę lub dodaj własny produkt.</div>
  <div id="v083Results" class="foodResults"></div>
  <div class="foodActions"><button id="v083New" type="button" class="secondary">+ NOWY WŁASNY</button>
