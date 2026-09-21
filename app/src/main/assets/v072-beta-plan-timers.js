@@ -4,6 +4,7 @@
   const NEW_KEY='trainer3.weekPlan.v070';
   const OLD_KEY='trainer3.schedule.v050';
   const MIGRATION_KEY='trainer3.weekPlan.v072Migrated';
+  const AUTO_CHOICE_KEY='trainer3.todayAutoChoice.v0888';
   const DEFAULT_OLD={'0':'','1':'mon','2':'','3':'wed','4':'','5':'fri','6':''};
   let lastWeekRaw='';
   let lastRunning=false;
@@ -134,21 +135,45 @@
     else{cell.classList.add('ready');rt.textContent='GOTOWY';}
   }
 
+  function localToday(){
+    const date=new Date();
+    return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+
+      String(date.getDate()).padStart(2,'0');
+  }
+
   function syncTodayUi(force){
     if(!window.TrenerBetaPlanner)return;
-    const day=String(new Date().getDay()),cfg=safe(localStorage.getItem(NEW_KEY),{days:{}}),assigned=isAssigned(cfg.days?.[day]);
+    const day=String(new Date().getDay()),cfg=safe(localStorage.getItem(NEW_KEY),{days:{}}),
+      assigned=isAssigned(cfg.days?.[day]);
     const sel=document.getElementById('planSelect'),hint=document.getElementById('v050TodayHint');
     if(!sel)return;
-    const wanted='v070day:'+day;
-    if(assigned&&window.TrenerBetaPlanner.planForDay(day)){
-      const has=[...sel.options].some(o=>o.value===wanted);
-      if(has&&(force||!String(sel.value||'').startsWith('v070day:'))){
+    const wanted='v070day:'+day,plan=assigned?window.TrenerBetaPlanner.planForDay(day):null;
+    if(plan){
+      const html='<b>DZIŚ WG PLANU:</b> '+String(plan.title||'Trening');
+      if(hint&&hint.innerHTML!==html)hint.innerHTML=html;
+      const settings=safe(localStorage.getItem('trainer3.settings'),{});
+      const selected=String(sel.value||''),stored=String(settings.planKey||'');
+      const previous=safe(localStorage.getItem(AUTO_CHOICE_KEY),null);
+      const date=localToday();
+      const present=[...sel.options].some(option=>option.value===wanted);
+      // Never replace a deliberately selected workout during the 250 ms timer tick.
+      // Auto-advance only an earlier AUTO choice on a new calendar day.
+      const wasAuto=previous?.planKey===selected&&stored===selected;
+      const nextDay=wasAuto&&previous.day!==date;
+      if(present&&(!selected||nextDay)&&document.activeElement!==sel){
         sel.value=wanted;
-        const settings=safe(localStorage.getItem('trainer3.settings'),{});settings.planKey=wanted;
-        try{localStorage.setItem('trainer3.settings',JSON.stringify(settings));}catch(e){}
+        settings.planKey=wanted;
+        try{
+          localStorage.setItem('trainer3.settings',JSON.stringify(settings));
+          localStorage.setItem(AUTO_CHOICE_KEY,JSON.stringify({day:date,planKey:wanted}));
+        }catch(e){}
+      }else if(selected===wanted&&stored===wanted&&!previous){
+        try{localStorage.setItem(AUTO_CHOICE_KEY,JSON.stringify({day:date,planKey:wanted}));}catch(e){}
       }
-      if(hint){const p=window.TrenerBetaPlanner.planForDay(day);hint.innerHTML='<b>DZIŚ WG PLANU:</b> '+String(p?.title||'Trening');}
-    }else if(hint){hint.innerHTML='<b>DZIŚ:</b> brak przypisanego treningu — możesz wybrać dowolny ręcznie.';}
+    }else if(hint){
+      const html='<b>DZIŚ:</b> brak przypisanego treningu — możesz wybrać dowolny ręcznie.';
+      if(hint.innerHTML!==html)hint.innerHTML=html;
+    }
   }
 
   function polishPlannerHeader(){
