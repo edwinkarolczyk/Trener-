@@ -59,4 +59,40 @@ stored.targets.kcal=0;
 dietWindow.TrenerDiet076.setDate(day);
 assert(nodes.v076Meals.innerHTML.includes('cel —'));
 assert(!nodes.v076Meals.innerHTML.includes('Infinity'));
+
+const setsScript=fs.readFileSync('app/src/main/assets/v0886-meal-sets.js','utf8');
+const setStorage=new Map();
+const savedMeals={version:1,targets:{},meals:[]};
+let setRefreshes=0,setWidgetSyncs=0;
+setStorage.set('trainer3.diet.v076',JSON.stringify(savedMeals));
+const setWindow={TrenerDiet076:{render(){setRefreshes++;}},
+  TrenerWidget077:{sync(){setWidgetSyncs++;}}};
+const setLocalStorage={getItem:key=>setStorage.get(key)||null,
+  setItem:(key,value)=>setStorage.set(key,value)};
+vm.runInNewContext(setsScript,{window:setWindow,document,
+  localStorage:setLocalStorage,Date,Math},{filename:'meal-sets.js',timeout:2000});
+const setApi=setWindow.TrenerMealSets0886;
+assert(setApi,'saved meal sets API missing');
+const saved={id:'set1',name:'Kanapki',type:'breakfast',
+  ingredients:[{...bread,grams:100,base100:per100},{...ham,grams:50},{...cheese,grams:30}]};
+setStorage.set('trainer3.mealSets.v0886',JSON.stringify([saved]));
+eq(setApi.sum(saved.ingredients),total);
+setApi.add(0);
+const logged=JSON.parse(setStorage.get('trainer3.diet.v076')).meals;
+assert.equal(logged.length,1,'set must be logged once, not one meal per ingredient');
+assert.equal(logged[0].ingredients.length,3);
+assert.equal(logged[0].kcal,400);
+assert.equal(logged[0].name,'Kanapki');
+assert.equal(setRefreshes,1);
+assert.equal(setWidgetSyncs,1);
+setApi.add(0);
+assert.equal(JSON.parse(setStorage.get('trainer3.diet.v076')).meals.length,2,
+  'logging same preset twice creates two separate meal entries');
+const entryScript=fs.readFileSync('app/src/main/assets/v0886-food-entry.js','utf8');
+assert(entryScript.includes("Android.scanFoodBarcode()"));
+assert(entryScript.includes("focus('v083Query')"));
+assert(entryScript.includes("focus('v0885Templates')"));
+assert(builder.includes("pane.addEventListener('input'"),'ingredient grams must recalculate on input');
+assert(builder.includes('captureManualBaseline'),'manual food grams need a stable per-100g baseline');
+
 console.log('Meal composer: scaling, missing values, totals, 4 goal bars, edit-safe rendering OK');
