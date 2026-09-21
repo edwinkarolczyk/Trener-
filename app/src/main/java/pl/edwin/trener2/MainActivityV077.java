@@ -43,11 +43,12 @@ public class MainActivityV077 extends MainActivity {
         if (betaWebView == null || incoming == null) return;
         final boolean workout = incoming.getBooleanExtra("open_workout", false);
         final boolean diet = incoming.getBooleanExtra("open_diet", false);
-        if (!workout && !diet) return;
+        final String meal = incoming.getStringExtra("open_food_action");
+        final String action = "SCAN".equals(meal) || "WRITE".equals(meal) || "SET".equals(meal)
+                ? meal : "";
+        if (!workout && !diet && action.isEmpty()) return;
         final String destination = workout ? "start" : "diet";
         final int request = ++widgetNavigationGeneration;
-        // On a cold launch onResume may happen before index.html and app.js are ready.
-        // Keep the widget intent pending until WebView has finished loading.
         betaWebView.postDelayed(new Runnable() {
             private int retries = 0;
             @Override
@@ -57,16 +58,26 @@ public class MainActivityV077 extends MainActivity {
                     if (retries++ < 50) betaWebView.postDelayed(this, 150);
                     return;
                 }
-                betaWebView.evaluateJavascript(
-                    "(function(){if(typeof showTab==='function'){showTab('" + destination
+                final String js;
+                if (!action.isEmpty()) {
+                    // Feature loader injects the meal entry module after the document loads.
+                    js = "(function(){var n=0;function open(){"
+                        + "if(window.TrenerMealEntry0886&&window.TrenerMealEntry0886.open){"
+                        + "window.TrenerMealEntry0886.open('" + action + "');}"
+                        + "else if(n++<40){setTimeout(open,150);}"
+                        + "else if(typeof showTab==='function'){showTab('diet');}}open();})();";
+                } else {
+                    js = "(function(){if(typeof showTab==='function'){showTab('" + destination
                         + "');}else{var bs=document.querySelectorAll('.tab');"
                         + "for(var i=0;i<bs.length;i++){if(bs[i].dataset.tab==='" + destination
-                        + "'){bs[i].click();break;}}}})();", null
-                );
+                        + "'){bs[i].click();break;}}}})();";
+                }
+                betaWebView.evaluateJavascript(js, null);
                 Intent pending = getIntent();
                 if (pending != null) {
                     pending.removeExtra("open_workout");
                     pending.removeExtra("open_diet");
+                    pending.removeExtra("open_food_action");
                 }
             }
         }, 250);
