@@ -137,6 +137,16 @@ const mealWidgetInfo=fs.readFileSync('app/src/main/res/xml/meal_entry_widget_inf
 for(const id of ['mealWidgetRoot','mealWidgetScan','mealWidgetWrite','mealWidgetSet'])
  assert(mealWidgetXml.includes('android:id="@+id/'+id+'"'),'missing meal shortcut '+id);
 assert(mealWidgetInfo.includes('@layout/meal_entry_widget'));
+assert(mealWidgetXml.includes('android:id="@+id/mealWidgetRoot"\\n    android:layout_width="match_parent"\\n    android:layout_height="wrap_content"'),
+  'meal widget root must wrap content rather than stretch vertically');
+assert(mealWidgetInfo.includes('android:minHeight="75dp"'),
+  'meal widget must occupy one compact launcher row');
+assert(mealWidgetInfo.includes('android:minResizeHeight="75dp"'));
+assert(mealWidgetInfo.includes('android:resizeMode="horizontal"'),
+  'do not allow meal widget to expand into a tall empty card');
+assert.equal((mealWidgetXml.match(/android:layout_weight="1"/g)||[]).length,3,
+  'scan, write and set must remain equally sized across one row');
+
 const mealWidgetJava=fs.readFileSync('app/src/main/java/pl/edwin/trener2/MealEntryWidgetProvider.java','utf8');
 for(const action of ['SCAN','WRITE','SET'])assert(mealWidgetJava.includes('action(context,"'+action+'"'));
 assert(mealWidgetJava.includes('MainActivityV077.class'));
