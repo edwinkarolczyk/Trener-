@@ -15,7 +15,7 @@
   function favorites(){const f=safe(localStorage.getItem(FAV_KEY),[]);return Array.isArray(f)?f:[];}
   function saveFavorites(f){localStorage.setItem(FAV_KEY,JSON.stringify(f.slice(0,40)));}
   function signature(m){return [String(m.name||'').trim().toLowerCase(),num(m.kcal),num(m.protein),num(m.carbs),num(m.fat),String(m.portion||'').trim().toLowerCase()].join('|');}
-  function cloneFood(m){return {name:String(m.name||'Posiłek').slice(0,60),type:m.type||'other',kcal:num(m.kcal),protein:num(m.protein),carbs:num(m.carbs),fat:num(m.fat),portion:String(m.portion||'').slice(0,30)};}
+  function cloneFood(m){return {name:String(m.name||'Posiłek').slice(0,60),type:m.type||'other',kcal:num(m.kcal),protein:num(m.protein),carbs:num(m.carbs),fat:num(m.fat),portion:String(m.portion||'').slice(0,30),...(Array.isArray(m.ingredients)&&m.ingredients.length?{ingredients:JSON.parse(JSON.stringify(m.ingredients))}:{}),...(m.grams>0&&m.source100?{grams:m.grams,source100:JSON.parse(JSON.stringify(m.source100)),source:m.source||''}:{})};}
   function recents(d){
     const seen=new Set(),out=[];
     [...(d.meals||[])].sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0)).forEach(m=>{const s=signature(m);if(!s||seen.has(s))return;seen.add(s);out.push(cloneFood(m));});
