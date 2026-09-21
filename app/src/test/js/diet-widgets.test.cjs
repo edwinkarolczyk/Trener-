@@ -87,4 +87,48 @@ const manifest=fs.readFileSync('app/src/main/AndroidManifest.xml','utf8');
 assert(manifest.includes('android:name=".WaterWidgetProvider"'));
 assert(manifest.includes('android:resource="@xml/water_widget_info"'));
 assert(manifest.includes('android.intent.action.DATE_CHANGED'));
+
+for(const [file,minHeight,minResizeHeight] of [
+  ['diet_widget_info.xml',320,300],
+  ['workout_widget_info.xml',250,230],
+  ['water_widget_info.xml',150,140]
+]){
+  const xml=fs.readFileSync('app/src/main/res/xml/'+file,'utf8');
+  assert(xml.includes('android:minHeight="'+minHeight+'dp"'),file+' content needs enough height');
+  assert(xml.includes('android:minResizeHeight="'+minResizeHeight+'dp"'),file+' may not be shrunk below content height');
+}
+for(const name of ['DietWidgetProvider','WaterWidgetProvider','WorkoutWidgetProvider']){
+ const java=fs.readFileSync('app/src/main/java/pl/edwin/trener2/'+name+'.java','utf8');
+ assert(java.includes('void onAppWidgetOptionsChanged('),name+' must redraw after resize');
+ assert(java.includes('updateAll(context);'),name+' must refresh data');
+}
+const boot=fs.readFileSync('app/src/main/java/pl/edwin/trener2/BootReceiver.java','utf8');
+for(const name of ['DietWidgetProvider','WaterWidgetProvider','WorkoutWidgetProvider'])
+ assert(boot.includes(name+'.updateAll(context);'),name+' must redraw after reboot');
+
+const appSource=fs.readFileSync('app/src/main/assets/app.js','utf8');
+const tabStart=appSource.indexOf("const LAST_TAB_KEY=");
+const tabEnd=appSource.indexOf('function loadSettings()',tabStart);
+assert(tabStart>0&&tabEnd>tabStart,'last-tab implementation missing');
+const memory=new Map(),screens={};
+const tabs=['start','plan','history','progress','diet','settings'];
+for(const id of tabs)screens[id]={classList:{add(){},remove(){}}};
+const tabButtons=tabs.map(id=>({dataset:{tab:id},classList:{toggle(){}}}));
+const tabWindow={};
+vm.runInNewContext(appSource.slice(tabStart,tabEnd)+'\\nwindow.tabApi={showTab,rememberedTab};',{
+ window:tabWindow,localStorage:{getItem:k=>memory.get(k)||null,setItem:(k,v)=>memory.set(k,v)},
+ document:{querySelectorAll:selector=>selector==='.screen'?Object.values(screens):tabButtons},
+ $:id=>screens[id],renderHistory(){},renderProgress(){},refreshWifiInfo(){}
+},{filename:'last-tab.js',timeout:2000});
+assert.equal(tabWindow.tabApi.rememberedTab(),'start');
+tabWindow.tabApi.showTab('diet');
+assert.equal(tabWindow.tabApi.rememberedTab(),'diet');
+tabWindow.tabApi.showTab('does-not-exist');
+assert.equal(tabWindow.tabApi.rememberedTab(),'diet','invalid tabs must not overwrite saved tab');
+tabWindow.tabApi.showTab('start');
+assert.equal(tabWindow.tabApi.rememberedTab(),'start','explicit widget navigation must persist');
+const activity=fs.readFileSync('app/src/main/java/pl/edwin/trener2/MainActivityV077.java','utf8');
+assert(activity.includes('betaWebView.getProgress() < 100'),'widget intents must wait for loaded app');
+assert(activity.includes('pending.removeExtra("open_diet")'),'widget deep link must be consumed once');
+
 console.log('Diet macro & water widget sync and native resources checks passed');
