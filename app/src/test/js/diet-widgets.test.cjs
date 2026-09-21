@@ -115,7 +115,7 @@ const tabs=['start','plan','history','progress','diet','settings'];
 for(const id of tabs)screens[id]={classList:{add(){},remove(){}}};
 const tabButtons=tabs.map(id=>({dataset:{tab:id},classList:{toggle(){}}}));
 const tabWindow={};
-vm.runInNewContext(appSource.slice(tabStart,tabEnd)+'\\nwindow.tabApi={showTab,rememberedTab};',{
+vm.runInNewContext(appSource.slice(tabStart,tabEnd)+'\nwindow.tabApi={showTab,rememberedTab};',{
  window:tabWindow,localStorage:{getItem:k=>memory.get(k)||null,setItem:(k,v)=>memory.set(k,v)},
  document:{querySelectorAll:selector=>selector==='.screen'?Object.values(screens):tabButtons},
  $:id=>screens[id],renderHistory(){},renderProgress(){},refreshWifiInfo(){}
