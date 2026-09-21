@@ -295,6 +295,6 @@
     document.querySelectorAll('.tab[data-tab="diet"]').forEach(b=>b.addEventListener('click',()=>setTimeout(render,0)));
   }
 
-  window.TrenerDiet076={render,load:()=>clone(load()),setDate:k=>{state.date=String(k||localKey());render();}};
+  window.TrenerDiet076={render,load:()=>clone(load()),getDate:()=>state.date,setDate:k=>{state.date=String(k||localKey());render();}};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
