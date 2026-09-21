@@ -66,6 +66,13 @@
       .v076ShopAdd{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end}.v076ShopAdd button{height:43px;margin:0!important}
       .v076ShopRow{display:grid;grid-template-columns:auto 1fr auto;gap:9px;align-items:center;padding:9px 0;border-top:1px solid #292929}.v076ShopRow:first-child{border-top:0}.v076ShopRow input{width:22px;height:22px;margin:0}.v076ShopRow.done span{text-decoration:line-through;color:#777}.v076ShopRow button{min-width:36px!important;width:36px!important;height:34px!important;padding:0!important;margin:0!important}
       .v076Info{color:#888;font-size:10px;line-height:1.45;margin-top:8px}.v076Mode{display:inline-block;border-radius:999px;background:#242424;color:#ddd;font-size:10px;font-weight:900;padding:5px 8px}
+      #diet .v0885MealStats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px 11px;margin-top:10px}
+      #diet .v0885MealStat{min-width:0}.v0885MealStat small{display:flex;justify-content:space-between;gap:3px;color:#bdbdbd!important;font-size:10px!important;margin:0 0 3px!important}.v0885MealStat b{color:#eee;font-size:10px}
+      #diet .v0885MealTrack{height:6px;background:#303030;border-radius:999px;overflow:hidden}
+      #diet .v0885MealTrack i{display:block;height:100%;border-radius:999px;background:#50c878}
+      #diet .v0885MealTrack.over i{background:#e65d5d}
+      #diet .v0885Ingredients{margin-top:8px;color:#aaa;font-size:11px;line-height:1.5}
+      #diet .v0885Ingredients summary{cursor:pointer;color:#ddd}
       @media(max-width:390px){#diet .v076Summary,#diet .v076Fields{grid-template-columns:1fr}.v076Fields .wide{grid-column:auto}}
     `;document.head.appendChild(s);
   }
@@ -153,11 +160,36 @@
     $('v076AddMeal').textContent='DODAJ POSIŁEK';
     $('v076CancelEdit')?.classList.add('hidden');
     ['v076MealName','v076Kcal','v076Protein','v076Carbs','v076Fat','v077Portion'].forEach(id=>{if($(id))$(id).value='';});
+    try{window.TrenerMealComposer0885?.clearSelection?.();}catch(e){}
   }
 
+  function mealBar(key,label,value,target,unit){
+    const amount=num(value),goal=num(target),has=goal>0,pct=has?amount/goal*100:0,over=has&&amount>goal;
+    const number=key==='kcal'?0:1;
+    return '<div class="v0885MealStat"><small><span>'+esc(label)+'</span><b>'+
+      fmt(amount,number)+' '+unit+' / '+(has?fmt(goal,number)+' '+unit:'cel —')+
+      (has?' ('+fmt(pct,0)+'%)':'')+'</b></small><div class="v0885MealTrack '+(over?'over':'')+
+      '"><i style="width:'+(has?Math.min(100,pct):0)+'%"></i></div></div>';
+  }
   function renderMeals(d){
     const rows=(d.meals||[]).filter(m=>m.date===state.date).sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0));
-    $('v076Meals').innerHTML=rows.length?rows.map(m=>`<div class="v076MealRow"><div><strong>${esc(m.name||mealTypeLabel(m.type))}</strong><span>${mealTypeLabel(m.type)} • ${fmt(m.kcal)} kcal • B ${fmt(m.protein,1)} g • W ${fmt(m.carbs,1)} g • T ${fmt(m.fat,1)} g</span></div><div style="display:flex;gap:6px"><button class="secondary" type="button" aria-label="Edytuj posiłek" title="Edytuj" data-diet-action="edit-meal" data-id="${esc(m.id)}">✎</button><button class="danger" type="button" aria-label="Usuń posiłek" data-diet-action="delete-meal" data-id="${esc(m.id)}">×</button></div></div>`).join(''):'<p class="hint">Brak posiłków w tym dniu.</p>';
+    const t=d.targets||defaults().targets;
+    $('v076Meals').innerHTML=rows.length?rows.map(m=>{
+      const ingredients=Array.isArray(m.ingredients)?m.ingredients:[];
+      const detail=ingredients.length?'<details class="v0885Ingredients"><summary>Składniki ('+ingredients.length+')</summary>'+
+        ingredients.map(x=>'<div>'+esc(x.name||'Produkt')+' • '+(x.grams>0?fmt(x.grams,1)+' g • ':'')+
+          fmt(x.kcal)+' kcal • B '+fmt(x.protein,1)+' • W '+fmt(x.carbs,1)+' • T '+fmt(x.fat,1)+'</div>').join('')+'</details>':'';
+      const bars='<div class="v0885MealStats">'+
+        mealBar('kcal','Kalorie',m.kcal,t.kcal,'kcal')+
+        mealBar('protein','Białko',m.protein,t.protein,'g')+
+        mealBar('carbs','Węgle',m.carbs,t.carbs,'g')+
+        mealBar('fat','Tłuszcz',m.fat,t.fat,'g')+'</div>';
+      return '<div class="v076MealRow"><div><strong>'+esc(m.name||mealTypeLabel(m.type))+
+        '</strong><span>'+mealTypeLabel(m.type)+' • '+fmt(m.kcal)+' kcal • B '+fmt(m.protein,1)+' g • W '+
+        fmt(m.carbs,1)+' g • T '+fmt(m.fat,1)+' g</span>'+bars+detail+
+        '</div><div style="display:flex;gap:6px"><button class="secondary" type="button" aria-label="Edytuj posiłek" title="Edytuj" data-diet-action="edit-meal" data-id="'+esc(m.id)+'">✎</button>'+
+        '<button class="danger" type="button" aria-label="Usuń posiłek" data-diet-action="delete-meal" data-id="'+esc(m.id)+'">×</button></div></div>';
+    }).join(''):'<p class="hint">Brak posiłków w tym dniu.</p>';
   }
 
   function renderTargets(d){
@@ -196,16 +228,17 @@
     const d=load(),protein=num($('v076Protein').value),carbs=num($('v076Carbs').value),fat=num($('v076Fat').value);
     let kcal=num($('v076Kcal').value);if(!kcal&&(protein||carbs||fat))kcal=round(protein*4+carbs*4+fat*9,0);
     const name=String($('v076MealName').value||'').trim().slice(0,60),type=$('v076MealType').value||'other';
+    const portion=String($('v077Portion')?.value||'').trim().slice(0,30);
     if(!kcal&&!protein&&!carbs&&!fat){try{toast('Wpisz kalorie albo przynajmniej jedno makro.');}catch(e){}return;}
     const editing=!!state.editId;
     if(editing){
       const old=(d.meals||[]).find(m=>m.id===state.editId);
       if(!old){clearMealEdit();try{toast('Posiłek nie istnieje.');}catch(e){}return;}
       Object.assign(old,{type,name:name||mealTypeLabel(type),kcal,protein,carbs,fat});
-      if($('v077Portion'))old.portion=String($('v077Portion').value||'').trim().slice(0,30);
+      old.portion=portion;
       $('v076AddMeal').dataset.v077SkipPortion='1';
     }else{
-      d.meals.push({id:uid('m'),date:state.date,type,name:name||mealTypeLabel(type),kcal,protein,carbs,fat,createdAt:Date.now()});
+      d.meals.push({id:uid('m'),date:state.date,type,name:name||mealTypeLabel(type),kcal,protein,carbs,fat,portion,createdAt:Date.now()});
     }
     save(d);clearMealEdit();
     render();try{toast(editing?'Zmiany posiłku zapisane.':'Posiłek zapisany.');}catch(e){}
@@ -226,6 +259,9 @@
     const el=ev.target?.closest?.('[data-diet-action]');if(!el)return;const action=el.dataset.dietAction,id=el.dataset.id;
     if(action==='edit-meal'){
       const meal=(load().meals||[]).find(m=>m.id===id);if(!meal)return;
+      if(Array.isArray(meal.ingredients)&&meal.ingredients.length&&window.TrenerMealComposer0885?.edit){
+        window.TrenerMealComposer0885.edit(meal);return;
+      }
       state.editId=meal.id;state.date=meal.date;
       $('v076MealType').value=meal.type||'other';
       [['v076MealName','name'],['v076Kcal','kcal'],['v076Protein','protein'],
