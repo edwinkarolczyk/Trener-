@@ -220,6 +220,7 @@ function use(){
   });
  const u=$('v083Unit').value;
  if($('v077Portion'))$('v077Portion').value=fmt(num($('v083Amount').value))+' '+u+' ('+fmt(grams)+' g)';
+ try{window.TrenerMealComposer0885?.setCatalogSource?.(p,grams,u,num($('v083Amount').value));}catch(e){}
  $('v076AddMeal')?.scrollIntoView({behavior:'smooth',block:'center'});
  status('Przeliczono '+fmt(grams)+' g. Sprawdź pola i naciśnij DODAJ POSIŁEK.');
 }
