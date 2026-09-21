@@ -41,6 +41,8 @@
     ['0.8.3','v083-food-catalog.js'],
     ['0.8.4','v084-diet-cards.js'],
     ['0.8.8.5','v0885-meal-composer.js'],
+    ['0.8.8.6','v0886-meal-sets.js'],
+    ['0.8.8.6','v0886-food-entry.js'],
     ['0.8.5','v085-drag-layout.js'],
     ['0.8.6','v086-one-phone.js'],
     ['0.8.7','v087-nearby.js'],
