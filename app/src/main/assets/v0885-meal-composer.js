@@ -84,7 +84,7 @@
   }
   function addIngredient(){
     const x=readItem();if(!x)return;
-    state.items.push(x);clearFood();render();
+    state.items.push(x);window.TrenerDiet076?.cancelEdit?.();clearFood();render();
     toastSafe('Dodano składnik: '+x.name);
   }
   function sumItems(items){
@@ -149,6 +149,7 @@
   function edit(meal){
     if(!Array.isArray(meal.ingredients)||!meal.ingredients.length)return;
     if(state.items.length&&!confirm('Zastąpić niezapisany posiłek edycją „'+meal.name+'”?'))return;
+    window.TrenerDiet076?.cancelEdit?.();
     state.items=clone(meal.ingredients);state.editId=meal.id;state.editDate=meal.date;
     window.TrenerDiet076?.setDate?.(meal.date);
     $('v0885Name').value=meal.name||'';
