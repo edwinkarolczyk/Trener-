@@ -6,6 +6,7 @@ import android.appwidget.AppWidgetProvider;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Bundle;
 import android.widget.RemoteViews;
 
 public class WaterWidgetProvider extends AppWidgetProvider {
@@ -24,6 +25,13 @@ public class WaterWidgetProvider extends AppWidgetProvider {
     public void onReceive(Context context,Intent intent){
         super.onReceive(context,intent);
         if(intent!=null&&Intent.ACTION_DATE_CHANGED.equals(intent.getAction()))updateAll(context);
+    }
+
+    @Override
+    public void onAppWidgetOptionsChanged(Context context, AppWidgetManager manager,
+                                          int appWidgetId, Bundle newOptions) {
+        super.onAppWidgetOptionsChanged(context, manager, appWidgetId, newOptions);
+        updateAll(context);
     }
 
     private static PendingIntent add(Context context,String action,int requestCode){
