@@ -6,6 +6,7 @@ import android.appwidget.AppWidgetProvider;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Bundle;
 import android.content.SharedPreferences;
 import android.os.SystemClock;
 import android.view.View;
@@ -14,6 +15,13 @@ import android.widget.RemoteViews;
 import org.json.JSONObject;
 
 public class WorkoutWidgetProvider extends AppWidgetProvider {
+    @Override
+    public void onAppWidgetOptionsChanged(Context context, AppWidgetManager manager,
+                                          int appWidgetId, Bundle newOptions) {
+        super.onAppWidgetOptionsChanged(context, manager, appWidgetId, newOptions);
+        updateAll(context);
+    }
+
     private static final String PREFS = "trener2_workout_widget_v080";
 
     public static void sync(Context context, String json) {
