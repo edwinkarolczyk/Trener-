@@ -78,16 +78,20 @@
     if($('v0885Grams'))$('v0885Grams').value=grams;
     if($('v0885Source'))$('v0885Source').textContent='Edycja gramów przelicza wszystkie wartości. '+source;
   }
+  function captureManualBaseline(){
+    if(state.selected)return;
+    const g=num($('v0885Grams')?.value);
+    if(!(g>0))return;
+    const base={};
+    nutrients.forEach((k,i)=>{base[k]=num($(fields[i+1])?.value);});
+    if(nutrients.every(k=>base[k]===null))return;
+    state.selected={base100:{},grams:g,source:'Ręcznie'};
+    nutrients.forEach(k=>{state.selected.base100[k]=base[k]===null?null:round(base[k]*100/g,5);});
+  }
   function changeGrams(){
     const g=num($('v0885Grams')?.value);
-    if(!state.selected){
-      if(!(g>0))return;
-      const base={};
-      nutrients.forEach((k,i)=>{base[k]=num($(fields[i+1])?.value);});
-      if(nutrients.every(k=>base[k]===null))return;
-      state.selected={base100:{},grams:g,source:'Ręcznie'};
-      nutrients.forEach(k=>{state.selected.base100[k]=base[k]===null?null:round(base[k]*100/g,5);});
-    }
+    // The first manual gram entry establishes a baseline on blur; do not scale while typing 1, 10, 100.
+    if(!state.selected)return;
     if(!(g>0)){
       nutrients.forEach((k,i)=>{const input=$(fields[i+1]);if(input)input.value='';});
       if($('v0885Source'))$('v0885Source').textContent='Podaj liczbę gramów większą od zera.';
@@ -209,6 +213,8 @@
         '<small id="v0885Source">Wpisy ręczne: pola B/W/T/kcal oznaczają wartości dla podanej porcji.</small>';
       portion.insertAdjacentElement('afterend',grams);
       $('v0885Grams').addEventListener('input',changeGrams);
+      $('v0885Grams').addEventListener('change',captureManualBaseline);
+      $('v0885Grams').addEventListener('blur',captureManualBaseline);
     }
     const style=document.createElement('style');style.id='v0885Css';style.textContent=[
       '#diet .v0885Composer{margin-top:16px;padding-top:15px;border-top:1px solid #363636}',
