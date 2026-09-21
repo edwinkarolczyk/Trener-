@@ -53,6 +53,9 @@ jobs:
       - name: JS and WebView diagnostics regression tests
         run: node app/src/test/js/diagnostics.test.cjs
 
+      - name: Workout plan selector stability regression tests
+        run: node app/src/test/js/training-selector.test.cjs
+
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
