@@ -38,6 +38,9 @@ jobs:
       - name: Food catalog regression tests
         run: node app/src/test/js/food-catalog.test.cjs
 
+      - name: Meal composer and gram conversion tests
+        run: node app/src/test/js/meal-composer.test.cjs
+
       - name: One-phone history and widget regression tests
         run: node app/src/test/js/one-phone.test.cjs
 
