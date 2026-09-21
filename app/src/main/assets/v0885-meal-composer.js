@@ -48,6 +48,36 @@
     const card=$('v076AddMeal')?.closest('.card');
     if(card?.classList.contains('v084Collapsed'))card.querySelector('.v084Toggle')?.click();
   }
+  function captureSelection(){
+    const grams=num($('v0885Grams')?.value);
+    if(!(grams>0))return null;
+    const values={};
+    for(let i=0;i<nutrients.length;i++){
+      values[nutrients[i]]=num($(fields[i+1])?.value);
+      if(values[nutrients[i]]===null)return null;
+    }
+    const norm={};
+    for(const key of nutrients)norm[key]=round(values[key]*100/grams,5);
+    return {grams,base100:norm,source:state.selected?.source||'Ręcznie'};
+  }
+  function restoreSelection(meal){
+    clearSelection();
+    let grams=num(meal.grams),normal=meal.source100||null,source=String(meal.source||'Zapisany posiłek');
+    if(!(grams>0)||!normal){
+      // Older meals only had a free-text portion. Restore only unambiguous gram amounts.
+      const portion=String(meal.portion||'');
+      const match=portion.match(/^(\d+(?:[.,]\d+)?)\s*g(?:\s|$|\()/i)||
+        portion.match(/\((\d+(?:[.,]\d+)?)\s*g\)/i);
+      grams=match?num(match[1]):null;
+      if(!(grams>0))return;
+      normal={};
+      for(const key of nutrients)normal[key]=round((Number(meal[key])||0)*100/grams,5);
+      source='Odtworzone ze starej porcji — sprawdź wartości z etykietą';
+    }
+    state.selected={base100:normal,grams,source};
+    if($('v0885Grams'))$('v0885Grams').value=grams;
+    if($('v0885Source'))$('v0885Source').textContent='Edycja gramów przelicza wszystkie wartości. '+source;
+  }
   function changeGrams(){
     const g=num($('v0885Grams')?.value);
     if(!state.selected)return;
@@ -226,7 +256,7 @@
   function boot(){
     let n=0;const t=setInterval(()=>{n++;if(install()||n>=90)clearInterval(t);},100);
   }
-  window.TrenerMealComposer0885={setCatalogSource,clearSelection,edit,recalc,totals:()=>totals(),
+  window.TrenerMealComposer0885={setCatalogSource,clearSelection,captureSelection,restoreSelection,edit,recalc,totals:()=>totals(),
     calculate:(per100,grams)=>recalc(per100,grams),sumItems};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
