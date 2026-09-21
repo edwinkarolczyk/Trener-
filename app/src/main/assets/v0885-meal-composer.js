@@ -87,12 +87,13 @@
     state.items.push(x);clearFood();render();
     toastSafe('Dodano składnik: '+x.name);
   }
-  function totals(){
+  function sumItems(items){
     const t={kcal:0,protein:0,carbs:0,fat:0};
-    for(const x of state.items)for(const k of nutrients)t[k]+=Number(x[k])||0;
+    for(const x of items)for(const k of nutrients)t[k]+=Number(x[k])||0;
     for(const k of nutrients)t[k]=round(t[k],1);
     return t;
   }
+  function totals(){return sumItems(state.items);}
   function render(){
     const list=$('v0885Items');if(!list)return;
     list.innerHTML=state.items.length?state.items.map((x,i)=>
@@ -225,6 +226,6 @@
     let n=0;const t=setInterval(()=>{n++;if(install()||n>=90)clearInterval(t);},100);
   }
   window.TrenerMealComposer0885={setCatalogSource,clearSelection,edit,recalc,totals:()=>totals(),
-    calculate:(per100,grams)=>recalc(per100,grams)};
+    calculate:(per100,grams)=>recalc(per100,grams),sumItems};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
