@@ -59,8 +59,9 @@ public class MainActivityV077 extends MainActivity {
                 }
                 betaWebView.evaluateJavascript(
                     "(function(){if(typeof showTab==='function'){showTab('" + destination
-                        + "');}else{var b=document.querySelector('.tab[data-tab=\\\"" + destination
-                        + "\\"]');if(b)b.click();}})();", null
+                        + "');}else{var bs=document.querySelectorAll('.tab');"
+                        + "for(var i=0;i<bs.length;i++){if(bs[i].dataset.tab==='" + destination
+                        + "'){bs[i].click();break;}}}})();", null
                 );
                 Intent pending = getIntent();
                 if (pending != null) {
