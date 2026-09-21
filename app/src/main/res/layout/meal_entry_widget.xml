@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="11dp"
+    android:padding="8dp"
     android:background="@drawable/diet_widget_bg">
     <TextView
         android:layout_width="match_parent"
@@ -17,24 +17,24 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:layout_marginTop="10dp">
+        android:layout_marginTop="6dp">
         <TextView android:id="@+id/mealWidgetScan"
             android:layout_width="0dp" android:layout_weight="1"
-            android:layout_height="wrap_content" android:padding="11dp"
+            android:layout_height="wrap_content" android:padding="8dp"
             android:layout_marginRight="4dp" android:gravity="center"
             android:text="SKANUJ" android:textColor="#FFFFFF"
             android:textStyle="bold" android:textSize="11sp"
             android:background="@drawable/diet_widget_button"/>
         <TextView android:id="@+id/mealWidgetWrite"
             android:layout_width="0dp" android:layout_weight="1"
-            android:layout_height="wrap_content" android:padding="11dp"
+            android:layout_height="wrap_content" android:padding="8dp"
             android:layout_marginLeft="3dp" android:layout_marginRight="3dp"
             android:gravity="center" android:text="WPISZ"
             android:textColor="#FFFFFF" android:textStyle="bold" android:textSize="11sp"
             android:background="@drawable/diet_widget_button"/>
         <TextView android:id="@+id/mealWidgetSet"
             android:layout_width="0dp" android:layout_weight="1"
-            android:layout_height="wrap_content" android:padding="11dp"
+            android:layout_height="wrap_content" android:padding="8dp"
             android:layout_marginLeft="4dp" android:gravity="center"
             android:text="ZESTAW" android:textColor="#FFFFFF"
             android:textStyle="bold" android:textSize="11sp"
