@@ -6,6 +6,7 @@ import android.appwidget.AppWidgetProvider;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Bundle;
 import android.content.SharedPreferences;
 import android.widget.RemoteViews;
 
@@ -16,6 +17,13 @@ import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
 public class DietWidgetProvider extends AppWidgetProvider {
+    @Override
+    public void onAppWidgetOptionsChanged(Context context, AppWidgetManager manager,
+                                          int appWidgetId, Bundle newOptions) {
+        super.onAppWidgetOptionsChanged(context, manager, appWidgetId, newOptions);
+        updateAll(context);
+    }
+
     private static final String PREFS="trener2_diet_widget_v077";
     private static final Locale PL=Locale.forLanguageTag("pl-PL");
 
