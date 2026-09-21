@@ -229,6 +229,7 @@
     let kcal=num($('v076Kcal').value);if(!kcal&&(protein||carbs||fat))kcal=round(protein*4+carbs*4+fat*9,0);
     const name=String($('v076MealName').value||'').trim().slice(0,60),type=$('v076MealType').value||'other';
     const portion=String($('v077Portion')?.value||'').trim().slice(0,30);
+    const portionSource=window.TrenerMealComposer0885?.captureSelection?.()||null;
     if(!kcal&&!protein&&!carbs&&!fat){try{toast('Wpisz kalorie albo przynajmniej jedno makro.');}catch(e){}return;}
     const editing=!!state.editId;
     if(editing){
@@ -236,9 +237,12 @@
       if(!old){clearMealEdit();try{toast('Posiłek nie istnieje.');}catch(e){}return;}
       Object.assign(old,{type,name:name||mealTypeLabel(type),kcal,protein,carbs,fat});
       old.portion=portion;
+      if(portionSource)Object.assign(old,{grams:portionSource.grams,source100:portionSource.base100,source:portionSource.source});
+      else{delete old.grams;delete old.source100;delete old.source;}
       $('v076AddMeal').dataset.v077SkipPortion='1';
     }else{
-      d.meals.push({id:uid('m'),date:state.date,type,name:name||mealTypeLabel(type),kcal,protein,carbs,fat,portion,createdAt:Date.now()});
+      d.meals.push({id:uid('m'),date:state.date,type,name:name||mealTypeLabel(type),kcal,protein,carbs,fat,portion,createdAt:Date.now(),
+        ...(portionSource?{grams:portionSource.grams,source100:portionSource.base100,source:portionSource.source}:{})});
     }
     save(d);clearMealEdit();
     render();try{toast(editing?'Zmiany posiłku zapisane.':'Posiłek zapisany.');}catch(e){}
@@ -267,6 +271,7 @@
       [['v076MealName','name'],['v076Kcal','kcal'],['v076Protein','protein'],
        ['v076Carbs','carbs'],['v076Fat','fat'],['v077Portion','portion']]
         .forEach(([field,key])=>{if($(field))$(field).value=meal[key]??'';});
+      try{window.TrenerMealComposer0885?.restoreSelection?.(meal);}catch(e){}
       $('v076AddMeal').textContent='ZAPISZ ZMIANY';
       $('v076CancelEdit')?.classList.remove('hidden');
       $('v076AddMeal').scrollIntoView({behavior:'smooth',block:'center'});
