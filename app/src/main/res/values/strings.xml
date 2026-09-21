@@ -4,4 +4,5 @@
     <string name="diet_widget_description">Kalorie, białko, węglowodany i tłuszcze — bilans dnia Trener 2</string>
     <string name="water_widget_description">Woda na dziś i szybkie dodawanie 100, 250 lub 500 ml</string>
     <string name="workout_widget_description">Aktywny trening, seria, czas i odpoczynek w Trener 2</string>
+    <string name="meal_entry_widget_description">Szybkie dodawanie posiłku: skanuj, wpisz lub wybierz zestaw</string>
 </resources>
