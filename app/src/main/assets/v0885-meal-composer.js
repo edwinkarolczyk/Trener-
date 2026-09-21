@@ -80,7 +80,14 @@
   }
   function changeGrams(){
     const g=num($('v0885Grams')?.value);
-    if(!state.selected)return;
+    if(!state.selected){
+      if(!(g>0))return;
+      const base={};
+      nutrients.forEach((k,i)=>{base[k]=num($(fields[i+1])?.value);});
+      if(nutrients.every(k=>base[k]===null))return;
+      state.selected={base100:{},grams:g,source:'Ręcznie'};
+      nutrients.forEach(k=>{state.selected.base100[k]=base[k]===null?null:round(base[k]*100/g,5);});
+    }
     if(!(g>0)){
       nutrients.forEach((k,i)=>{const input=$(fields[i+1]);if(input)input.value='';});
       if($('v0885Source'))$('v0885Source').textContent='Podaj liczbę gramów większą od zera.';
@@ -124,6 +131,10 @@
     return t;
   }
   function totals(){return sumItems(state.items);}
+  function refreshTotals(){
+    const t=totals();if($('v0885Total'))$('v0885Total').textContent=fmt(t.kcal)+' kcal • B '+fmt(t.protein)+
+      ' g • W '+fmt(t.carbs)+' g • T '+fmt(t.fat)+' g';
+  }
   function render(){
     const list=$('v0885Items');if(!list)return;
     list.innerHTML=state.items.length?state.items.map((x,i)=>
@@ -134,9 +145,7 @@
         '<span class="v0885Plain">ręcznie</span>')+
       '<button class="secondary" type="button" data-remove="'+i+'" aria-label="Usuń składnik">×</button></div>'
     ).join(''):'<p class="hint">Dodaj np. chleb, szynkę i ser — zapiszą się jako jeden posiłek.</p>';
-    const t=totals();
-    $('v0885Total').textContent=fmt(t.kcal)+' kcal • B '+fmt(t.protein)+' g • W '+
-      fmt(t.carbs)+' g • T '+fmt(t.fat)+' g';
+    refreshTotals();
     $('v0885Save').disabled=state.items.length===0;
     $('v0885Save').textContent=state.editId?'ZAPISZ ZMIANY POSIŁKU':'ZAPISZ POSIŁEK ZE SKŁADNIKÓW';
     $('v0885Cancel').hidden=!state.editId&&!state.items.length;
@@ -240,15 +249,29 @@
       const button=e.target.closest('[data-remove]');if(!button)return;
       state.items.splice(Number(button.dataset.remove),1);render();
     });
-    pane.addEventListener('change',e=>{
+    pane.addEventListener('input',e=>{
       const input=e.target.closest('[data-grams]');if(!input)return;
       const item=state.items[Number(input.dataset.grams)],grams=num(input.value);
-      if(!item||!item.base100||!(grams>0)){toastSafe('Masa musi być większa od zera.');render();return;}
-      Object.assign(item,recalc(item.base100,grams));item.grams=grams;item.portion=fmt(grams)+' g';render();
+      if(!item||!item.base100)return;
+      if(!(grams>0)){if($('v0885Message'))$('v0885Message').textContent='Masa musi być większa od zera.';return;}
+      Object.assign(item,recalc(item.base100,grams));item.grams=grams;item.portion=fmt(grams)+' g';
+      const summary=input.closest('.v0885Item')?.querySelector('small');
+      if(summary)summary.textContent=fmt(item.kcal)+' kcal • B '+fmt(item.protein)+' • W '+
+        fmt(item.carbs)+' • T '+fmt(item.fat)+' • '+item.portion;
+      refreshTotals();
+      if($('v0885Message'))$('v0885Message').textContent='';
     });
     ['v076Kcal','v076Protein','v076Carbs','v076Fat'].forEach(k=>$(k)?.addEventListener('input',()=>{
-      if(state.selected){state.selected=null;
-        $('v0885Source').textContent='Wartości zmienione ręcznie. Dalsza zmiana gramów nie nadpisze Twojej korekty.';}
+      const grams=num($('v0885Grams')?.value);
+      if(!(grams>0))return;
+      if(!state.selected)state.selected={base100:{},grams,source:'Ręcznie'};
+      state.selected.grams=grams;
+      for(let i=0;i<nutrients.length;i++){
+        const val=num($(fields[i+1])?.value);
+        state.selected.base100[nutrients[i]]=val===null?null:round(val*100/grams,5);
+      }
+      if($('v0885Source'))$('v0885Source').textContent='Wartości dla '+fmt(grams)+
+        ' g. Zmiana gramów przeliczy je na bieżąco.';
     }));
     $('v076AddMeal')?.addEventListener('click',()=>{if(!state.items.length&&!state.editId)setTimeout(clearSelection,0);});
     render();return true;
@@ -256,7 +279,17 @@
   function boot(){
     let n=0;const t=setInterval(()=>{n++;if(install()||n>=90)clearInterval(t);},100);
   }
-  window.TrenerMealComposer0885={setCatalogSource,clearSelection,captureSelection,restoreSelection,edit,recalc,totals:()=>totals(),
+  function getItems(){return clone(state.items);}
+  function loadItems(items,name,type){
+    if(!Array.isArray(items)||!items.length)return false;
+    if(state.items.length&&!confirm('Zastąpić niezapisane składniki wybranym zestawem?'))return false;
+    window.TrenerDiet076?.cancelEdit?.();
+    state.items=clone(items);state.editId=null;state.editDate='';
+    if($('v0885Name'))$('v0885Name').value=String(name||'').slice(0,60);
+    if($('v0885Type'))$('v0885Type').value=type||'other';
+    render();return true;
+  }
+  window.TrenerMealComposer0885={setCatalogSource,clearSelection,captureSelection,restoreSelection,edit,recalc,getItems,loadItems,totals:()=>totals(),
     calculate:(per100,grams)=>recalc(per100,grams),sumItems};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
