@@ -36,7 +36,7 @@ vm.runInNewContext(script,{window:dietWindow,document:dom,localStorage},
 assert(dietWindow.TrenerDiet076,'diet API missing');
 dietWindow.TrenerDiet076.setDate(day);
 assert(nodes.v076Meals.innerHTML.includes('Składniki (3)'));
-assert.equal((nodes.v076Meals.innerHTML.match(/v0885MealStat/g)||[]).length,4);
+assert.equal((nodes.v076Meals.innerHTML.match(/class="v0885MealStat"/g)||[]).length,4);
 assert(nodes.v076Meals.innerHTML.replace(/\s/g,' ').includes('400 kcal / 2 000 kcal (20%)'));
 assert(nodes.v076Meals.innerHTML.includes('34 g / 100 g (34%)'));
 assert(nodes.v076Summary.innerHTML.includes('400 kcal'));
