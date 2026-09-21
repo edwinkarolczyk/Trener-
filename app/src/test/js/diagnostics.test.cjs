@@ -28,7 +28,7 @@ const localStorage={
  removeItem(key){storage.delete(key);}
 };
 vm.runInNewContext(script,{
- window:win,document,localStorage,performance:{now:()=>time},
+ window:win,Android:win.Android,document,localStorage,performance:{now:()=>time},
  Date,console,setInterval(fn){interval=fn;return 1;},
  setTimeout(){return 1;},clearTimeout(){},confirm(){return true;}
 },{filename:'diagnostics.js',timeout:2000});
