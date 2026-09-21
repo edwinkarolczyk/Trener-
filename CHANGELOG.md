@@ -1,3 +1,11 @@
+## 0.8.8.5 (beta)
+
+- Wiersze posiłków pokazują cztery paski: kcal, białko, węglowodany i tłuszcz względem indywidualnych celów dnia; brak celu nie jest pokazywany jako 0%.
+- Złożony posiłek zapisuje składniki i sumuje wartości tylko raz; edycja gramów poszczególnych składników przelicza kcal i makro.
+- Po wybraniu produktu z bazy można zmienić gramaturę na formularzu posiłku, zachowując przeliczenie z wartości na 100 g.
+- Poprawiono zapis tekstowej porcji w pojedynczym posiłku; zachowano starsze wpisy.
+- Dodano testy sumowania składników i przeliczania gramatury.
+
 ## 0.8.8.1
 - Naprawa systemowego „Nie można wczytać widżetu” na części launcherów (zgłoszenie: Xiaomi). W czterech kaflach „Kalorie i makro” zastąpiono widoki Space bezpiecznymi dla Android RemoteViews elementami TextView.
 - Pozostają układ 2×2, cele, wartości oraz paski makro. Zapis danych diety i innych widgetów bez zmian.
