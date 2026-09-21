@@ -36,24 +36,39 @@ public class MainActivityV077 extends MainActivity {
         openWidgetTargetIfRequested();
     }
 
+    private int widgetNavigationGeneration = 0;
+
     private void openWidgetTargetIfRequested() {
-        Intent intent = getIntent();
-        if (betaWebView == null || intent == null) return;
-        if (intent.getBooleanExtra("open_workout", false)) {
-            intent.removeExtra("open_workout");
-            betaWebView.postDelayed(() -> betaWebView.evaluateJavascript(
-                    "(function(){if(typeof showTab==='function'){showTab('start');}else{var b=document.querySelector('.tab[data-tab=\"start\"]');if(b)b.click();}})();",
-                    null
-            ), 350);
-            return;
-        }
-        if (intent.getBooleanExtra("open_diet", false)) {
-            intent.removeExtra("open_diet");
-            betaWebView.postDelayed(() -> betaWebView.evaluateJavascript(
-                    "(function(){if(typeof showTab==='function'){showTab('diet');}else{var b=document.querySelector('.tab[data-tab=\"diet\"]');if(b)b.click();}})();",
-                    null
-            ), 350);
-        }
+        Intent incoming = getIntent();
+        if (betaWebView == null || incoming == null) return;
+        final boolean workout = incoming.getBooleanExtra("open_workout", false);
+        final boolean diet = incoming.getBooleanExtra("open_diet", false);
+        if (!workout && !diet) return;
+        final String destination = workout ? "start" : "diet";
+        final int request = ++widgetNavigationGeneration;
+        // On a cold launch onResume may happen before index.html and app.js are ready.
+        // Keep the widget intent pending until WebView has finished loading.
+        betaWebView.postDelayed(new Runnable() {
+            private int retries = 0;
+            @Override
+            public void run() {
+                if (request != widgetNavigationGeneration || betaWebView == null) return;
+                if (betaWebView.getProgress() < 100) {
+                    if (retries++ < 50) betaWebView.postDelayed(this, 150);
+                    return;
+                }
+                betaWebView.evaluateJavascript(
+                    "(function(){if(typeof showTab==='function'){showTab('" + destination
+                        + "');}else{var b=document.querySelector('.tab[data-tab=\\\"" + destination
+                        + "\\"]');if(b)b.click();}})();", null
+                );
+                Intent pending = getIntent();
+                if (pending != null) {
+                    pending.removeExtra("open_workout");
+                    pending.removeExtra("open_diet");
+                }
+            }
+        }, 250);
     }
 
     private void requestHydrationNotificationPermissionIfNeeded() {
