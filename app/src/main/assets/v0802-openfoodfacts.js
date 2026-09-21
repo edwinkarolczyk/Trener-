@@ -123,7 +123,7 @@
       const p=recents().find(x=>x.barcode===b.dataset.offBarcode);if(p)showProduct(p);
     });
     $('v0802Result').addEventListener('input',ev=>{
-      if(ev.target?.id==='v0802Grams'){state.grams=num(ev.target.value);renderProduct()}
+      if(ev.target?.id==='v0802Grams'){state.grams=num(ev.target.value);updatePreview();}
     });
     $('v0802Result').addEventListener('click',ev=>{
       if(ev.target?.id==='v0802Use')useProduct();
@@ -181,7 +181,21 @@
     const serving=num(product.servingQuantity);
     state.grams=serving>0&&serving<=1000?serving:100;
     remember(product);
+    const card=$('v076AddMeal')?.closest('.card');
+    if(card?.classList.contains('v084Collapsed'))card.querySelector('.v084Toggle')?.click();
     renderProduct();
+    try{$('v0802Result')?.scrollIntoView({behavior:'smooth',block:'center'});}catch(e){}
+  }
+
+  function updatePreview(){
+    if(!state.product)return;
+    const grams=num($('v0802Grams')?.value);
+    const m=scaled(state.product,grams);
+    [['kcal','kcal'],['protein','g'],['carbs','g'],['fat','g']].forEach(([key,unit])=>{
+      const node=document.querySelector('[data-scan-value="'+key+'"]');
+      if(node)node.textContent=grams>0?m[key]+' '+unit:'—';
+    });
+    const button=$('v0802Use');if(button)button.disabled=!(grams>0);
   }
 
   function renderProduct(){
@@ -193,10 +207,10 @@
       <h3>${esc(p.name)}</h3>
       <div class="v0802Meta">${esc([p.brand,p.quantity,'EAN '+p.barcode].filter(Boolean).join(' • '))}</div>
       <div class="v0802Macros">
-        <div class="v0802Macro"><span>Kalorie</span><b>${m.kcal} kcal</b></div>
-        <div class="v0802Macro"><span>Białko</span><b>${m.protein} g</b></div>
-        <div class="v0802Macro"><span>Węglowodany</span><b>${m.carbs} g</b></div>
-        <div class="v0802Macro"><span>Tłuszcze</span><b>${m.fat} g</b></div>
+        <div class="v0802Macro"><span>Kalorie</span><b data-scan-value="kcal">${m.kcal} kcal</b></div>
+        <div class="v0802Macro"><span>Białko</span><b data-scan-value="protein">${m.protein} g</b></div>
+        <div class="v0802Macro"><span>Węglowodany</span><b data-scan-value="carbs">${m.carbs} g</b></div>
+        <div class="v0802Macro"><span>Tłuszcze</span><b data-scan-value="fat">${m.fat} g</b></div>
       </div>
       <div class="v0802GramRow">
         <div><label>Ilość [g]</label><input id="v0802Grams" type="number" min="1" max="5000" step="1" inputmode="decimal" value="${esc(state.grams)}"></div>
@@ -207,7 +221,8 @@
 
   function useProduct(){
     const p=state.product;if(!p)return;
-    const grams=Math.max(1,num($('v0802Grams')?.value||state.grams));
+    const grams=num($('v0802Grams')?.value);
+    if(!(grams>0)){setStatus('Podaj poprawną ilość gramów.',false);return;}
     const m=scaled(p,grams);
     const displayName=[p.name,p.brand].filter(Boolean).join(' • ').slice(0,60);
     if($('v076MealName'))$('v076MealName').value=displayName;
@@ -216,6 +231,7 @@
     if($('v076Carbs'))$('v076Carbs').value=m.carbs||'';
     if($('v076Fat'))$('v076Fat').value=m.fat||'';
     if($('v077Portion'))$('v077Portion').value=round(grams,1)+' g';
+    try{window.TrenerMealComposer0885?.setCatalogSource?.(p,grams,'g',grams);}catch(e){}
     state.grams=grams;
     setStatus('Wartości wpisane do posiłku. Możesz je poprawić przed zapisaniem.',false);
     try{$('v076MealName')?.scrollIntoView({behavior:'smooth',block:'center'})}catch(e){}
