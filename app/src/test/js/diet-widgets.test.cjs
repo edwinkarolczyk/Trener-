@@ -131,4 +131,18 @@ const activity=fs.readFileSync('app/src/main/java/pl/edwin/trener2/MainActivityV
 assert(activity.includes('betaWebView.getProgress() < 100'),'widget intents must wait for loaded app');
 assert(activity.includes('pending.removeExtra("open_diet")'),'widget deep link must be consumed once');
 
+
+const mealWidgetXml=fs.readFileSync('app/src/main/res/layout/meal_entry_widget.xml','utf8');
+const mealWidgetInfo=fs.readFileSync('app/src/main/res/xml/meal_entry_widget_info.xml','utf8');
+for(const id of ['mealWidgetRoot','mealWidgetScan','mealWidgetWrite','mealWidgetSet'])
+ assert(mealWidgetXml.includes('android:id="@+id/'+id+'"'),'missing meal shortcut '+id);
+assert(mealWidgetInfo.includes('@layout/meal_entry_widget'));
+const mealWidgetJava=fs.readFileSync('app/src/main/java/pl/edwin/trener2/MealEntryWidgetProvider.java','utf8');
+for(const action of ['SCAN','WRITE','SET'])assert(mealWidgetJava.includes('action(context,"'+action+'"'));
+assert(mealWidgetJava.includes('MainActivityV077.class'));
+assert(manifest.includes('android:name=".MealEntryWidgetProvider"'));
+const nativeEntry=fs.readFileSync('app/src/main/java/pl/edwin/trener2/MainActivityV077.java','utf8');
+assert(nativeEntry.includes('open_food_action'));
+assert(nativeEntry.includes('TrenerMealEntry0886.open'));
+assert(nativeEntry.includes('betaWebView.getProgress() < 100'));
 console.log('Diet macro & water widget sync and native resources checks passed');
