@@ -10,6 +10,9 @@ public class BootReceiver extends BroadcastReceiver {
         if (Intent.ACTION_BOOT_COMPLETED.equals(intent.getAction())) {
             ReminderScheduler.rescheduleSaved(context);
             HydrationScheduler.rescheduleSaved(context);
+            DietWidgetProvider.updateAll(context);
+            WaterWidgetProvider.updateAll(context);
+            WorkoutWidgetProvider.updateAll(context);
         }
     }
 }
