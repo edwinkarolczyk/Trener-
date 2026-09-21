@@ -50,7 +50,15 @@ function migrateOldData(){
   if(!localStorage.getItem('trainer3.history') && localStorage.getItem('trainer2.history')) localStorage.setItem('trainer3.history',localStorage.getItem('trainer2.history'));
 }
 
+const LAST_TAB_KEY='trainer3.lastTab.v0884';
+const TAB_IDS=['start','plan','history','progress','diet','settings'];
+function rememberedTab(){
+  try {const saved=localStorage.getItem(LAST_TAB_KEY);return TAB_IDS.includes(saved)?saved:'start';}
+  catch(e){return 'start';}
+}
 function showTab(id){
+  if(!TAB_IDS.includes(id)||!$(id))return;
+  try{localStorage.setItem(LAST_TAB_KEY,id);}catch(e){}
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('show'));
   document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===id));
   $(id).classList.add('show');
@@ -1079,6 +1087,7 @@ function init(){
   const day=new Date().getDay();
   const stored=safeJson(localStorage.getItem('trainer3.settings'),{});
   if(!stored.planKey){if(day===1)$('planSelect').value='mon';if(day===3)$('planSelect').value='wed';if(day===5)$('planSelect').value='fri';}
+  showTab(rememberedTab());
 }
 
 init();
