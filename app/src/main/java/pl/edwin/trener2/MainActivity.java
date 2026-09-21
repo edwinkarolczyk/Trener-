@@ -23,6 +23,8 @@ import android.os.PowerManager;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.util.Base64;
+import android.util.Log;
+import android.webkit.ConsoleMessage;
 import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
@@ -116,6 +118,25 @@ public class MainActivity extends Activity {
             }
         });
         webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public boolean onConsoleMessage(ConsoleMessage message) {
+                if (message == null || message.messageLevel() != ConsoleMessage.MessageLevel.ERROR)
+                    return super.onConsoleMessage(message);
+                final String detail = message.message() == null ? "" : message.message();
+                final String file = message.sourceId() == null ? "" : message.sourceId();
+                final int line = message.lineNumber();
+                Log.e("Trener2-JS", file + ":" + line + " " + detail);
+                // WebView console usually retains script location even if window.error reports
+                // only "Script error." with blank file and line 0.
+                final String script = "window.TrenerDiagnostics&&window.TrenerDiagnostics.nativeConsole("
+                        + JSONObject.quote(detail) + ","
+                        + JSONObject.quote(file) + "," + line + ");";
+                if (webView != null) webView.post(() -> {
+                    if (webView != null) webView.evaluateJavascript(script, null);
+                });
+                return true;
+            }
+
             @Override
             public boolean onShowFileChooser(
                     WebView view,
