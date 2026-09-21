@@ -137,6 +137,11 @@ const mealWidgetInfo=fs.readFileSync('app/src/main/res/xml/meal_entry_widget_inf
 for(const id of ['mealWidgetRoot','mealWidgetScan','mealWidgetWrite','mealWidgetSet'])
  assert(mealWidgetXml.includes('android:id="@+id/'+id+'"'),'missing meal shortcut '+id);
 assert(mealWidgetInfo.includes('@layout/meal_entry_widget'));
+assert(mealWidgetInfo.includes('android:minHeight="72dp"'),
+ 'quick meal shortcut widget should fit a compact launcher row');
+assert(mealWidgetInfo.includes('android:minResizeHeight="72dp"'));
+assert(mealWidgetXml.includes('android:layout_marginTop="6dp"'));
+
 const mealWidgetJava=fs.readFileSync('app/src/main/java/pl/edwin/trener2/MealEntryWidgetProvider.java','utf8');
 for(const action of ['SCAN','WRITE','SET'])assert(mealWidgetJava.includes('action(context,"'+action+'"'));
 assert(mealWidgetJava.includes('MainActivityV077.class'));
