@@ -7,6 +7,9 @@
   let booted=false;
   let resizeTimer=0;
   let lastBeat=performance.now();
+  let foregroundSince=lastBeat;
+  let lastConsoleSignature='';
+  let lastConsoleAt=0;
   let wifiWrapped=false;
 
   function byId(id){return document.getElementById(id)}
@@ -75,7 +78,7 @@
     ];
     const body=list.map(x=>{
       const st=x.state||{};
-      const stateTxt='role='+clean(st.role,40)+' status='+clean(st.status,60)+' connected='+!!st.connected+
+      const stateTxt='ver='+clean(st.version||'unknown',40)+' role='+clean(st.role,40)+' status='+clean(st.status,60)+' connected='+!!st.connected+
         ' shared='+!!st.shared+' running='+!!st.running+' focus='+clean(st.focus,40)+
         ' h='+clean(st.innerHeight,20)+' vv='+clean(st.vvHeight,20)+' y='+clean(st.scrollY,20)+
         (st.exercise?' ex='+clean(st.exercise,80):'')+(st.turn!==''?' turn='+clean(st.turn,20):'');
@@ -184,6 +187,15 @@
     wifiWrapped=true;
   }
 
+  function nativeConsole(message,source,line){
+    const text=clean(message,900),file=clean(source,180),location=Number(line)||0;
+    const signature=text+'|'+file+'|'+location;
+    const time=performance.now();
+    if(signature===lastConsoleSignature&&time-lastConsoleAt<1500)return;
+    lastConsoleSignature=signature;lastConsoleAt=time;
+    write('JS_CONSOLE_ERROR',text,{file,line:location});
+  }
+
   function installEvents(){
     window.addEventListener('error',ev=>{
       write('JS_ERROR',ev.message||'window.error',{
@@ -219,13 +231,27 @@
     window.addEventListener('resize',logResize);
     window.visualViewport?.addEventListener('resize',logResize);
 
+    // Android suspends WebView timers in background; a resumed timer is not a UI freeze.
+    document.addEventListener('visibilitychange',()=>{
+      lastBeat=performance.now();
+      foregroundSince=lastBeat;
+    });
+    window.addEventListener('pageshow',()=>{
+      lastBeat=performance.now();
+      foregroundSince=lastBeat;
+    });
     setInterval(()=>{
       wrapWifi();
       const p=performance.now();
       const delta=p-lastBeat;
       lastBeat=p;
-      if(!document.hidden&&delta>1800){
-        write('UI_STALL','Pętla UI była opóźniona o '+Math.round(delta-1000)+' ms',{deltaMs:Math.round(delta)});
+      if(document.hidden||p-foregroundSince<2200)return;
+      if(delta>12000){
+        write('TIMER_GAP','Długi odstęp timera; możliwe uśpienie WebView',
+          {deltaMs:Math.round(delta),foregroundConfirmed:false});
+      }else if(delta>1800){
+        write('UI_STALL','Pętla UI była opóźniona o '+Math.round(delta-1000)+' ms',
+          {deltaMs:Math.round(delta),foregroundConfirmed:true});
       }
     },1000);
   }
@@ -244,7 +270,8 @@
     rows,
     exportText,
     render,
-    clear:clearLogs
+    clear:clearLogs,
+    nativeConsole
   };
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});
