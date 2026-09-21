@@ -25,7 +25,8 @@
 
   const state={
     cfg:null,view:'week',editDay:null,editKind:'off',editPreset:'mon',editParts:[],editExercises:[],
-    exerciseQuery:'',baseGetPlan:null,baseRefresh:null,legacyCards:[],customCard:null,customEditorOpen:false
+    exerciseQuery:'',baseGetPlan:null,baseRefresh:null,legacyCards:[],customCard:null,customEditorOpen:false,
+    startOptionsInitialized:false
   };
 
   function clone(v){try{return JSON.parse(JSON.stringify(v));}catch(e){return v;}}
@@ -263,13 +264,33 @@
 
   function refreshStartOptions(){
     const sel=$('planSelect');if(!sel)return;
-    sel.querySelectorAll('option[data-v070-day]').forEach(o=>o.remove());
+    const desired=[];
     for(const [k,,short] of DAYS){
       const p=planForDay(k);if(!p)continue;
-      const o=document.createElement('option');o.value='v070day:'+k;o.dataset.v070Day=k;o.textContent=(k===today()?'DZISIAJ • ':short+' • ')+p.title;sel.appendChild(o);
+      desired.push({value:'v070day:'+k,label:(k===today()?'DZISIAJ • ':short+' • ')+p.title,day:k});
     }
+    const existing=[...sel.querySelectorAll('option[data-v070-day]')];
+    // Android closes the native select popup if an <option> is removed even when
+    // it is recreated with the same label. The old 1.5s maintenance did exactly that.
+    const changed=existing.length!==desired.length||existing.some((option,i)=>
+      option.value!==desired[i].value||option.textContent!==desired[i].label);
+    if(!changed)return;
+    // A user editing a native select always has priority over planner refreshes.
+    if(document.activeElement===sel)return;
+    const current=sel.value;
     const settings=(()=>{try{return JSON.parse(localStorage.getItem('trainer3.settings')||'{}');}catch(e){return {};}})();
-    const requested=String(settings.planKey||'');if(requested.startsWith('v070day:')&&planForDay(requested.split(':')[1]))sel.value=requested;
+    const requested=String(settings.planKey||'');
+    existing.forEach(option=>option.remove());
+    for(const item of desired){
+      const option=document.createElement('option');
+      option.value=item.value;option.dataset.v070Day=item.day;option.textContent=item.label;
+      sel.appendChild(option);
+    }
+    const present=value=>[...sel.options].some(option=>option.value===value);
+    const selected=!state.startOptionsInitialized&&present(requested)?requested:
+      present(current)?current:present(requested)?requested:'';
+    if(selected)sel.value=selected;
+    state.startOptionsInitialized=true;
   }
 
   function wrapPlans(){
