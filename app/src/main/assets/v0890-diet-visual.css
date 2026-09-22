@@ -104,22 +104,6 @@ body.v0890NoScroll{overflow:hidden!important}
 #diet .v0890Ready .v0890More button:active,#diet .v0890Ready .v0890AddButton:active{transform:scale(.99)}
 
 
-/* Only Diet uses the approved bottom navigation. All other tabs stay unchanged. */
-body.v0890DietActive .appHeader,body.v0890DietActive nav.tabs{display:none!important}
-body.v0890DietActive .app{padding-top:6px}
-#diet #v076DietRoot.v0890Ready{padding-bottom:calc(104px + env(safe-area-inset-bottom))}
-#v0890BottomNav{position:fixed;left:50%;transform:translateX(-50%);bottom:0;z-index:185;
- width:min(100%,750px);display:none;grid-template-columns:repeat(4,minmax(0,1fr));gap:2px;
- background:#151518f5;border:1px solid #34343a;border-radius:24px 24px 0 0;
- padding:8px 10px calc(8px + env(safe-area-inset-bottom));box-shadow:0 -10px 32px #0008}
-body.v0890DietActive #v0890BottomNav{display:grid}
-#v0890BottomNav button{margin:0!important;padding:5px 2px 3px!important;min-width:0!important;
- width:100%;height:55px;background:transparent!important;border:0!important;
- color:#a5a5ad!important;font-size:20px!important;border-radius:14px!important}
-#v0890BottomNav button span{display:block;font-size:11px;line-height:1.3;margin-top:1px}
-#v0890BottomNav button[aria-current="page"]{color:#e25a67!important;background:#262428!important}
-#v0890Overlay.v0890Open~#v0890BottomNav{display:none!important}
-
 #diet .v0890MealEmoji{position:relative;overflow:hidden}
 #diet .v0890MealEmoji .v0890MealThumb{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit;background:#2a2a31}
 
@@ -132,8 +116,6 @@ body.v0890DietActive #v0890BottomNav{display:grid}
 #diet .v0890RemainingExceeded{background:#39252a!important;color:#ef9ba5!important}
 #diet .v0890Meal.v0890Dragging{box-shadow:0 0 0 2px #d94b5b52!important}
 #diet .v0890MealMenu .danger{background:#50282f!important;color:#f1c3ca!important}
-#v0890BottomNav button svg{display:block;width:22px;height:22px;margin:0 auto 3px;stroke:currentColor;pointer-events:none}
-#v0890BottomNav button span{margin-top:0}
 #diet .v0890Ready .v0890More button{color:#c9c9d0!important}
 #diet .v0890Ready .v0890MealMetric b{color:#eeeef0}
 #diet .v0890Ready .v0890RingValues{color:#d8d8dc}
