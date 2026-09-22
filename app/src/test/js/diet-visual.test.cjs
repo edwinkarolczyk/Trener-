@@ -83,12 +83,12 @@ for(const old of ['#56d487','#69b9ff','#ffd062','#ff925b','#61caeb']){
 const loader=fs.readFileSync('app/src/main/assets/feature-loader.js','utf8');
 assert(loader.includes("['0.8.9.0','v0890-diet-visual.js']"));
 const build=fs.readFileSync('app/build.gradle','utf8');
-assert(build.includes("versionName '0.8.9.4'"));
-assert(build.includes('versionCode 88'));
+assert(build.includes("versionName '0.8.9.5'"));
+assert(build.includes('versionCode 89'));
 assert(css.includes('--d-panel:var(--panel)'),'diet card palette should follow app theme');
 assert(css.includes('--d-red:var(--red)'),'diet accent should follow app theme');
 assert(css.includes('background:var(--red)!important'),'add-meal button should use app red');
 assert(css.includes('#v0890SheetTabs button[aria-selected="true"]'),'bottom sheet tab selection should follow app theme');
 const activity=fs.readFileSync('app/src/main/java/pl/edwin/trener2/MainActivity.java','utf8');
 assert(activity.includes('image_front_small_url,image_small_url'),'Android must actually request the food pictures');
-console.log('Diet 0.8.9.4 with shared theme: 4 full bars, compound totals, colors, sorting, sanitization and version OK');
+console.log('Diet 0.8.9.5 with shared theme: 4 full bars, compound totals, colors, sorting, sanitization and version OK');
