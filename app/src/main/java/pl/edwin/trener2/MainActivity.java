@@ -304,7 +304,7 @@ public class MainActivity extends Activity {
             try {
                 String endpoint = "https://world.openfoodfacts.org/api/v2/product/"
                         + barcode
-                        + ".json?fields=code,product_name,product_name_pl,brands,quantity,serving_size,serving_quantity,nutriments";
+                        + ".json?fields=code,product_name,product_name_pl,brands,quantity,serving_size,serving_quantity,nutriments,image_front_small_url,image_small_url";
                 connection = (HttpURLConnection) new URL(endpoint).openConnection();
                 connection.setRequestMethod("GET");
                 connection.setConnectTimeout(8000);
@@ -368,7 +368,7 @@ public class MainActivity extends Activity {
                 final String endpoint = "off".equals(provider)
                         ? "https://world.openfoodfacts.org/cgi/search.pl?search_terms=" + term
                             + "&search_simple=1&action=process&json=1&page_size=20"
-                            + "&fields=code,product_name,product_name_pl,nutriments,serving_quantity,brands"
+                            + "&fields=code,product_name,product_name_pl,nutriments,serving_quantity,brands,image_front_small_url,image_small_url"
                         : "https://api.nal.usda.gov/fdc/v1/foods/search?query=" + term
                             + "&pageSize=15&dataType=Foundation,SR%20Legacy,Branded"
                             + "&api_key=" + java.net.URLEncoder.encode(key, "UTF-8");
