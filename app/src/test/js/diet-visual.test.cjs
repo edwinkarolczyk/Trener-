@@ -67,7 +67,14 @@ for(const token of ['var(--d-green)','var(--d-blue)','var(--d-yellow)','var(--d-
  assert(source.includes(token),'JS bars must use CSS palette token '+token);
 }
 assert(source.includes('v0890RemainingExceeded'),'over target requires a distinct muted warning');
-assert(css.includes('#v0890BottomNav button svg'),'navigation icons must be monochrome SVG');
+assert(!css.includes('#v0890BottomNav'),'no separate navigation CSS in Diet');
+assert(!css.includes('body.v0890DietActive'),'Diet must not hide app header or six tabs');
+assert(!source.includes("nav.id='v0890BottomNav'"),'no Diet-specific bottom navigation');
+const html=fs.readFileSync('app/src/main/assets/index.html','utf8');
+for(const tab of ['start','plan','history','progress','diet','settings'])
+ assert(html.includes('data-tab="'+tab+'"'),'retain original tab '+tab);
+assert(html.includes('class="appHeader"'),'retain original TRENER 2 header');
+
 assert(!source.includes('🏋️<span>Trening')&&!source.includes('🍴<span>Dieta'),
  'avoid mixed saturated emoji colors in tab navigation');
 for(const old of ['#56d487','#69b9ff','#ffd062','#ff925b','#61caeb']){
@@ -76,7 +83,7 @@ for(const old of ['#56d487','#69b9ff','#ffd062','#ff925b','#61caeb']){
 const loader=fs.readFileSync('app/src/main/assets/feature-loader.js','utf8');
 assert(loader.includes("['0.8.9.0','v0890-diet-visual.js']"));
 const build=fs.readFileSync('app/build.gradle','utf8');
-assert(build.includes("versionName '0.8.9.1'"));
+assert(build.includes("versionName '0.8.9.2'"));
 const activity=fs.readFileSync('app/src/main/java/pl/edwin/trener2/MainActivity.java','utf8');
 assert(activity.includes('image_front_small_url,image_small_url'),'Android must actually request the food pictures');
-console.log('Diet 0.8.9.0 visual: 4 full bars, compound totals, colors, sorting, sanitization and version OK');
+console.log('Diet 0.8.9.2 with shared navigation: 4 full bars, compound totals, colors, sorting, sanitization and version OK');
