@@ -34,10 +34,16 @@
   }
 
   function save(d){
+    // Never silently discard historical meals or shopping on routine saves.
     d.version=1;
-    d.meals=(d.meals||[]).slice(-1500);
-    d.shopping=(d.shopping||[]).slice(-300);
-    localStorage.setItem(KEY,JSON.stringify(d));
+    if(!Array.isArray(d.meals))d.meals=[];
+    if(!Array.isArray(d.shopping))d.shopping=[];
+    try{localStorage.setItem(KEY,JSON.stringify(d));return true;}
+    catch(e){
+      try{toast('Nie udało się zapisać danych Diety. Poprzedni zapis pozostał bez zmian. Zrób eksport danych.');}
+      catch(err){console.warn('Diet save failed; previous data retained',e);}
+      return false;
+    }
   }
 
   function totalsFor(d,key){
@@ -246,20 +252,20 @@
       d.meals.push({id:uid('m'),date:state.date,type,name:name||mealTypeLabel(type),kcal,protein,carbs,fat,portion,createdAt:Date.now(),
         ...(portionSource?{grams:portionSource.grams,source100:portionSource.base100,source:portionSource.source,imageUrl:portionSource.imageUrl||''}:{})});
     }
-    save(d);clearMealEdit();
+    if(!save(d))return;clearMealEdit();
     render();try{toast(editing?'Zmiany posiłku zapisane.':'Posiłek zapisany.');}catch(e){}
   }
 
   function saveTargets(){
-    const d=load();d.targets={mode:$('v076TargetMode').value||'maintain',kcal:num($('v076TargetKcal').value),protein:num($('v076TargetProtein').value),carbs:num($('v076TargetCarbs').value),fat:num($('v076TargetFat').value)};save(d);render();try{toast('Cel diety zapisany.');}catch(e){}
+    const d=load();d.targets={mode:$('v076TargetMode').value||'maintain',kcal:num($('v076TargetKcal').value),protein:num($('v076TargetProtein').value),carbs:num($('v076TargetCarbs').value),fat:num($('v076TargetFat').value)};if(!save(d))return;render();try{toast('Cel diety zapisany.');}catch(e){}
   }
 
   function addShopping(){
     const input=$('v076ShopName'),name=String(input?.value||'').trim().slice(0,60);if(!name)return;
-    const d=load();d.shopping.push({id:uid('s'),name,done:false,createdAt:Date.now()});save(d);input.value='';renderShopping(d);
+    const d=load();d.shopping.push({id:uid('s'),name,done:false,createdAt:Date.now()});if(!save(d))return;input.value='';renderShopping(d);
   }
 
-  function clearDone(){const d=load();d.shopping=(d.shopping||[]).filter(x=>!x.done);save(d);renderShopping(d);}
+  function clearDone(){const d=load();d.shopping=(d.shopping||[]).filter(x=>!x.done);if(!save(d))return;renderShopping(d);}
 
   function handleAction(ev){
     const el=ev.target?.closest?.('[data-diet-action]');if(!el)return;const action=el.dataset.dietAction,id=el.dataset.id;
@@ -283,10 +289,10 @@
     if(action==='delete-meal'){
       const d=load();const meal=(d.meals||[]).find(m=>m.id===id);if(!meal)return;
       if(!confirm('Usunąć posiłek „'+String(meal.name||'Posiłek')+'”?'))return;
-      d.meals=d.meals.filter(m=>m.id!==id);save(d);if(state.editId===id)clearMealEdit();render();return;
+      d.meals=d.meals.filter(m=>m.id!==id);if(!save(d))return;if(state.editId===id)clearMealEdit();render();return;
     }
     if(action==='delete-shop'){
-      const d=load();d.shopping=d.shopping.filter(x=>x.id!==id);save(d);renderShopping(d);return;
+      const d=load();d.shopping=d.shopping.filter(x=>x.id!==id);if(!save(d))return;renderShopping(d);return;
     }
     if(action==='open-day'){
       clearMealEdit();state.date=el.dataset.date||localKey();render();try{$('diet')?.scrollIntoView({block:'start'});}catch(e){}return;
@@ -295,7 +301,7 @@
 
   function handleChange(ev){
     const el=ev.target;if(!el||el.dataset?.dietAction!=='toggle-shop')return;
-    const d=load(),row=(d.shopping||[]).find(x=>x.id===el.dataset.id);if(!row)return;row.done=!!el.checked;save(d);renderShopping(d);
+    const d=load(),row=(d.shopping||[]).find(x=>x.id===el.dataset.id);if(!row)return;row.done=!!el.checked;if(!save(d)){renderShopping(load());return;}renderShopping(d);
   }
 
   function boot(){
