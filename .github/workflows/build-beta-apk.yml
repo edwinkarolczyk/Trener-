@@ -41,6 +41,9 @@ jobs:
       - name: Meal composer and gram conversion tests
         run: node app/src/test/js/meal-composer.test.cjs
 
+      - name: Meal classification by local time tests
+        run: node app/src/test/js/meal-time.test.cjs
+
       - name: One-phone history and widget regression tests
         run: node app/src/test/js/one-phone.test.cjs
 
