@@ -297,6 +297,8 @@ function install(){
  if(!root||!hero||!list||!add||!catalog||!quick||!target||!history||!shopping||!water||!$('v0885Composer'))return false;
  if(state.ready)return true;
  // The original cards are not destroyed: their inputs, listeners and backups continue working.
+ ensureVisible(hero);ensureVisible(list);
+ if($('v076NoTarget'))$('v076NoTarget').textContent='Ustaw własne cele w przycisku Cele. Posiłki możesz zapisywać już teraz.';
  list.classList.add('v0890MealsCard');
  const heading=document.createElement('div');heading.className='v0890Heading';
  heading.innerHTML='<h2>Dieta</h2><button type="button" id="v0890Calendar" aria-label="Historia i kalendarz">▦</button>';
