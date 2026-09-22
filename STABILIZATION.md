@@ -1,3 +1,35 @@
+# Trener 2 — stabilizacja aktualnej bety 0.8.9.4
+
+Stan: **feature freeze / testy praktyczne otwarte**. Gałąź robocza: `beta/0.8.9.4-stabilization-data`. Gałąź `main` bez zmian.
+
+## Co sprawdzono automatycznie
+
+- Kontrola składni JS i regresje starego schematu Diety `trainer3.diet.v076`.
+- Dane historyczne: 1602 posiłki i 322 pozycje zakupów bez cichego usuwania najstarszych.
+- Brak fałszywego potwierdzenia i czyszczenia formularza po nieudanym zapisie.
+- Import kopii: wycofanie częściowych zmian po błędzie, odrzucenie pustej/uszkodzonej zawartości.
+- Obecne testy makro, gramatury, widgetów, synchronizacji i wyboru treningu są częścią builda beta.
+
+**Zielony build nie zastępuje testu na telefonie ani dwóch telefonach.**
+
+## Testy na urządzeniu, wymagane przed uznaniem wersji za ustabilizowaną
+
+- [ ] Aktualizacja z 0.8.9.3 do 0.8.9.4 bez odinstalowania i bez utraty danych.
+- [ ] Zakładki: spójne kolory, ten sam nagłówek i nawigacja w Diecie i reszcie aplikacji.
+- [ ] Dieta: zapis, edycja, usuwanie, duplikat, gramatura składników, cztery paski i historia po restarcie.
+- [ ] Posiłki na wybrany dzień: chronologia, przesuwanie, przejście wstecz i naprzód bez zmiany danych.
+- [ ] Formularz z klawiaturą Androida: dostęp do pól i przycisku Zapisz, bez zasłaniania i blokady przewijania.
+- [ ] Widżety kalorii i wody po aktualizacji oraz restarcie telefonu.
+- [ ] Solo: zmiana treningu, zapis serii, pauza, zakończenie i historia bez migania/resetowania widoku.
+- [ ] Dwa telefony z tą samą wersją: połączenie, rozłączenie, ponowne połączenie i zapis historii obu osób.
+- [ ] Eksport kopii przed aktualizacją oraz kontrolny import i weryfikacja zachowanych treningów i posiłków.
+
+Do czasu ukończenia testów rzeczywistych status pozostaje **beta — stabilizacja w toku**, nie Stable.
+
+---
+
+## Archiwum: wcześniejsza stabilizacja 0.6.1
+
 # Trener 2 — stabilizacja po v0.6.1
 
 ## Punkt bazowy
