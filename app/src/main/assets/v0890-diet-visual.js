@@ -333,21 +333,6 @@ function install(){
   '<div id="v0890Favorites"></div><div id="v0890SheetCards"></div>'+
   '<p id="v0890Notice" role="status"></p></div>';
  root.appendChild(overlay);
- const nav=document.createElement('nav');nav.id='v0890BottomNav';nav.setAttribute('aria-label','Nawigacja Trener 2');
- const navIcon=paths=>'<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+paths+'</svg>';
- nav.innerHTML='<button type="button" data-v0890-tab="start">'+
-  navIcon('<path d="m6.5 6.5 11 11M4 14l-2 2 6 6 2-2M14 4l2-2 6 6-2 2M2 12l10 10M12 2l10 10"/>')+
-  '<span>Trening</span></button>'+
-  '<button type="button" data-v0890-tab="diet" aria-current="page">'+
-  navIcon('<path d="M4 3v7a3 3 0 0 0 6 0V3M7 3v19M19 22V3c-4 3-5 7-5 11h5"/>')+
-  '<span>Dieta</span></button>'+
-  '<button type="button" data-v0890-tab="progress">'+
-  navIcon('<path d="M3 3v18h18M7 16l4-5 3 2 5-7"/>')+
-  '<span>Postępy</span></button>'+
-  '<button type="button" data-v0890-tab="settings">'+
-  navIcon('<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>')+
-  '<span>Więcej</span></button>';
- root.appendChild(nav);
  const sheetCards=$('v0890SheetCards');
  for(const card of [catalog,quick,add,target,history,shopping,water]){
   if(!card)return false;
@@ -387,15 +372,6 @@ function install(){
  $('v0890SheetTabs').addEventListener('click',e=>{const btn=e.target.closest('[data-pane]');if(btn)pane(btn.dataset.pane);});
  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&state.sheet)closeSheet();});
  document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{if(state.sheet)closeSheet();}));
- const syncActive=()=>document.body.classList.toggle('v0890DietActive',!!$('diet')?.classList.contains('show'));
- if(typeof MutationObserver==='function')new MutationObserver(syncActive).observe($('diet'),{attributes:true,attributeFilter:['class']});
- nav.addEventListener('click',e=>{const button=e.target.closest('[data-v0890-tab]');if(!button)return;
-  if(button.dataset.v0890Tab==='diet'){closeSheet();return;}
-  if(typeof showTab==='function')showTab(button.dataset.v0890Tab);
-  else document.querySelector('.tab[data-tab="'+button.dataset.v0890Tab+'"]')?.click();
-  syncActive();
- });
- syncActive();
  renderFavorites();pane('search');refresh();return true;
 }
 function boot(){
