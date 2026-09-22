@@ -189,7 +189,7 @@ function openSheet(kind='add',mode='search'){
 function preserveMeals(d){return JSON.stringify((d.meals||[]).map(m=>[m.id,m.kcal,m.protein,m.carbs,m.fat,m.name,m.type,(m.ingredients||[]).length]));}
 function writeMeal(d){
  try{
-  d.version=1;d.meals=(d.meals||[]).slice(-1500);
+  d.version=1;if(!Array.isArray(d.meals))d.meals=[];
   localStorage.setItem('trainer3.diet.v076',JSON.stringify(d));
   window.TrenerDiet076?.render?.();window.TrenerWidget077?.sync?.(true);
   return true;
