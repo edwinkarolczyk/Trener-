@@ -92,7 +92,9 @@ function off(p){
   return {id:'off:'+String(p.code||''),name:String(p.product_name_pl||p.product_name||'').trim().slice(0,90),
     source:'Open Food Facts',kcal100:kcal,protein100:nget('proteins_100g'),
     carbs100:nget('carbohydrates_100g'),fat100:nget('fat_100g'),
-    servingGrams:num(p.serving_quantity),gramsPerPiece:null,gramsPerMl:null};
+    servingGrams:num(p.serving_quantity),gramsPerPiece:null,gramsPerMl:null,
+     imageUrl:/^https:\/\/images\.openfoodfacts\.org\//.test(String(p.image_front_small_url||p.image_small_url||''))?
+       String(p.image_front_small_url||p.image_small_url||'').slice(0,500):''};
 }
 function usda(p){
   const ns=Array.isArray(p.foodNutrients)?p.foodNutrients:[];
@@ -187,7 +189,7 @@ function data(){
   kcal100:num($('v083Kcal').value),protein100:num($('v083Protein').value),
   carbs100:num($('v083Carbs').value),fat100:num($('v083Fat').value),
   gramsPerPiece:num($('v083Piece').value),gramsPerMl:num($('v083Density').value),
-  servingGrams:p.servingGrams||null};
+  servingGrams:p.servingGrams||null,imageUrl:p.imageUrl||''};
 }
 function calculate(){
  const unit=$('v083Unit').value,amount=num($('v083Amount').value),p=data();
