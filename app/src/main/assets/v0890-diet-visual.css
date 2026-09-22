@@ -94,3 +94,11 @@
 #v0890Overlay .v0890SheetHint{color:#a7a7a7;font-size:11px;margin:4px 0 9px}
 @media(max-width:370px){#diet .v0890MealBars{gap:4px}#diet .v0890MealMetric label{font-size:9px}#diet .v0890MealMetric b{font-size:9px}#diet .v0890Ring{width:39px;height:39px}#diet .v0890Ring::after{width:29px;height:29px}#diet .v0890RingValues{font-size:9px}#v0890SheetTabs button{font-size:10px!important}}
 @media(prefers-reduced-motion:reduce){#diet .v0890Line>i{transition:none}}
+
+
+#v0890Overlay [hidden]{display:none!important}
+#v0890Overlay #v0890Favorites[hidden]{display:none!important}
+body.v0890NoScroll{overflow:hidden!important}
+#v0890Sheet .v0890Ingredient button{min-width:65px!important;width:auto!important;margin:0!important;padding:8px!important;font-size:11px!important}
+#diet .v0890Ready .v0890MealMetric .v0890Line{max-width:100%}
+#diet .v0890Ready .v0890More button:active,#diet .v0890Ready .v0890AddButton:active{transform:scale(.99)}
