@@ -353,6 +353,9 @@ function install(){
    }
  });
  root.addEventListener('click',e=>{if(e.target.closest('#v076AddMeal,#v0885Save,#v0886SaveSet'))state.preSave=preserveMeals(data());},true);
+ root.addEventListener('toggle',e=>{const el=e.target;if(!el.matches?.('[data-details]'))return;
+  if(el.open)state.expanded.add(el.dataset.details);else state.expanded.delete(el.dataset.details);
+ },true);
  root.addEventListener('pointerdown',e=>{if(e.target.closest('[data-drag]'))dragStart(e);else menuHold(e);});
  root.addEventListener('pointermove',dragMove,{passive:false});
  root.addEventListener('pointerup',dragEnd);
@@ -367,7 +370,9 @@ function install(){
  document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{if(state.sheet)closeSheet();}));
  renderFavorites();pane('search');refresh();return true;
 }
-function boot(){let count=0;const t=setInterval(()=>{
+function boot(){
+ if(!$('v0890Style')){const link=document.createElement('link');link.id='v0890Style';link.rel='stylesheet';link.href='v0890-diet-visual.css';document.head.appendChild(link);}
+ let count=0;const t=setInterval(()=>{
  count++;if(install()||count>=100)clearInterval(t);
 },120);}
 window.TrenerDietVisual0890={refresh,openSheet,pane,closeSheet,bar,totals,orderMeals,signature,
