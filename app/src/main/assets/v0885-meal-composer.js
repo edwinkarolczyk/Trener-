@@ -41,7 +41,7 @@
   }
   function setCatalogSource(p,grams,unit,amount){
     const g=num(grams);if(!(g>0))return;
-    state.selected={base100:base100(p),grams:g,unit:String(unit||'g'),amount:num(amount),source:String(p.source||'')};
+    state.selected={base100:base100(p),grams:g,unit:String(unit||'g'),amount:num(amount),source:String(p.source||''),imageUrl:String(p.imageUrl||'')};
     if($('v0885Grams'))$('v0885Grams').value=round(g,2);
     if($('v0885Source'))$('v0885Source').textContent='Z bazy: '+state.selected.source+
       '. Zmiana gramów automatycznie przelicza kcal, B, W i T.';
@@ -58,7 +58,7 @@
     }
     const norm={};
     for(const key of nutrients)norm[key]=round(values[key]*100/grams,5);
-    return {grams,base100:norm,source:state.selected?.source||'Ręcznie'};
+    return {grams,base100:norm,source:state.selected?.source||'Ręcznie',imageUrl:state.selected?.imageUrl||''};
   }
   function restoreSelection(meal){
     clearSelection();
@@ -74,7 +74,7 @@
       for(const key of nutrients)normal[key]=round((Number(meal[key])||0)*100/grams,5);
       source='Odtworzone ze starej porcji — sprawdź wartości z etykietą';
     }
-    state.selected={base100:normal,grams,source};
+    state.selected={base100:normal,grams,source,imageUrl:meal.imageUrl||''};
     if($('v0885Grams'))$('v0885Grams').value=grams;
     if($('v0885Source'))$('v0885Source').textContent='Edycja gramów przelicza wszystkie wartości. '+source;
   }
@@ -121,7 +121,7 @@
         carbs:round(carbs*100/grams,5),fat:round(fat*100/grams,5)};
     }
     return {id:id(),name,portion,grams:grams||null,base100:normalized,
-      source:source?.source||'Ręcznie',kcal,protein,carbs,fat};
+      source:source?.source||'Ręcznie',imageUrl:source?.imageUrl||'',kcal,protein,carbs,fat};
   }
   function addIngredient(){
     const x=readItem();if(!x)return;
@@ -167,7 +167,7 @@
       (state.items.length===1?state.items[0].name:'Posiłek z '+state.items.length+' składników');
     const type=$('v0885Type')?.value||'other';
     const d=diet(),t=totals(),now=Date.now();
-    const row={name,type,...t,ingredients:clone(state.items)};
+    const row={name,type,...t,ingredients:clone(state.items),imageUrl:state.items.find(x=>x.imageUrl)?.imageUrl||''};
     if(state.editId){
       const old=(d.meals||[]).find(m=>m.id===state.editId);
       if(!old){toastSafe('Nie znaleziono edytowanego posiłku.');return;}
