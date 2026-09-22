@@ -44,6 +44,8 @@ jobs:
         run: node app/src/test/js/diet-upgrade.test.cjs
       - name: Diet history retention and failed-save regression
         run: node app/src/test/js/diet-data-retention.test.cjs
+      - name: Backup rollback and imported data integrity
+        run: node app/src/test/js/backup-atomicity.test.cjs
 
       - name: Meal composer and gram conversion tests
         run: node app/src/test/js/meal-composer.test.cjs
