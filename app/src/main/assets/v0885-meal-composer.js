@@ -15,7 +15,7 @@
   const clone=x=>JSON.parse(JSON.stringify(x));
   function diet(){return window.TrenerDiet076?.load?.()||{version:1,targets:{},meals:[],shopping:[]};}
   function save(d){
-    d.version=1;d.meals=(d.meals||[]).slice(-1500);
+    d.version=1;if(!Array.isArray(d.meals))d.meals=[];
     try{localStorage.setItem(KEY,JSON.stringify(d));}catch(e){toastSafe('Nie udało się zapisać posiłku.');return false;}
     try{window.TrenerDiet076?.render?.();window.TrenerDiet077?.syncWidget?.();}catch(e){}
     return true;
