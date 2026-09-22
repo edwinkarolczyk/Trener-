@@ -46,7 +46,8 @@ function add(index){
  const saved=sets()[index];if(!saved)return;
  const ingredients=copy(saved.ingredients);
  const entry={id:'m'+Date.now().toString(36)+Math.random().toString(36).slice(2,7),
-   date:today(),createdAt:Date.now(),name:saved.name,type:saved.type||'other',
+   date:today(),createdAt:Date.now(),name:saved.name,
+   type:window.TrenerMealTime0889?.typeForRepeat?.(saved.type)||saved.type||'other',
    ...sum(ingredients),ingredients};
  let data;try{data=JSON.parse(localStorage.getItem(DIET_KEY)||'{}');}catch(e){data={};}
  if(!Array.isArray(data.meals))data.meals=[];
