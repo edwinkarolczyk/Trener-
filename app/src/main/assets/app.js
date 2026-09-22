@@ -51,7 +51,7 @@ function migrateOldData(){
 }
 
 const LAST_TAB_KEY='trainer3.lastTab.v0884';
-const TAB_IDS=['start','plan','history','progress','diet','settings'];
+const TAB_IDS=['start','plan','history','progress','diet','recipes','settings'];
 function rememberedTab(){
   try {const saved=localStorage.getItem(LAST_TAB_KEY);return TAB_IDS.includes(saved)?saved:'start';}
   catch(e){return 'start';}
