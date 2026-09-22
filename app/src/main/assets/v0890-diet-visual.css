@@ -127,3 +127,14 @@ body.v0890DietActive #v0890BottomNav{display:grid}
 #diet .v0890Ready .v0890MealMetric label{margin:0 0 4px!important}
 #diet .v0890Ready .v0890MealsCard{min-width:0}
 #diet .v0890Ready #v076Meals{min-width:0}
+
+/* 0.8.9.1: one consistent color meaning across the whole diary. */
+#diet .v0890RemainingExceeded{background:#39252a!important;color:#ef9ba5!important}
+#diet .v0890Meal.v0890Dragging{box-shadow:0 0 0 2px #d94b5b52!important}
+#diet .v0890MealMenu .danger{background:#50282f!important;color:#f1c3ca!important}
+#v0890BottomNav button svg{display:block;width:22px;height:22px;margin:0 auto 3px;stroke:currentColor;pointer-events:none}
+#v0890BottomNav button span{margin-top:0}
+#diet .v0890Ready .v0890More button{color:#c9c9d0!important}
+#diet .v0890Ready .v0890MealMetric b{color:#eeeef0}
+#diet .v0890Ready .v0890RingValues{color:#d8d8dc}
+#v0890SheetTabs button[aria-selected="true"]{background:#34282e!important;color:#f4c4cc!important;border-color:#69434c!important}
