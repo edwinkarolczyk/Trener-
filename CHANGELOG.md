@@ -1,3 +1,10 @@
+## 0.8.9.2 (beta) — wspólna nawigacja, zachowane dane
+
+- Przywrócono klasyczny nagłówek TRENER 2 i sześć górnych zakładek w całej aplikacji, również w Diecie.
+- Usunięto oddzielny dolny pasek Diety. Nowe karty bilansu, cztery paski makro, woda, posiłki i kreator nadal działają.
+- Zachowano identyfikator aplikacji, klucz `trainer3.diet.v076`, schemat danych diety, historię, gramatury, ustawienia i istniejące kopie zapasowe.
+- Zmiana dotyczy wyłącznie gałęzi beta; bez zmian w `main`.
+
 ## 0.8.9.1 (beta) — stonowana kolorystyka Diety
 
 - Grafitowe tło i karty, subtelniejsze obramowania oraz spójny kontrast tekstu.
