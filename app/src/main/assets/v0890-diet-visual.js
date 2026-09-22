@@ -331,6 +331,12 @@ function install(){
   '<div id="v0890Favorites"></div><div id="v0890SheetCards"></div>'+
   '<p id="v0890Notice" role="status"></p></div>';
  root.appendChild(overlay);
+ const nav=document.createElement('nav');nav.id='v0890BottomNav';nav.setAttribute('aria-label','Nawigacja Trener 2');
+ nav.innerHTML='<button type="button" data-v0890-tab="start">🏋️<span>Trening</span></button>'+
+  '<button type="button" data-v0890-tab="diet" aria-current="page">🍴<span>Dieta</span></button>'+
+  '<button type="button" data-v0890-tab="progress">▥<span>Postępy</span></button>'+
+  '<button type="button" data-v0890-tab="settings">▦<span>Więcej</span></button>';
+ root.appendChild(nav);
  const sheetCards=$('v0890SheetCards');
  for(const card of [catalog,quick,add,target,history,shopping,water]){
   if(!card)return false;
@@ -370,6 +376,15 @@ function install(){
  $('v0890SheetTabs').addEventListener('click',e=>{const btn=e.target.closest('[data-pane]');if(btn)pane(btn.dataset.pane);});
  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&state.sheet)closeSheet();});
  document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{if(state.sheet)closeSheet();}));
+ const syncActive=()=>document.body.classList.toggle('v0890DietActive',!!$('diet')?.classList.contains('show'));
+ if(typeof MutationObserver==='function')new MutationObserver(syncActive).observe($('diet'),{attributes:true,attributeFilter:['class']});
+ nav.addEventListener('click',e=>{const button=e.target.closest('[data-v0890-tab]');if(!button)return;
+  if(button.dataset.v0890Tab==='diet'){closeSheet();return;}
+  if(typeof showTab==='function')showTab(button.dataset.v0890Tab);
+  else document.querySelector('.tab[data-tab="'+button.dataset.v0890Tab+'"]')?.click();
+  syncActive();
+ });
+ syncActive();
  renderFavorites();pane('search');refresh();return true;
 }
 function boot(){
