@@ -1,6 +1,6 @@
-# Trener 2 — stabilizacja aktualnej bety 0.8.9.4
+# Trener 2 — stabilizacja aktualnej bety 0.8.9.5
 
-Stan: **feature freeze / testy praktyczne otwarte**. Gałąź robocza: `beta/0.8.9.4-stabilization-data`. Gałąź `main` bez zmian.
+Stan: **feature freeze / testy praktyczne otwarte**. Gałąź robocza: `beta/0.8.9.5-ergonomics-stabilization`. Gałąź `main` bez zmian.
 
 ## Co sprawdzono automatycznie
 
@@ -12,9 +12,16 @@ Stan: **feature freeze / testy praktyczne otwarte**. Gałąź robocza: `beta/0.8
 
 **Zielony build nie zastępuje testu na telefonie ani dwóch telefonach.**
 
+## Ergonomia dodana w 0.8.9.5
+
+- Trening: większe pole ciężaru i powtórzeń, czytelne etykiety, widoczny fokus wpisywanej wartości.
+- Dolny panel postępu/zegarów ustępuje miejsca podczas edycji serii; po wyjściu z pól pojawia się ponownie.
+- Dieta: większe strefy dotykowe, formularz wysuwanego panelu i czytelniejsze posiłki bez zmiany czterech pasków.
+- Styl ładowany po starszych modułach, bez cyklicznych renderów i bez zmiany localStorage.
+
 ## Testy na urządzeniu, wymagane przed uznaniem wersji za ustabilizowaną
 
-- [ ] Aktualizacja z 0.8.9.3 do 0.8.9.4 bez odinstalowania i bez utraty danych.
+- [ ] Aktualizacja z 0.8.9.4 do 0.8.9.5 bez odinstalowania i bez utraty danych.
 - [ ] Zakładki: spójne kolory, ten sam nagłówek i nawigacja w Diecie i reszcie aplikacji.
 - [ ] Dieta: zapis, edycja, usuwanie, duplikat, gramatura składników, cztery paski i historia po restarcie.
 - [ ] Posiłki na wybrany dzień: chronologia, przesuwanie, przejście wstecz i naprzód bez zmiany danych.
