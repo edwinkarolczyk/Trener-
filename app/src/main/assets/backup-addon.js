@@ -121,9 +121,13 @@
           if(typeof value!=='string'){toastMsg('Nieprawidłowa wartość w kopii danych.');return;}
           entries.push([key,value]);
         }
-        if(data.schemaVersion&&!localStorage.getItem('trainer3.schemaVersion'))
+        if(entries.length&&data.schemaVersion&&
+          !entries.some(([k])=>k==='trainer3.schemaVersion')&&
+          !localStorage.getItem('trainer3.schemaVersion'))
           entries.push(['trainer3.schemaVersion',String(data.schemaVersion)]);
-        if(data.participantId&&!localStorage.getItem('trainer3.participantId.v070'))
+        if(entries.length&&data.participantId&&
+          !entries.some(([k])=>k==='trainer3.participantId.v070')&&
+          !localStorage.getItem('trainer3.participantId.v070'))
           entries.push(['trainer3.participantId.v070',String(data.participantId)]);
       }else entries=legacyEntries(data);
     }catch(e){toastMsg('Nie udało się odczytać danych kopii.');return;}
