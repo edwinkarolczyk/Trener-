@@ -108,10 +108,12 @@ function menu(m){
  '<button class="secondary" type="button" data-visual="fav" data-id="'+esc(m.id)+'">♡ Ulubione</button>'+
  '<button class="danger" type="button" data-diet-action="delete-meal" data-id="'+esc(m.id)+'" data-visual="delete">♧ Usuń</button></div>';
 }
+function safeImage(url){const s=String(url||'');return /^https:\/\/images\.openfoodfacts\.org\/[a-zA-Z0-9_./%-]+$/.test(s)&&s.length<=500?s:'';}
 function meal(m,t){
  const id=esc(m.id),details=Array.isArray(m.ingredients)?m.ingredients.length:0;
  return '<article class="v0890Meal" data-meal-id="'+id+'" tabindex="0">'+
-  '<div class="v0890MealTop"><div class="v0890MealEmoji" aria-hidden="true">'+emoji(m)+'</div>'+
+  '<div class="v0890MealTop"><div class="v0890MealEmoji" aria-hidden="true">'+emoji(m)+
+  (safeImage(m.imageUrl)?'<img class="v0890MealThumb" src="'+esc(safeImage(m.imageUrl))+'" alt="" loading="lazy" onerror="this.remove()">':'')+'</div>'+
   '<div class="v0890MealInfo"><small>'+esc(time(m))+'　'+kind(m)+'</small><strong>'+
   esc(m.name||kind(m))+'</strong><span>'+fmt(m.kcal)+' kcal · B '+fmt(m.protein,1)+' g · W '+
   fmt(m.carbs,1)+' g · T '+fmt(m.fat,1)+' g'+(details?' · '+details+' składn.':'')+'</span></div>'+
