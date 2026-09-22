@@ -223,6 +223,7 @@
   function render(){
     const d=load();
     renderSummary(d);renderMeals(d);renderTargets(d);renderHistory(d);renderShopping(d);
+    try{window.TrenerDietVisual0890?.refresh?.();}catch(e){console.warn('Diet visual refresh',e);}
   }
 
   function addMeal(){
