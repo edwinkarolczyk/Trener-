@@ -1,0 +1,133 @@
+/* Trener 2 0.8.9.5 — ergonomics-only stabilization.
+   No screen replacement, JS state changes or diet calculations. */
+
+/* Shared navigation: finger-sized touch targets and legible captions on phones. */
+.tabs .tab{min-height:44px;line-height:1.25;touch-action:manipulation}
+@media(max-width:700px){
+  .tabs .tab{font-size:10px;padding:10px 2px}
+}
+
+/* Workout: the existing v0631 scrollable document remains scrollable.
+   No fixed workout card and no forced scrolling while a keyboard is open. */
+body.v062Active #training .v062Summary{gap:8px!important}
+body.v062Active #training .v062Stat{
+  min-height:60px!important;
+  padding:11px 14px!important;
+  border-color:var(--line)!important;
+}
+body.v062Active #training .v062Stat span{
+  font-size:12px!important;
+  line-height:1.3!important;
+  color:var(--muted)!important;
+  letter-spacing:.02em!important;
+}
+body.v062Active #training .v062Stat b{
+  font-size:21px!important;
+  line-height:1.2!important;
+  font-variant-numeric:tabular-nums;
+}
+body.v062Active #training .inputs{gap:10px!important;min-width:0}
+body.v062Active #training .inputs>div{min-width:0}
+body.v062Active #training .inputs label{
+  font-size:13px!important;
+  font-weight:750!important;
+  line-height:1.35!important;
+  color:#d5d5d5!important;
+  margin:0 0 6px!important;
+}
+body.v062Active #training .inputs input{
+  min-width:0!important;
+  height:56px!important;
+  min-height:56px!important;
+  font-size:24px!important;
+  font-weight:900!important;
+  border:1px solid #505050!important;
+  border-radius:14px!important;
+  background:#101010!important;
+  color:var(--text)!important;
+  font-variant-numeric:tabular-nums;
+  scroll-margin-block:80px 110px;
+}
+body.v062Active #training .inputs input:focus{
+  border:2px solid var(--red)!important;
+  box-shadow:0 0 0 3px #ef2b2d30!important;
+  outline:none!important;
+}
+body.v062Active #training #saveSetBtn{
+  min-height:60px!important;
+  border-radius:14px!important;
+  font-size:17px!important;
+  touch-action:manipulation;
+}
+body.v062Active #training #v0631HowTo{
+  min-height:50px!important;
+  font-size:14px!important;
+  touch-action:manipulation;
+}
+body.v062Active #training .controls button{
+  min-height:50px!important;
+  font-size:14px!important;
+  touch-action:manipulation;
+}
+body.v062Active #training #stopBtn{border:1px solid #a84046!important}
+
+/* The timer/progress dock is useful between sets but must not cover kg/reps.
+   :focus-within follows the actual inputs without timers or keyboard-resize loops. */
+body.v062Active:has(#training .inputs:focus-within) #v072FixedTimers{
+  display:none!important;
+}
+body.v062Active:has(#training .inputs:focus-within) #training.trainingCard{
+  padding-bottom:calc(28px + env(safe-area-inset-bottom))!important;
+}
+
+/* Compact phones and short viewports still have the same vertical scroll. */
+@media(max-height:720px){
+  body.v062Active #training .v062Stat{min-height:56px!important;padding:8px 12px!important}
+  body.v062Active #training .inputs input{height:50px!important;min-height:50px!important;font-size:22px!important}
+  body.v062Active #training #saveSetBtn{min-height:56px!important}
+}
+@media(max-width:380px){
+  body.v062Active #training .inputs label{font-size:12px!important}
+  body.v062Active #training .v062Stat span{font-size:11px!important}
+  body.v062Active #training .v062Stat b{font-size:19px!important}
+}
+
+/* Diet: retain the approved four-colored bars, card order and theme. */
+#diet .v0890Ready .v0890MealInfo strong{font-size:14px;line-height:1.4}
+#diet .v0890Ready .v0890MealInfo span{font-size:11px}
+#diet .v0890Ready .v0890MealDrag{
+  min-width:38px!important;
+  width:38px!important;
+  min-height:44px!important;
+  height:44px!important;
+  touch-action:none;
+}
+#diet .v0890Ready .v0890MoreButton{
+  min-width:42px!important;
+  width:42px!important;
+  min-height:44px!important;
+  height:44px!important;
+}
+#diet .v0890Ready .v0890More button{min-height:48px!important;touch-action:manipulation}
+#diet .v0890Ready .v0890MealMetric output{font-size:11px}
+#v0890Sheet{scroll-padding-bottom:96px}
+#v0890Sheet input,#v0890Sheet select,#v0890Sheet textarea{
+  min-height:48px!important;
+  font-size:16px!important;
+}
+#v0890Sheet .primary.bigBtn,#v0890Sheet .secondary.bigBtn{
+  min-height:52px!important;
+  touch-action:manipulation;
+}
+#v0890SheetTabs button{
+  min-height:46px!important;
+  font-size:11px!important;
+  touch-action:manipulation;
+}
+@media(max-width:370px){
+  #diet .v0890Ready .v0890MealDrag{min-width:34px!important;width:34px!important}
+  #diet .v0890Ready .v0890MoreButton{min-width:38px!important;width:38px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  body.v062Active #training .inputs input{scroll-behavior:auto}
+}
