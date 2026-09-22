@@ -69,7 +69,9 @@
   }
   function toggleFavorite(food){const list=favorites(),s=signature(food),idx=list.findIndex(x=>signature(x)===s);if(idx>=0)list.splice(idx,1);else list.unshift(cloneFood(food));saveFavorites(list);}
   function quickAdd(food){
-    const d=diet();d.meals.push(Object.assign({id:uid(),date:dayKey(),createdAt:Date.now()},cloneFood(food)));saveDiet(d);renderQuick($('v077QuickList')?.dataset.mode||'recent');try{toast('Dodano: '+food.name);}catch(e){}
+    const d=diet(),row=cloneFood(food);
+    row.type=window.TrenerMealTime0889?.typeForRepeat?.(row.type)||row.type;
+    d.meals.push(Object.assign({id:uid(),date:dayKey(),createdAt:Date.now()},row));saveDiet(d);renderQuick($('v077QuickList')?.dataset.mode||'recent');try{toast('Dodano: '+food.name);}catch(e){}
   }
 
   function afterManualAdd(){
