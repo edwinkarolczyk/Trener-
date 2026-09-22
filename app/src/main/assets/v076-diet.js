@@ -161,7 +161,7 @@
     $('v076CancelEdit')?.classList.add('hidden');
     ['v076MealName','v076Kcal','v076Protein','v076Carbs','v076Fat','v077Portion'].forEach(id=>{if($(id))$(id).value='';});
     try{window.TrenerMealComposer0885?.clearSelection?.();}catch(e){}
-    window.TrenerMealTime0889?.reset?.();
+    if(resetType)window.TrenerMealTime0889?.reset?.();
   }
 
   function mealBar(key,label,value,target,unit){
