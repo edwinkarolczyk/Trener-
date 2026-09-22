@@ -125,7 +125,7 @@
   }
   function addIngredient(){
     const x=readItem();if(!x)return;
-    state.items.push(x);window.TrenerDiet076?.cancelEdit?.();clearFood();render();
+    state.items.push(x);window.TrenerDiet076?.cancelEdit?.(false);clearFood();render();
     toastSafe('Dodano składnik: '+x.name);
   }
   function sumItems(items){
