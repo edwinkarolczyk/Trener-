@@ -71,7 +71,7 @@
   function quickAdd(food){
     const d=diet(),row=cloneFood(food);
     row.type=window.TrenerMealTime0889?.typeForRepeat?.(row.type)||row.type;
-    d.meals.push(Object.assign({id:uid(),date:dayKey(),createdAt:Date.now()},row));saveDiet(d);renderQuick($('v077QuickList')?.dataset.mode||'recent');try{toast('Dodano: '+food.name);}catch(e){}
+    d.meals.push(Object.assign({id:uid(),date:window.TrenerDiet076?.getDate?.()||dayKey(),createdAt:Date.now()},row));saveDiet(d);renderQuick($('v077QuickList')?.dataset.mode||'recent');try{toast('Dodano: '+food.name);}catch(e){}
   }
 
   function afterManualAdd(){
