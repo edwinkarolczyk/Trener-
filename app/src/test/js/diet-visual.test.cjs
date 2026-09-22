@@ -42,6 +42,12 @@ assert(markup.includes('Składniki (3)'));
 assert(markup.includes('Ser'));
 assert(markup.includes('data-drag="combo"'));
 assert(markup.includes('data-visual="menu"'));
+const photo=api.renderMeal({...compound,imageUrl:'https://images.openfoodfacts.org/images/products/123/front.200.jpg'},targets);
+assert(photo.includes('class="v0890MealThumb"'),'verified OFF photos should be displayed');
+assert(!api.renderMeal({...compound,imageUrl:'javascript:alert(1)'},targets).includes('class="v0890MealThumb"'),
+ 'unsafe product image must never be shown');
+assert(!api.renderMeal({...compound,imageUrl:'https://evil.example.org/x.jpg'},targets).includes('class="v0890MealThumb"'));
+
 const bad=api.renderMeal({...compound,name:'<img src=x onerror=alert(1)>'},targets);
 assert(!bad.includes('<img '),'meal title must be HTML-escaped');
 assert(bad.includes('&lt;img'));
