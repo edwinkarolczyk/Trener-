@@ -120,3 +120,123 @@ body.v0890NoScroll{overflow:hidden!important}
 #diet .v0890Ready .v0890MealMetric b{color:#eeeef0}
 #diet .v0890Ready .v0890RingValues{color:#d8d8dc}
 #v0890SheetTabs button[aria-selected="true"]{background:#34282e!important;color:#f4c4cc!important;border-color:#69434c!important}
+
+
+/* 0.8.9.3 — Dieta inherits the same black/charcoal/red UI as the other six screens.
+   The four macro colors remain semantic data colors, not a second page theme. */
+#diet #v076DietRoot.v0890Ready {
+  --d-bg:var(--bg);
+  --d-panel:var(--panel);
+  --d-inner:var(--panel2);
+  --d-border:var(--line);
+  --d-red:var(--red);
+  --d-muted:var(--muted);
+  color:var(--text);
+}
+#diet .v0890Ready>.card {
+  background:var(--panel);
+  border-color:var(--line);
+  border-radius:var(--radius);
+}
+#diet .v0890Ready>.dietHero {
+  background:linear-gradient(145deg,#171717,#101010);
+}
+#diet .v0890Ready .v0890Heading button,
+#diet .v0890Ready #v076Prev,
+#diet .v0890Ready #v076Next,
+#diet .v0890Ready .v0890MealsTitle select,
+#diet .v0890Ready .v0890More button {
+  background:var(--panel2)!important;
+  border-color:var(--line)!important;
+  color:var(--text)!important;
+}
+#diet .v0890Ready .v0890Remaining {
+  background:#163c29;
+  color:#5ef0a0;
+}
+#diet .v0890Ready .v0890RemainingExceeded {
+  background:#4c2024!important;
+  color:#ff9ca6!important;
+}
+#diet .v0890Ready .v0890Line {
+  background:#303030;
+}
+#diet .v0890Ready .v0890Line.v0890Over>i {
+  background:var(--red);
+}
+#diet .v0890Ready .v0890Rings {
+  border-top-color:var(--line);
+}
+#diet .v0890Ready .v0890Ring {
+  background:conic-gradient(var(--ring) var(--pct),#303030 var(--pct));
+}
+#diet .v0890Ready .v0890Ring::after {
+  background:var(--panel);
+}
+#diet .v0890Ready .v0890WaterMini {
+  background:var(--panel);
+  border-color:var(--line);
+  color:var(--text)!important;
+}
+#diet .v0890Ready .v0890WaterMini b {color:var(--d-water)}
+#diet .v0890Ready .v0890WaterMini small {color:var(--muted)}
+#diet .v0890Ready .v0890Meal {
+  background:#101010;
+  border-color:var(--line);
+}
+#diet .v0890Ready .v0890MealEmoji,
+#diet .v0890Ready .v0890MealThumb {
+  background:var(--panel2);
+  border-color:var(--line);
+}
+#diet .v0890Ready .v0890MealInfo small,
+#diet .v0890Ready .v0890MealInfo span,
+#diet .v0890Ready .v0890MealDrag {
+  color:var(--muted);
+}
+#diet .v0890Ready .v0890MealDetail,
+#diet .v0890Ready .v0890Ingredient {
+  border-color:var(--line);
+}
+#diet .v0890Ready .v0890Meal.v0890Dragging {
+  border-color:var(--red);
+  box-shadow:0 0 0 2px #ef2b2d50!important;
+}
+#diet .v0890Ready .v0890MealMenu .danger {
+  background:#7f1e24!important;
+  color:#fff!important;
+}
+#diet .v0890Ready .v0890AddButton {
+  background:var(--red)!important;
+  border-color:var(--red)!important;
+  color:#fff!important;
+}
+#v0890Sheet {
+  background:var(--panel);
+  border-color:var(--line);
+  color:var(--text);
+}
+#v0890SheetTop {
+  background:var(--panel);
+  border-color:var(--line);
+}
+#v0890SheetTabs button {
+  background:var(--panel2)!important;
+  color:var(--text)!important;
+  border-color:var(--line)!important;
+}
+#v0890SheetTabs button[aria-selected="true"] {
+  background:var(--red)!important;
+  color:#fff!important;
+  border-color:var(--red)!important;
+}
+#v0890Sheet .card {
+  background:#101010!important;
+  border-color:var(--line)!important;
+}
+#v0890Sheet input,#v0890Sheet select {
+  background:#0e0e0e;
+  border-color:#3a3a3a;
+  color:var(--text);
+}
+#v0890Sheet .v0890SheetHint {color:var(--muted)}
