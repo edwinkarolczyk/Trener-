@@ -1,3 +1,12 @@
+## 0.8.9.5 (beta) — stabilizacja ergonomii telefonu
+
+- Większe i czytelniejsze pola kg/powtórzeń, etykiety i kafelki postępu serii; wyraźny fokus aktualnie edytowanego pola.
+- Dolny panel zegarów i postępu nie zasłania pól podczas wpisywania wyniku; po wyjściu z pól wraca.
+- Przyciski zapisu, instrukcji i sterowania treningiem mają większe cele dotykowe, bez ponownego blokowania przewijania.
+- Dieta: większe cele dotykowe posiłków, wygodniejsze formularze w wysuwanym panelu, czytelniejsze nazwy i wartości; cztery paski pozostają.
+- Bez nowych modułów, zmiany zapisu, migracji, przeliczania kalorii ani zmian protokołu wspólnego treningu. `main` bez zmian.
+- Test regresji ergonomii i wszystkie dotychczasowe testy w procesie APK; pełna walidacja dotykowa na telefonie pozostaje obowiązkowa.
+
 ## 0.8.9.4 (beta) — stabilizacja zapisu Diety
 
 - Usunięto automatyczne obcinanie starszych posiłków po 1500 wpisach i zakupów po 300 wpisach.
