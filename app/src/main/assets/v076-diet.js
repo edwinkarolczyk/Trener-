@@ -239,12 +239,12 @@
       if(!old){clearMealEdit();try{toast('Posiłek nie istnieje.');}catch(e){}return;}
       Object.assign(old,{type,name:name||mealTypeLabel(type),kcal,protein,carbs,fat});
       old.portion=portion;
-      if(portionSource)Object.assign(old,{grams:portionSource.grams,source100:portionSource.base100,source:portionSource.source});
-      else{delete old.grams;delete old.source100;delete old.source;}
+      if(portionSource)Object.assign(old,{grams:portionSource.grams,source100:portionSource.base100,source:portionSource.source,imageUrl:portionSource.imageUrl||''});
+      else{delete old.grams;delete old.source100;delete old.source;delete old.imageUrl;}
       $('v076AddMeal').dataset.v077SkipPortion='1';
     }else{
       d.meals.push({id:uid('m'),date:state.date,type,name:name||mealTypeLabel(type),kcal,protein,carbs,fat,portion,createdAt:Date.now(),
-        ...(portionSource?{grams:portionSource.grams,source100:portionSource.base100,source:portionSource.source}:{})});
+        ...(portionSource?{grams:portionSource.grams,source100:portionSource.base100,source:portionSource.source,imageUrl:portionSource.imageUrl||''}:{})});
     }
     save(d);clearMealEdit();
     render();try{toast(editing?'Zmiany posiłku zapisane.':'Posiłek zapisany.');}catch(e){}
