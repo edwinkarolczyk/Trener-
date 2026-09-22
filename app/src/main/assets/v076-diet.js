@@ -155,7 +155,7 @@
     $('v076Next').disabled=state.date>=localKey();
   }
 
-  function clearMealEdit(){
+  function clearMealEdit(resetType=true){
     state.editId=null;
     $('v076AddMeal').textContent='DODAJ POSIŁEK';
     $('v076CancelEdit')?.classList.add('hidden');
