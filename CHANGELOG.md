@@ -1,3 +1,16 @@
+## 0.8.9.0 (beta) — Dieta według zatwierdzonego projektu
+
+- Przebudowany ekran Diety: bilans dzienny, cztery wskaźniki makro, woda, chronologiczne posiłki i duży przycisk dodawania.
+- Każdy posiłek ma zawsze widoczne cztery kolorowe paski: kcal, białko, węglowodany i tłuszcz względem celu dnia.
+- Szczegóły składników pod posiłkiem, menu dotykiem/przytrzymaniem, edycja, duplikowanie, ulubione i usuwanie.
+- Przesuwanie posiłków z zapisem kolejności wybranego dnia; sortowanie chronologiczne, od najnowszych i wg kalorii.
+- Jeden wysuwany panel z wyszukiwarką, ostatnimi, ulubionymi, kreatorem składników oraz skanerem kodów.
+- Cele, historia, lista zakupów i nawodnienie w pomocniczym panelu, bez usuwania ich danych.
+- Dolna nawigacja wyłącznie w Dietcie; pozostałe ekrany zachowują dotychczasowe zakładki.
+- Miniatury produktów z Open Food Facts wyłącznie z oficjalnego hosta i zastępcza ikonka dla pozostałych wpisów.
+- Testy regresji sumowania posiłków, 4 pasków, sortowania, nieustawionego celu i zdjęć.
+- Gałąź `main` bez zmian. Zachowano istniejący format danych diety i kopie zapasowe.
+
 ## 0.8.8.5 (beta)
 
 - Wiersze posiłków pokazują cztery paski: kcal, białko, węglowodany i tłuszcz względem indywidualnych celów dnia; brak celu nie jest pokazywany jako 0%.
