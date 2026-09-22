@@ -60,10 +60,23 @@ assert.equal(api.signature({...compound,id:'different',createdAt:3000}),api.sign
  'favorites should ignore record ID and timestamp');
 assert(css.includes('grid-template-columns:repeat(4,minmax(0,1fr))'),'four metrics must fit phone width');
 assert(css.includes('#v0890Overlay'),'bottom sheet must have real styles');
+for(const color of ['#5bcb7a','#63a8f8','#e6be55','#ee915c','#58bedc','#d94b5b']){
+ assert(css.toLowerCase().includes(color),'muted diet palette missing '+color);
+}
+for(const token of ['var(--d-green)','var(--d-blue)','var(--d-yellow)','var(--d-orange)','var(--d-water)']){
+ assert(source.includes(token),'JS bars must use CSS palette token '+token);
+}
+assert(source.includes('v0890RemainingExceeded'),'over target requires a distinct muted warning');
+assert(css.includes('#v0890BottomNav button svg'),'navigation icons must be monochrome SVG');
+assert(!source.includes('🏋️<span>Trening')&&!source.includes('🍴<span>Dieta'),
+ 'avoid mixed saturated emoji colors in tab navigation');
+for(const old of ['#56d487','#69b9ff','#ffd062','#ff925b','#61caeb']){
+ assert(!source.toLowerCase().includes(old),'legacy saturated JS color '+old);
+}
 const loader=fs.readFileSync('app/src/main/assets/feature-loader.js','utf8');
 assert(loader.includes("['0.8.9.0','v0890-diet-visual.js']"));
 const build=fs.readFileSync('app/build.gradle','utf8');
-assert(build.includes("versionName '0.8.9.0'"));
+assert(build.includes("versionName '0.8.9.1'"));
 const activity=fs.readFileSync('app/src/main/java/pl/edwin/trener2/MainActivity.java','utf8');
 assert(activity.includes('image_front_small_url,image_small_url'),'Android must actually request the food pictures');
 console.log('Diet 0.8.9.0 visual: 4 full bars, compound totals, colors, sorting, sanitization and version OK');
