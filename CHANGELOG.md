@@ -1,3 +1,12 @@
+## 0.8.9.4 (beta) — stabilizacja zapisu Diety
+
+- Usunięto automatyczne obcinanie starszych posiłków po 1500 wpisach i zakupów po 300 wpisach.
+- Wszystkie ścieżki zapisu Diety (zwykły posiłek, kreator składników, duplikowanie) zachowują pełną historię.
+- Nieudany zapis nie czyści formularza posiłku ani nie zgłasza sukcesu; dotychczasowe dane pozostają zapisane.
+- Test regresji sprawdza 1602 posiłki, 322 zakupy i błąd zapełnionego magazynu danych.
+- Schemat danych pozostaje v1, klucz `trainer3.diet.v076` bez zmian, `main` bez zmian.
+- Przed zakończeniem stabilizacji wymagane są jeszcze testy praktyczne na telefonie, szczególnie aktualizacji, Diety i wspólnego treningu.
+
 ## 0.8.9.3 (beta) — wspólny motyw kolorystyczny Diety
 
 - Dieta korzysta z tych samych czarnych i antracytowych teł, obramowań i czerwonych przycisków co pozostałe zakładki Trenera 2.
