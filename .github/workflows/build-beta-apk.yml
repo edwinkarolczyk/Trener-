@@ -42,6 +42,8 @@ jobs:
         run: node app/src/test/js/diet-visual.test.cjs
       - name: Legacy Diet upgrade and user data retention
         run: node app/src/test/js/diet-upgrade.test.cjs
+      - name: Diet history retention and failed-save regression
+        run: node app/src/test/js/diet-data-retention.test.cjs
 
       - name: Meal composer and gram conversion tests
         run: node app/src/test/js/meal-composer.test.cjs
