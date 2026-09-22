@@ -1,0 +1,39 @@
+/* Przepisy 0.9.0 — isolated page, no selectors affecting existing Diet cards. */
+.tabs{display:flex!important;overflow-x:auto;gap:6px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.tabs::-webkit-scrollbar{display:none}
+.tabs .tab{flex:1 0 78px;white-space:nowrap;min-height:44px;border-radius:13px}
+#recipes .r090Hero{background:linear-gradient(145deg,#1a1a1a,#111)}
+#recipes .r090Fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 10px}
+#recipes .r090Fields label{min-width:0;font-size:12px;font-weight:750;line-height:1.35}
+#recipes .r090Fields input,#recipes .r090Fields select{margin-top:6px;min-height:48px;font-size:16px}
+#recipes .r090Fields label:last-child{grid-column:1/-1}
+#recipes .r090Stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+#recipes .r090Stats>div{background:#111;border:1px solid #333;border-radius:14px;padding:11px 7px}
+#recipes .r090Stats span,#recipes .r090Stats b{display:block}
+#recipes .r090Stats span{color:#aaa;font-size:11px}
+#recipes .r090Stats b{font-size:19px;color:#eee}
+#recipes .r090Error{color:#ffaaaa;background:#391a1b;border-radius:12px;padding:11px;line-height:1.45}
+#recipes .r090DayTotal{font-size:18px;font-weight:850;margin:13px 0;color:#5dcc89}
+#recipes .r090Meal,#recipes .r090Recipe{border:1px solid #353535;background:#141414;border-radius:18px;padding:14px;margin-top:11px}
+#recipes .r090Meal h3{margin:8px 0;color:#fff;font-size:18px}
+#recipes .r090Meal p{color:#ddd;font-size:13px}
+#recipes .r090MealHead{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:11px;color:#aaa}
+#recipes .r090MealHead strong{color:#5dcc89}
+#recipes details{min-width:0}
+#recipes details summary{min-height:42px;display:flex;align-items:center;cursor:pointer;color:#eee;font-size:13px;list-style:disclosure-closed}
+#recipes details[open] summary{list-style:disclosure-open}
+#recipes .r090Ingredients{display:grid;gap:7px;margin-top:5px}
+#recipes .r090Ingredients>div{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:#ccc}
+#recipes .r090Ingredients b{white-space:nowrap;color:#fff}
+#recipes .r090Category{border:1px solid #333;background:#111;border-radius:15px;margin:9px 0;padding:8px 12px}
+#recipes .r090Category>summary{font-weight:850;font-size:15px}
+#recipes .r090Recipe b,#recipes .r090Recipe small{display:block}
+#recipes .r090Recipe b{font-size:13px}
+#recipes .r090Recipe small{font-size:11px;color:#a9c8b6;line-height:1.4;margin-top:5px}
+#recipes #r090Day{font-size:16px;min-height:50px}
+@media(max-width:360px){
+ #recipes .r090Fields{grid-template-columns:1fr}
+ #recipes .r090Fields label:last-child{grid-column:auto}
+ #recipes .r090Stats b{font-size:16px}
+ #recipes .r090MealHead{flex-wrap:wrap}
+}
