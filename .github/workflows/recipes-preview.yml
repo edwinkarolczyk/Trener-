@@ -1,0 +1,32 @@
+name: Trener 2 Recipes Preview Check
+
+on:
+  push:
+    branches:
+      - 'feature/trener2-0.9.0-przepisy'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  js-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check all JavaScript assets
+        run: |
+          set -e
+          find app/src/main/assets -maxdepth 1 -type f -name '*.js' -print0 | while IFS= read -r -d '' f; do
+            node --check "$f"
+          done
+      - name: Recipe planning regression
+        run: node --test app/src/test/js/recipes-090.test.cjs
+      - name: Existing JavaScript regressions
+        run: |
+          set -e
+          for f in app/src/test/js/*.test.cjs; do
+            case "$f" in *recipes-090.test.cjs) continue ;; esac
+            node "$f"
+          done
