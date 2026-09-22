@@ -47,7 +47,7 @@
   }
 
   function modeLabel(v){return v==='reduce'?'Redukcja':v==='gain'?'Masa':'Utrzymanie';}
-  function mealTypeLabel(v){return ({breakfast:'Śniadanie',lunch:'Obiad',dinner:'Kolacja',snack:'Przekąska',other:'Inne'})[v]||'Posiłek';}
+  function mealTypeLabel(v){return ({breakfast:'Śniadanie',lunch:'Obiad',afternoon:'Podwieczorek',dinner:'Kolacja',snack:'Przekąska',other:'Inne'})[v]||'Posiłek';}
 
   function installCss(){
     if($('v076DietStyle'))return;
@@ -91,7 +91,7 @@
       <div class="card">
         <div class="eyebrow">DODAJ POSIŁEK</div><h2>Co zjadłeś?</h2>
         <div class="v076Fields">
-          <div><label>Typ</label><select id="v076MealType"><option value="breakfast">Śniadanie</option><option value="lunch">Obiad</option><option value="dinner">Kolacja</option><option value="snack">Przekąska</option><option value="other">Inne</option></select></div>
+          <div><label>Typ</label><select id="v076MealType"><option value="breakfast">Śniadanie</option><option value="lunch">Obiad</option><option value="afternoon">Podwieczorek</option><option value="dinner">Kolacja</option><option value="snack">Przekąska</option><option value="other">Inne</option></select></div>
           <div><label>Nazwa</label><input id="v076MealName" maxlength="60" placeholder="np. jajecznica + pieczywo"></div>
           <div><label>Kalorie [kcal]</label><input id="v076Kcal" type="number" min="0" step="1" inputmode="decimal" placeholder="np. 650"></div>
           <div><label>Białko [g]</label><input id="v076Protein" type="number" min="0" step="0.1" inputmode="decimal" placeholder="np. 35"></div>
@@ -161,6 +161,7 @@
     $('v076CancelEdit')?.classList.add('hidden');
     ['v076MealName','v076Kcal','v076Protein','v076Carbs','v076Fat','v077Portion'].forEach(id=>{if($(id))$(id).value='';});
     try{window.TrenerMealComposer0885?.clearSelection?.();}catch(e){}
+    window.TrenerMealTime0889?.reset?.();
   }
 
   function mealBar(key,label,value,target,unit){
@@ -267,7 +268,8 @@
         window.TrenerMealComposer0885.edit(meal);return;
       }
       state.editId=meal.id;state.date=meal.date;
-      $('v076MealType').value=meal.type||'other';
+      if(window.TrenerMealTime0889?.beginEdit)window.TrenerMealTime0889.beginEdit('v076MealType',meal.type);
+      else $('v076MealType').value=meal.type||'other';
       [['v076MealName','name'],['v076Kcal','kcal'],['v076Protein','protein'],
        ['v076Carbs','carbs'],['v076Fat','fat'],['v077Portion','portion']]
         .forEach(([field,key])=>{if($(field))$(field).value=meal[key]??'';});
