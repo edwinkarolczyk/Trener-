@@ -97,7 +97,7 @@
   const byId=id=>document.getElementById(id);
   const fmt=n=>Number(n).toLocaleString('pl-PL',{maximumFractionDigits:1});
   const escape=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  let profile={sex:'male',age:34,weight:70,height:170,training:3,work:'moderate',trend:'falling',goal:'recomp',meals:4};
+  let profile={sex:'',age:'',weight:'',height:'',training:'',work:'moderate',trend:'stable',goal:'maintain',meals:4};
   let selected=1,plan=null;
   function read(){
     try{const o=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');if(o&&o.schemaVersion===1&&o.profile)profile={...profile,...o.profile};}catch(e){}
@@ -110,7 +110,7 @@
   function form(){
     return '<div class="card r090Hero"><div class="eyebrow">PRZEPISY • OSOBNY MODUŁ</div><h2>Jadłospis na 30 dni</h2><p class="hint">Własny kalkulator i 50 przepisów. Nic nie zapisuje do Diety ani treningów.</p>'+
     '<div class="r090Fields">'+
-    '<label>Wariant wzoru BMR<select id="r090Sex"><option value="male">Męski</option><option value="female">Żeński</option></select></label>'+
+    '<label>Wariant wzoru BMR<select id="r090Sex"><option value="">Wybierz</option><option value="male">Męski</option><option value="female">Żeński</option></select></label>'+
     '<label>Wiek [lata]<input id="r090Age" type="number" min="18" max="100"></label>'+
     '<label>Masa [kg]<input id="r090Weight" type="number" min="35" max="300" step=".1"></label>'+
     '<label>Wzrost [cm]<input id="r090Height" type="number" min="120" max="230"></label>'+
@@ -124,6 +124,7 @@
   }
   function collect(){
     const text=(id)=>byId('r090'+id).value;
+    if(text('Training')==='')throw Error('Wpisz liczbę treningów tygodniowo (0–7).');
     return {sex:text('Sex'),age:Number(text('Age')),weight:Number(text('Weight')),height:Number(text('Height')),work:text('Work'),training:Number(text('Training')),goal:text('Goal'),trend:text('Trend'),meals:Number(text('Meals'))};
   }
   function restore(){
@@ -162,7 +163,7 @@
     const el=byId('recipes');if(!el)return;
     read();el.innerHTML=form();restore();drawLibrary();
     byId('r090Generate').addEventListener('click',generate);
-    document.querySelector('.tab[data-tab="recipes"]')?.addEventListener('click',()=>{if(!plan)generate();});
+
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })(typeof window!=='undefined'?window:globalThis);
