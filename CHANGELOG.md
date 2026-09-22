@@ -1,3 +1,12 @@
+## 0.8.9.1 (beta) — stonowana kolorystyka Diety
+
+- Grafitowe tło i karty, subtelniejsze obramowania oraz spójny kontrast tekstu.
+- Cztery stałe, mniej jaskrawe kolory makro: kalorie #5BCB7A, białko #63A8F8, węglowodany #E6BE55, tłuszcz #EE915C.
+- Woda #58BEDC, spokojniejszy badge pozostałych kalorii oraz czerwony stan przekroczenia.
+- Dolna nawigacja ma jednobarwne ikony liniowe i stonowany aktywny element.
+- Bez zmiany danych diety, gramatury, obliczeń, układu ani czterech pasków przy każdym posiłku.
+- Tylko gałąź beta; bez zmian w main.
+
 ## 0.8.9.0 (beta) — Dieta według zatwierdzonego projektu
 
 - Przebudowany ekran Diety: bilans dzienny, cztery wskaźniki makro, woda, chronologiczne posiłki i duży przycisk dodawania.
