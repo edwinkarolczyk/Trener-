@@ -24,7 +24,7 @@ function data(){return window.TrenerDiet076?.load?.()||{targets:{},meals:[]};}
 function date(){return window.TrenerDiet076?.getDate?.()||localDate();}
 function localDate(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function numberOrDash(v,unit,places=0){return v>0?fmt(v,places)+' '+unit:'Cel nieustawiony';}
-function bar(value,target){const v=n(value),t=n(target);return {known:t>0,pct:t>0?Math.round(v/t*100):0,width:t>0?Math.min(100,v/t*100):0,over:t>0&&v>t};}
+function bar(value,target){const v=n(value),t=n(target);return {known:t>0,pct:t>0?Math.round(v/t*100):0,width:t>0?Math.min(100,Math.round(v/t*1000)/10):0,over:t>0&&v>t};}
 function goals(d){return d.targets||{};}
 function totals(d,key){const out={kcal:0,protein:0,carbs:0,fat:0};
  (d.meals||[]).forEach(m=>{if(m.date!==key)return;metric.forEach(x=>out[x.key]+=n(m[x.key]));});
