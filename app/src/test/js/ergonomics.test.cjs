@@ -19,6 +19,11 @@ assert(!source.includes('localStorage'),'layout layer must not touch user data')
 assert(!source.includes('setInterval'),'layout layer must not add high-frequency rendering loops');
 assert(!source.includes('scrollIntoView'),'layout layer must not steal scroll position');
 assert(!css.includes('position:fixed'),'must not reintroduce a fixed workout screen');
+const manifest=fs.readFileSync('app/src/main/AndroidManifest.xml','utf8');
+for(const activity of ['.MainActivityV077','.MainActivity']){
+ assert(manifest.includes('android:name="'+activity+'"\\n            android:windowSoftInputMode="adjustResize"'.replace('\\n','\n')),
+  'keyboard must resize activity '+activity);
+}
 let onReady=()=>{},link=null,count=0;
 const document={
  readyState:'loading',
