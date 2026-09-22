@@ -4,6 +4,8 @@
 - Wszystkie ścieżki zapisu Diety (zwykły posiłek, kreator składników, duplikowanie) zachowują pełną historię.
 - Nieudany zapis nie czyści formularza posiłku ani nie zgłasza sukcesu; dotychczasowe dane pozostają zapisane.
 - Test regresji sprawdza 1602 posiłki, 322 zakupy i błąd zapełnionego magazynu danych.
+- Import kopii zapasowej nie pozostawia mieszanego stanu danych po błędzie w połowie zapisu: przywraca poprzednie wartości albo jawnie zgłasza problem z przywróceniem.
+- Puste i nieprawidłowe kopie są odrzucane przed zapisem; test regresji sprawdza wycofanie zmian, prawidłowy import i brak restartu po błędzie.
 - Schemat danych pozostaje v1, klucz `trainer3.diet.v076` bez zmian, `main` bez zmian.
 - Przed zakończeniem stabilizacji wymagane są jeszcze testy praktyczne na telefonie, szczególnie aktualizacji, Diety i wspólnego treningu.
 
