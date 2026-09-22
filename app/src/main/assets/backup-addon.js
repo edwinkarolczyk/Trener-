@@ -70,39 +70,67 @@
     toastMsg('Import pliku działa w aplikacji Android.');
   }
 
-  function applyLegacy(data){
-    if(data.settings)localStorage.setItem('trainer3.settings',JSON.stringify(data.settings));
-    if(Array.isArray(data.history))localStorage.setItem('trainer3.history',JSON.stringify(data.history));
-    if(Array.isArray(data.weights))localStorage.setItem('trainer3.weights',JSON.stringify(data.weights));
-    if(data.customPlan)localStorage.setItem('trainer3.customPlan',JSON.stringify(data.customPlan));
-    if(data.reminders)localStorage.setItem('trainer3.reminders',JSON.stringify(data.reminders));
+  function legacyEntries(data){
+    const pairs=[];
+    for(const [key,field] of [['trainer3.settings','settings'],['trainer3.history','history'],
+      ['trainer3.weights','weights'],['trainer3.customPlan','customPlan'],
+      ['trainer3.reminders','reminders']]){
+      const value=data[field];
+      if(value&&(field!=='history'&&field!=='weights'||Array.isArray(value)))
+        pairs.push([key,JSON.stringify(value)]);
+    }
+    return pairs;
+  }
+
+  function writeBackupEntries(entries){
+    // Import is a multi-key write; take a snapshot before touching the first key.
+    // If a later write reaches WebView storage quota, restore the previous values.
+    const previous=new Map();
+    try{
+      for(const [key] of entries)previous.set(key,localStorage.getItem(key));
+      for(const [key,value] of entries)localStorage.setItem(key,value);
+      return true;
+    }catch(e){
+      let recovered=true;
+      // Clear partially written keys first to free the space needed by the snapshot.
+      for(const [key] of previous)try{localStorage.removeItem(key);}catch(err){recovered=false;}
+      for(const [key,value] of previous){
+        if(value!==null)try{localStorage.setItem(key,value);}catch(err){recovered=false;}
+      }
+      toastMsg(recovered?'Nie udało się zaimportować kopii. Przywrócono poprzednie dane.':
+        'Błąd importu i przywracania danych — nie zamykaj aplikacji, wykonaj eksport i sprawdź kopię.');
+      return false;
+    }
   }
 
   function applyBackup(raw){
     let data;
     try{data=JSON.parse(raw)}catch(e){toastMsg('Nieprawidłowy plik kopii.');return;}
-    try{
-      if(data&&data.format==='trener2-backup'&&data.storage&&typeof data.storage==='object'){
-        const entries=Object.entries(data.storage);
-        if(!entries.length){toastMsg('Kopia nie zawiera danych.');return;}
-        for(const [key,value] of entries){
-          if(!(key.startsWith('trainer3.')||key.startsWith('trainer2.')))continue;
-          if(key==='trainer3.photos')continue;
-          if(typeof value==='string')localStorage.setItem(key,value);
-        }
-        if(data.schemaVersion&&!localStorage.getItem('trainer3.schemaVersion'))localStorage.setItem('trainer3.schemaVersion',String(data.schemaVersion));
-        if(data.participantId&&!localStorage.getItem('trainer3.participantId.v070'))localStorage.setItem('trainer3.participantId.v070',String(data.participantId));
-      }else if(data&&typeof data==='object'){
-        applyLegacy(data);
-      }else{
-        toastMsg('Nieprawidłowy plik kopii.');
-        return;
-      }
-      toastMsg('Kopia danych wczytana. Uruchamiam ponownie aplikację…');
-      setTimeout(()=>window.location.reload(),650);
-    }catch(e){
-      toastMsg('Nie udało się wczytać kopii danych.');
+    if(!data||typeof data!=='object'||Array.isArray(data)){
+      toastMsg('Nieprawidłowy plik kopii.');return;
     }
+    let entries=[];
+    try{
+      if(data.format==='trener2-backup'){
+        if(!data.storage||typeof data.storage!=='object'||Array.isArray(data.storage)){
+          toastMsg('Nieprawidłowy format danych kopii.');return;
+        }
+        for(const [key,value] of Object.entries(data.storage)){
+          if(!(key.startsWith('trainer3.')||key.startsWith('trainer2.'))||
+            key==='trainer3.photos')continue;
+          if(typeof value!=='string'){toastMsg('Nieprawidłowa wartość w kopii danych.');return;}
+          entries.push([key,value]);
+        }
+        if(data.schemaVersion&&!localStorage.getItem('trainer3.schemaVersion'))
+          entries.push(['trainer3.schemaVersion',String(data.schemaVersion)]);
+        if(data.participantId&&!localStorage.getItem('trainer3.participantId.v070'))
+          entries.push(['trainer3.participantId.v070',String(data.participantId)]);
+      }else entries=legacyEntries(data);
+    }catch(e){toastMsg('Nie udało się odczytać danych kopii.');return;}
+    if(!entries.length){toastMsg('Kopia nie zawiera danych.');return;}
+    if(!writeBackupEntries(entries))return;
+    toastMsg('Kopia danych wczytana. Uruchamiam ponownie aplikację…');
+    setTimeout(()=>window.location.reload(),650);
   }
 
   function install(){
