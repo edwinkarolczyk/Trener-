@@ -1,0 +1,96 @@
+
+/* Trener 2 0.8.9.0 — approved diary presentation. No data model changes. */
+#diet #v076DietRoot.v0890Ready{--d-bg:#171717;--d-panel:#232323;--d-border:#393939;--d-muted:#aaa;--d-green:#56d487;--d-blue:#69b9ff;--d-yellow:#ffd062;--d-orange:#ff925b;--d-red:#da3042;display:flex;flex-direction:column;gap:13px;max-width:750px;margin:0 auto;padding-bottom:26px;color:#f5f5f5}
+#diet .v0890Ready>.card{background:linear-gradient(135deg,#232323,#1a1a1a);border:1px solid var(--d-border);border-radius:22px;padding:16px;box-shadow:none}
+#diet .v0890Ready>.dietHero{order:0;padding:18px}
+#diet .v0890Ready>.v0890WaterMini{order:1}
+#diet .v0890Ready>.v0890MealsCard{order:2;padding:14px}
+#diet .v0890Ready>.v0890AddButton{order:3}
+#diet .v0890Ready>.v0890More{order:4}
+#diet .v0890Ready .dietHero .v084Head,#diet .v0890Ready .v0890MealsCard>.v084Head,
+#diet .v0890Ready .dietHero>.eyebrow,#diet .v0890Ready .dietHero>.topline,
+#diet .v0890Ready .v0890MealsCard>.eyebrow,#diet .v0890Ready .v0890MealsCard>h2{display:none!important}
+#diet .v0890Ready .dietHero.v084Collapsed>:not(.v084Head),
+#diet .v0890Ready .v0890MealsCard.v084Collapsed>:not(.v084Head){display:revert!important}
+#diet .v0890Ready .dietHero.v085Collapsed>:not(.v085Head),
+#diet .v0890Ready .v0890MealsCard.v085Collapsed>:not(.v085Head){display:revert!important}
+#diet .v0890Ready .v076DateNav{display:grid;grid-template-columns:46px minmax(0,1fr) 46px;gap:10px;margin:0 0 16px;align-items:center}
+#diet .v0890Ready #v076Prev,#diet .v0890Ready #v076Next{width:44px!important;min-width:44px!important;height:44px!important;font-size:23px!important;border-radius:14px!important;background:#2b2b2b!important}
+#diet .v0890Ready .v076Date{font-size:14px;font-weight:700;line-height:1.2}
+#diet .v0890Heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 12px}
+#diet .v0890Heading h2{margin:0;font-size:28px;line-height:1.15;font-weight:900;color:#fff}
+#diet .v0890Heading button{margin:0!important;width:43px!important;min-width:43px!important;height:43px!important;padding:0!important;border-radius:13px!important;border:1px solid #484848!important;background:#303030!important;font-size:21px}
+#diet .v0890Ready #v076Summary{display:block!important}
+#diet .v0890BalanceLabel{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:14px;font-weight:800}
+#diet .v0890Remaining{background:#26392e;color:#80e5a2;padding:6px 11px;border-radius:999px;font-size:12px;white-space:nowrap}
+#diet .v0890KcalLine{display:flex;align-items:baseline;gap:8px;margin:12px 0 9px;flex-wrap:wrap}
+#diet .v0890KcalLine strong{font-size:31px;color:#fff;line-height:1;font-variant-numeric:tabular-nums}
+#diet .v0890KcalLine span{font-size:16px;color:#aaa}
+#diet .v0890Line{height:10px;background:#3a3a3a;overflow:hidden;border-radius:999px;position:relative}
+#diet .v0890Line>i{display:block;height:100%;max-width:100%;border-radius:999px;background:var(--line-color,var(--d-green));transition:width .2s}
+#diet .v0890Line.v0890Over>i{background:#f36870}
+#diet .v0890Percent{text-align:right;font-size:12px;color:var(--d-green);font-weight:850;margin-top:-17px;margin-bottom:7px}
+#diet .v0890Rings{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:17px;padding-top:14px;border-top:1px solid #343434}
+#diet .v0890RingCell{text-align:center;min-width:0}
+#diet .v0890Ring{width:45px;height:45px;margin:auto auto 7px;border-radius:100%;display:grid;place-items:center;background:conic-gradient(var(--ring) var(--pct),#444 var(--pct));}
+#diet .v0890Ring::after{content:"";width:34px;height:34px;background:#242424;border-radius:50%;grid-area:1/1}
+#diet .v0890RingLabel{font-size:11px;color:#ccc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#diet .v0890RingValues{font-size:10px;color:#ddd;margin-top:5px;white-space:nowrap}
+#diet .v0890RingPercent{font-size:11px;color:var(--ring);font-weight:800;margin-top:4px}
+#diet .v0890WaterMini{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 15px;border:1px solid #34505a;background:#18262b;border-radius:18px;color:#e1f8ff!important;margin:0!important;width:100%!important}
+#diet .v0890WaterMini b{color:#75d6fa}
+#diet .v0890WaterMini small{color:#9ab9c7;font-size:11px}
+#diet .v0890MealsTitle{display:flex;align-items:center;justify-content:space-between;gap:9px;margin:0 0 12px}
+#diet .v0890MealsTitle h2{font-size:21px;margin:0;font-weight:900}
+#diet .v0890MealsTitle select{width:auto!important;max-width:185px;min-width:0;margin:0!important;border-radius:12px!important;background:#303030!important;color:#eee;padding:8px 7px!important;font-size:11px!important}
+#diet #v076Meals{display:flex;flex-direction:column;gap:10px}
+#diet .v0890Meal{padding:13px 11px;border:1px solid #383838;border-radius:19px;background:#222;min-width:0;position:relative;touch-action:pan-y}
+#diet .v0890MealTop{display:flex;align-items:flex-start;gap:10px;min-width:0}
+#diet .v0890MealEmoji{display:grid;place-items:center;font-size:25px;background:#303030;border-radius:13px;width:51px;min-width:51px;height:51px;border:1px solid #434343}
+#diet .v0890MealInfo{flex:1;min-width:0}
+#diet .v0890MealInfo small{font-size:10px;color:#aaa;display:block;margin-bottom:4px}
+#diet .v0890MealInfo strong{display:block;font-size:13px;line-height:1.3;overflow-wrap:anywhere;color:#fff}
+#diet .v0890MealInfo span{display:block;font-size:10px;color:#a7a7a7;line-height:1.4;margin-top:5px}
+#diet .v0890MoreButton{margin:0!important;min-width:31px!important;width:31px!important;height:38px!important;padding:0!important;font-size:20px!important;background:transparent!important;border:0!important;color:#ddd}
+#diet .v0890MealBars{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-top:13px}
+#diet .v0890MealMetric{min-width:0;font-size:10px}
+#diet .v0890MealMetric label{display:block;font-size:10px;color:#cecece;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#diet .v0890MealMetric b{display:block;font-size:10px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#diet .v0890MealMetric .v0890Line{height:8px;margin:6px 0 4px}
+#diet .v0890MealMetric output{display:block;color:var(--metric);font-weight:850;font-size:10px;text-align:right}
+#diet .v0890MealDetail{margin-top:12px;border-top:1px solid #393939;padding-top:12px;font-size:11px}
+#diet .v0890MealDetail summary{cursor:pointer;font-weight:800;color:#ececec;padding:3px 0;list-style:none}
+#diet .v0890MealDetail summary::-webkit-details-marker{display:none}
+#diet .v0890Ingredient{display:flex;justify-content:space-between;gap:7px;padding:9px 0;border-bottom:1px solid #343434;color:#ddd}
+#diet .v0890Ingredient span{color:#aaa;font-size:10px;text-align:right}
+#diet .v0890MealMenu{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:10px 0 0}
+#diet .v0890MealMenu button{min-width:0!important;width:100%;margin:0!important;padding:10px 4px!important;border-radius:11px!important;font-size:11px!important}
+#diet .v0890Meal.v0890Dragging{border-color:var(--d-red);box-shadow:0 0 0 2px #b8273b80;z-index:9;opacity:.85}
+#diet .v0890MealDrag{width:24px!important;min-width:24px!important;height:37px!important;font-size:19px!important;background:none!important;border:0!important;padding:0!important;margin:0!important;color:#999;touch-action:none}
+#diet .v0890AddButton{width:100%!important;padding:17px!important;margin:0!important;min-height:58px!important;border:1px solid #fc5261!important;border-radius:20px!important;background:linear-gradient(110deg,#aa202d,#b92739)!important;color:white!important;font-size:18px!important;font-weight:900}
+#diet .v0890More{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+#diet .v0890More button{background:#262626!important;border:1px solid #414141!important;margin:0!important;padding:13px 3px!important;min-width:0!important;border-radius:13px!important;font-size:11px!important;color:#ddd!important}
+#diet .v0890Aux{display:none!important}
+#diet .v0890Ready .v0890SheetCard{display:block!important}
+#v0890Overlay{position:fixed;inset:0;background:#000b;z-index:450;display:none;align-items:flex-end;justify-content:center;overscroll-behavior:contain}
+#v0890Overlay.v0890Open{display:flex}
+#v0890Sheet{width:min(100%,750px);max-height:min(91dvh,950px);overflow:auto;overscroll-behavior:contain;background:#191919;border:1px solid #424242;border-radius:26px 26px 0 0;padding:16px 15px max(21px,env(safe-area-inset-bottom));box-shadow:0 -16px 40px #000a;color:#eee}
+#v0890Sheet button{border-radius:13px}
+#v0890SheetTop{position:sticky;top:-16px;background:#191919;z-index:3;padding:6px 1px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid #3a3a3a}
+#v0890SheetTop strong{font-size:19px;color:#fff}
+#v0890Close{min-width:38px!important;width:38px!important;height:38px!important;margin:0!important;padding:0!important;border-radius:11px!important}
+#v0890SheetTabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin:14px 0 12px}
+#v0890SheetTabs button{min-width:0!important;margin:0!important;padding:11px 3px!important;font-size:11px!important;border-radius:14px!important;background:#292929!important;color:#ddd!important;border:1px solid #454545!important}
+#v0890SheetTabs button[aria-selected="true"]{background:#b92739!important;color:#fff!important;border-color:#b92739!important}
+#v0890Sheet .card{background:#222!important;border:1px solid #3e3e3e!important;border-radius:17px!important;margin:11px 0!important;padding:12px!important;box-shadow:none!important}
+#v0890Sheet .v084Head,#v0890Sheet .v085Grip,#v0890Sheet .v084MoveUp,#v0890Sheet .v084MoveDown{display:none!important}
+#v0890Sheet .v084Collapsed>:not(.v084Head),#v0890Sheet .v085Collapsed>:not(.v085Head){display:revert!important}
+#v0890Sheet .v084DuplicateTitle{display:revert!important}
+#v0890Sheet .v0890PaneHidden{display:none!important}
+#v0890Sheet .v0885Composer{margin-top:18px}
+#v0890Sheet .v077QuickList{max-height:none}
+#v0890Overlay .v0890SheetCard{display:block}
+#v0890Overlay #v083FoodCard,#v0890Overlay #v077QuickCard,#v0890Overlay #v078HydrationCard{position:static}
+#v0890Overlay .v0890SheetHint{color:#a7a7a7;font-size:11px;margin:4px 0 9px}
+@media(max-width:370px){#diet .v0890MealBars{gap:4px}#diet .v0890MealMetric label{font-size:9px}#diet .v0890MealMetric b{font-size:9px}#diet .v0890Ring{width:39px;height:39px}#diet .v0890Ring::after{width:29px;height:29px}#diet .v0890RingValues{font-size:9px}#v0890SheetTabs button{font-size:10px!important}}
+@media(prefers-reduced-motion:reduce){#diet .v0890Line>i{transition:none}}
