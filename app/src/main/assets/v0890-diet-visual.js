@@ -5,10 +5,10 @@ const $=id=>document.getElementById(id);
 const ROOT='v076DietRoot',VISUAL='trainer3.dietVisual.v0890',FAV='trainer3.dietMealFavorites.v0890';
 const legacy={add:'v076AddMeal',catalog:'v083FoodCard',quick:'v077QuickCard',
  targets:'v076SaveTargets',history:'v076History',shopping:'v076Shopping',water:'v078HydrationCard'};
-const metric=[{key:'kcal',name:'Kalorie',short:'Kalorie',unit:'kcal',color:'#56d487',icon:'🔥'},
- {key:'protein',name:'Białko',short:'Białko',unit:'g',color:'#69b9ff',icon:'🏋️'},
- {key:'carbs',name:'Węglowodany',short:'Węgle',unit:'g',color:'#ffd062',icon:'🌾'},
- {key:'fat',name:'Tłuszcz',short:'Tłuszcz',unit:'g',color:'#ff925b',icon:'🟠'}];
+const metric=[{key:'kcal',name:'Kalorie',short:'Kalorie',unit:'kcal',color:'var(--d-green)',icon:'🔥'},
+ {key:'protein',name:'Białko',short:'Białko',unit:'g',color:'var(--d-blue)',icon:'🏋️'},
+ {key:'carbs',name:'Węglowodany',short:'Węgle',unit:'g',color:'var(--d-yellow)',icon:'🌾'},
+ {key:'fat',name:'Tłuszcz',short:'Tłuszcz',unit:'g',color:'var(--d-orange)',icon:'🟠'}];
 const typeNames={breakfast:'Śniadanie',lunch:'Obiad',afternoon:'Podwieczorek',
  dinner:'Kolacja',snack:'Przekąska',other:'Inne'};
 const state={ready:false,sheet:'',pane:'search',menu:'',sort:'time',
@@ -63,16 +63,16 @@ function summary(d){
  let water={todayMl:0,targetMl:0};
  try{water=window.TrenerHydration078?.state?.()||water;}catch(e){}
  const waterL=n(water.todayMl)/1000,waterT=n(water.targetMl)/1000;
- node.innerHTML='<div class="v0890BalanceLabel"><span>Bilans dnia</span><span class="v0890Remaining">'+
+ node.innerHTML='<div class="v0890BalanceLabel"><span>Bilans dnia</span><span class="v0890Remaining'+(k.over?' v0890RemainingExceeded':'')+'">'+
   (k.known?(remain>=0?'Jeszcze '+fmt(remain)+' kcal':'Przekroczono o '+fmt(-remain)+' kcal'):'Ustaw cel kcal')+
   '</span></div><div class="v0890KcalLine"><strong>'+fmt(value.kcal)+'</strong><span>/ '+
   (k.known?fmt(t.kcal):'—')+' kcal</span></div><div class="v0890Percent">'+(k.known?fmt(k.pct)+'%':'—')+
-  '</div><div class="v0890Line'+(k.over?' v0890Over':'')+'" style="--line-color:#56d487"><i style="width:'+k.width+'%"></i></div>'+
+  '</div><div class="v0890Line'+(k.over?' v0890Over':'')+'" style="--line-color:var(--d-green)"><i style="width:'+k.width+'%"></i></div>'+
   '<div class="v0890Rings">'+
-  ring('Białko',value.protein,t.protein,'#69b9ff')+
-  ring('Węgle',value.carbs,t.carbs,'#ffd062')+
-  ring('Tłuszcz',value.fat,t.fat,'#ff925b')+
-  ring('Woda',waterL,waterT,'#61caeb')+'</div>';
+  ring('Białko',value.protein,t.protein,'var(--d-blue)')+
+  ring('Węgle',value.carbs,t.carbs,'var(--d-yellow)')+
+  ring('Tłuszcz',value.fat,t.fat,'var(--d-orange)')+
+  ring('Woda',waterL,waterT,'var(--d-water)')+'</div>';
  if($('v0890WaterMini')){
    const w=bar(n(water.todayMl),n(water.targetMl));
    $('v0890WaterMini').innerHTML='<span>💧 Woda <b>'+fmt(waterL,2)+' / '+fmt(waterT,2)+' l</b></span>'+
