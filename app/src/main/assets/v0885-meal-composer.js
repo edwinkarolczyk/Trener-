@@ -178,7 +178,8 @@
     }
     if(!save(d))return;
     state.items=[];state.editId=null;state.editDate='';clearFood();
-    $('v0885Name').value='';render();toastSafe('Posiłek zapisany — jedna pozycja w bilansie dnia.');
+    $('v0885Name').value='';window.TrenerMealTime0889?.reset?.();
+    render();toastSafe('Posiłek zapisany — jedna pozycja w bilansie dnia.');
   }
   function localDay(){
     const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+
@@ -187,7 +188,7 @@
   function cancel(){
     state.items=[];state.editId=null;state.editDate='';
     if($('v0885Name'))$('v0885Name').value='';
-    clearFood();render();
+    clearFood();window.TrenerMealTime0889?.reset?.();render();
   }
   function edit(meal){
     if(!Array.isArray(meal.ingredients)||!meal.ingredients.length)return;
@@ -196,7 +197,8 @@
     state.items=clone(meal.ingredients);state.editId=meal.id;state.editDate=meal.date;
     window.TrenerDiet076?.setDate?.(meal.date);
     $('v0885Name').value=meal.name||'';
-    $('v0885Type').value=meal.type||'other';
+    if(window.TrenerMealTime0889?.beginEdit)window.TrenerMealTime0889.beginEdit('v0885Type',meal.type);
+    else $('v0885Type').value=meal.type||'other';
     const card=$('v076AddMeal')?.closest('.card');
     if(card?.classList.contains('v084Collapsed'))card.querySelector('.v084Toggle')?.click();
     render();
@@ -241,7 +243,8 @@
       '<div class="v076Fields"><div class="wide"><label>Nazwa całego posiłku</label>'+
       '<input id="v0885Name" maxlength="60" placeholder="np. Kanapki z serem i szynką"></div>'+
       '<div class="wide"><label>Typ posiłku</label><select id="v0885Type">'+
-      '<option value="breakfast">Śniadanie</option><option value="lunch">Obiad</option>'+
+      '<option value="breakfast">Śniadanie</option><option value="lunch">Obiad</option>'+ 
+      '<option value="afternoon">Podwieczorek</option>'+
       '<option value="dinner">Kolacja</option><option value="snack">Przekąska</option>'+
       '<option value="other">Inne</option></select></div></div>'+
       '<div class="v0885Buttons"><button id="v0885Save" class="primary bigBtn" type="button">ZAPISZ POSIŁEK ZE SKŁADNIKÓW</button>'+
@@ -292,7 +295,8 @@
     window.TrenerDiet076?.cancelEdit?.();
     state.items=clone(items);state.editId=null;state.editDate='';
     if($('v0885Name'))$('v0885Name').value=String(name||'').slice(0,60);
-    if($('v0885Type'))$('v0885Type').value=type||'other';
+    if(window.TrenerMealTime0889?.beginEdit)window.TrenerMealTime0889.beginEdit('v0885Type',type);
+    else if($('v0885Type'))$('v0885Type').value=type||'other';
     render();return true;
   }
   window.TrenerMealComposer0885={setCatalogSource,clearSelection,captureSelection,restoreSelection,edit,recalc,getItems,loadItems,totals:()=>totals(),
