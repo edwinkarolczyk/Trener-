@@ -1,3 +1,10 @@
+## 0.8.9.3 (beta) — wspólny motyw kolorystyczny Diety
+
+- Dieta korzysta z tych samych czarnych i antracytowych teł, obramowań i czerwonych przycisków co pozostałe zakładki Trenera 2.
+- Ujednolicono panel dodawania posiłku, zaznaczoną kartę panelu, wodę, kafelki posiłków i przycisk „Dodaj posiłek”.
+- Zachowano cztery odróżnialne kolory pasków makro oraz układ widoku Diety.
+- Bez zmian danych, obliczeń, historii, importu, migracji i schematu zapisów; `main` bez zmian.
+
 ## 0.8.9.2 (beta) — wspólna nawigacja, zachowane dane
 
 - Przywrócono klasyczny nagłówek TRENER 2 i sześć górnych zakładek w całej aplikacji, również w Diecie.
