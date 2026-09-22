@@ -375,7 +375,7 @@ function boot(){
  let count=0;const t=setInterval(()=>{
  count++;if(install()||count>=100)clearInterval(t);
 },120);}
-window.TrenerDietVisual0890={refresh,openSheet,pane,closeSheet,bar,totals,orderMeals,signature,
+window.TrenerDietVisual0890={refresh,openSheet,pane,closeSheet,bar,totals,orderMeals,signature,renderMeal:meal,renderRing:ring,
  get ready(){return state.ready;}};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});
 else boot();
