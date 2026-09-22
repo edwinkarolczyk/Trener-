@@ -40,6 +40,8 @@ jobs:
 
       - name: Approved diet screen and all macro bars
         run: node app/src/test/js/diet-visual.test.cjs
+      - name: Legacy Diet upgrade and user data retention
+        run: node app/src/test/js/diet-upgrade.test.cjs
 
       - name: Meal composer and gram conversion tests
         run: node app/src/test/js/meal-composer.test.cjs
