@@ -14,6 +14,15 @@ function open(action){
   const add=$('v076AddMeal')?.closest('.card');
   const catalog=$('v083FoodCard');
   const choice=String(action||'WRITE').toUpperCase();
+  if(window.TrenerDietVisual0890?.ready){
+    window.TrenerDietVisual0890.openSheet('add',choice==='SET'?'sets':choice==='SCAN'?'compose':'search');
+    if(choice==='SCAN'){
+      if(window.Android&&typeof Android.scanFoodBarcode==='function')Android.scanFoodBarcode();
+      else $('v0802Scan')?.click();
+    }else if(choice==='SET')focus('v0885Templates');
+    else focus('v083Query');
+    return;
+  }
   if(choice==='SCAN'){
     reveal(add);
     focus('v0802OffBox');
