@@ -2,6 +2,7 @@
 
 - Większe i czytelniejsze pola kg/powtórzeń, etykiety i kafelki postępu serii; wyraźny fokus aktualnie edytowanego pola.
 - Dolny panel zegarów i postępu nie zasłania pól podczas wpisywania wyniku; po wyjściu z pól wraca.
+- Android dostosowuje wysokość aktywności do otwartej klawiatury, aby pola nie były zasłaniane (w obu aktywnościach).
 - Przyciski zapisu, instrukcji i sterowania treningiem mają większe cele dotykowe, bez ponownego blokowania przewijania.
 - Dieta: większe cele dotykowe posiłków, wygodniejsze formularze w wysuwanym panelu, czytelniejsze nazwy i wartości; cztery paski pozostają.
 - Bez nowych modułów, zmiany zapisu, migracji, przeliczania kalorii ani zmian protokołu wspólnego treningu. `main` bez zmian.
