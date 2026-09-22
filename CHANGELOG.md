@@ -1,3 +1,10 @@
+## 0.9.0 (feature preview) — odrębna zakładka Przepisy
+
+- Osobna zakładka obok Diety, kalkulator zapotrzebowania, 50 bazowych przepisów i przykładowy 30-dniowy plan na 3 lub 4 posiłki.
+- Odizolowany klucz danych `trainer2.recipes.v1`; bez modyfikacji historii, celów Diety, treningów ani widgetów.
+- Szacunki kalorii oparte na BMR Mifflina i deklarowanej aktywności; proporcje dopasowywane do wybranego celu. Informacja o niepewności i obserwacji trendu masy.
+- Wymagane testy aplikacji na telefonie i weryfikacja gramatur oraz makro przed udostępnieniem APK; `main` i zamrożona gałąź 0.8.9.5 pozostają bez zmian.
+
 ## 0.8.9.5 (beta) — stabilizacja ergonomii telefonu
 
 - Większe i czytelniejsze pola kg/powtórzeń, etykiety i kafelki postępu serii; wyraźny fokus aktualnie edytowanego pola.
