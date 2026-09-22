@@ -11,6 +11,8 @@ assert(food,'food API missing');
 const off=food.parseOff({code:'5901234567890',product_name:'Test',
  nutriments:{'energy-kcal_100g':100,proteins_100g:10,carbohydrates_100g:15,fat_100g:2}});
 assert.equal(off.kcal100,100);
+assert.equal(food.parseOff({code:'01',product_name:'Zdjęcie',image_front_small_url:'https://images.openfoodfacts.org/images/products/01/front.200.jpg',nutriments:{'energy-kcal_100g':120}}).imageUrl,'https://images.openfoodfacts.org/images/products/01/front.200.jpg');
+assert.equal(food.parseOff({code:'02',product_name:'Zły URL',image_small_url:'javascript:alert(1)',nutriments:{'energy-kcal_100g':120}}).imageUrl,'');
 assert.equal(food.calculate(off,200,'g',null,null).protein100,20);
 const usda=food.parseUsda({fdcId:123,description:'Egg',
  foodNutrients:[{nutrientId:1008,unitName:'KCAL',value:155},
