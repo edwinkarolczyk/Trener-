@@ -40,6 +40,8 @@ jobs:
 
       - name: Approved diet screen and all macro bars
         run: node app/src/test/js/diet-visual.test.cjs
+      - name: Workout and Diet ergonomic stabilization
+        run: node app/src/test/js/ergonomics.test.cjs
       - name: Legacy Diet upgrade and user data retention
         run: node app/src/test/js/diet-upgrade.test.cjs
       - name: Diet history retention and failed-save regression
