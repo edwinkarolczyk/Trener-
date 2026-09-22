@@ -122,3 +122,8 @@ body.v0890DietActive #v0890BottomNav{display:grid}
 
 #diet .v0890MealEmoji{position:relative;overflow:hidden}
 #diet .v0890MealEmoji .v0890MealThumb{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit;background:#292929}
+
+#diet .v0890Ready>.card{margin-top:0!important}
+#diet .v0890Ready .v0890MealMetric label{margin:0 0 4px!important}
+#diet .v0890Ready .v0890MealsCard{min-width:0}
+#diet .v0890Ready #v076Meals{min-width:0}
