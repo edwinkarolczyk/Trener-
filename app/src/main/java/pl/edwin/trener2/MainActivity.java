@@ -201,7 +201,7 @@ public class MainActivity extends Activity {
             public void onMessage(String message) {
                 emitWifiMessage(message);
             }
-        });
+        }, appVersionName());
 
         nearbyProfiles = new NearbyProfileManager(this, this::emitNearbyEvent);
         webView.addJavascriptInterface(new AndroidBridge(this), "Android");
