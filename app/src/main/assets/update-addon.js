@@ -115,20 +115,21 @@
     try{
       for(let i=0;i<localStorage.length;i++){
         const key=localStorage.key(i);
-        if(!key||(!(key.startsWith('trainer3.')||key.startsWith('trainer2.')))||key==='trainer3.photos')continue;
+        if(!key||(!(key.startsWith('trainer3.')||key.startsWith('trainer2.'))))continue;
         const value=localStorage.getItem(key);
         if(value!==null)storage[key]=value;
       }
     }catch(e){}
     return {
       format:'trener2-backup',
-      version:5,
+      version:6,
       schemaVersion:Math.max(1,Number(localStorage.getItem('trainer3.schemaVersion')||1)||1),
       appVersion:currentVersion(),
       exportedAt:new Date().toISOString(),
       metadata:{forwardCompatibleStorage:true,preserveUnknownKeys:true,automaticPreUpdate:true},
       storage,
-      excludes:['trainer3.photos']
+      excludes:[],
+      includesPhotos:true
     };
   }
 
