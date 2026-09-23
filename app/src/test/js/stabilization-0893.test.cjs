@@ -46,16 +46,23 @@ const photos=[{id:'p1',date:'2026-09-21',data:'data:image/jpeg;base64,'+'A'.repe
 memory.set('trainer3.photos',JSON.stringify(photos));
 memory.set('trainer3.history',JSON.stringify([{id:'old-workout'}]));
 window.Android={getAppVersion:()=> '0.8.9.3'};
+let restoredNative=null;
+window.TrenerHydration={
+ exportHydrationBackup:()=>JSON.stringify({'water_2026-08-01':2200,'water_2026-09-21':700,target_ml:2500}),
+ importHydrationBackup:raw=>{restoredNative=JSON.parse(raw);return true;}
+};
 let reloads=0;
 vm.runInNewContext(read('backup-addon.js'),{window,document,localStorage,Date,setTimeout:()=>{reloads++;}},{timeout:3000});
 const backup=window.TrenerBackup.buildBackup();
 assert.equal(backup.version,6);
 assert.equal(backup.includesPhotos,true);
+assert.equal(backup.nativeHydration['water_2026-08-01'],2200,'all dates, not just last 7, must be exported');
 assert.equal(backup.storage['trainer3.photos'],JSON.stringify(photos));
 assert.equal(backup.storage['trainer3.diet.v076'],memory.get('trainer3.diet.v076'));
 memory.delete('trainer3.photos');
 window.TrenerBackup.nativeImport(JSON.stringify(backup));
 assert.equal(memory.get('trainer3.photos'),JSON.stringify(photos),'import must restore photos');
+assert.equal(restoredNative['water_2026-08-01'],2200,'import restores native hydration history');
 assert.deepEqual(JSON.parse(memory.get('trainer3.history')),[{id:'old-workout'}]);
 assert.equal(reloads,1);
 const update=read('update-addon.js');
@@ -63,6 +70,13 @@ assert(!update.includes("||key==='trainer3.photos'"),'automatic pre-update fallb
 assert(update.includes('includesPhotos:true'));
 const pre=fs.readFileSync('app/src/main/java/pl/edwin/trener2/PreUpdateBackupStore.java','utf8');
 assert(pre.includes('32 * 1024 * 1024'),'pre-update backup should accept photo-inclusive files');
+const store=fs.readFileSync('app/src/main/java/pl/edwin/trener2/HydrationStore.java','utf8');
+assert(store.includes('prefs(context).getAll()'),'all native hydration dates must enter backup');
+assert(store.includes('editor.commit()'),'hydration restore commits preferences');
+const hydrationBridge=fs.readFileSync('app/src/main/java/pl/edwin/trener2/MainActivityV077.java','utf8');
+assert(hydrationBridge.includes('exportHydrationBackup()'));
+assert(hydrationBridge.includes('importHydrationBackup(String json)'));
+
 const nativeSession=fs.readFileSync('app/src/main/java/pl/edwin/trener2/LocalSessionManager.java','utf8');
 assert(nativeSession.includes('out.writeUTF("HELLO:" + normalized + ":" + appVersion)'));
 assert(nativeSession.includes('matchesHandshake(hello, expectedCode, appVersion)'));
