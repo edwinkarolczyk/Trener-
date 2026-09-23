@@ -70,3 +70,38 @@ test('reject unsafe profile and unsupported plans rather than fabricate dates/ta
   assert.throws(()=>month(base,367));
   assert.throws(()=>personalized(RECIPES[0],{kcal:NaN,protein:1,carbs:1,fat:1}));
 });
+
+
+test('v1 profile update preserves unrecognized fields and never touches old Diet data',()=>{
+  const legacyProfile={schemaVersion:1,profile:{age:33,customFlag:'kept'},customTop:'kept too'};
+  const storage=new Map([[STORAGE_KEY,JSON.stringify(legacyProfile)],
+    ['trainer3.diet.v076','{"historicalMeals":[1,2,3]}']]);
+  const errors={};
+  const sandbox={document:{readyState:'loading',addEventListener(){},getElementById:id=>errors[id]||(errors[id]={hidden:true,textContent:''})},
+    localStorage:{getItem:key=>storage.get(key)||null,setItem:(key,val)=>storage.set(key,val)}};
+  sandbox.window=sandbox;
+  vm.runInNewContext(src.replace('root.TrenerRecipes090=api;',
+    "root.TrenerRecipes090=api;root.__storeTest={read,save,update:x=>{profile={...profile,...x}}};"),sandbox);
+  sandbox.__storeTest.read();
+  sandbox.__storeTest.update({age:34,weight:70});
+  assert.equal(sandbox.__storeTest.save(),true);
+  const restored=JSON.parse(storage.get(STORAGE_KEY));
+  assert.equal(restored.schemaVersion,1);
+  assert.equal(restored.customTop,'kept too');
+  assert.equal(restored.profile.customFlag,'kept');
+  assert.equal(restored.profile.age,34);
+  assert.equal(storage.get('trainer3.diet.v076'),'{"historicalMeals":[1,2,3]}');
+});
+test('newer recipe storage schema is never overwritten by an older APK',()=>{
+  const v2='{"schemaVersion":2,"profile":{"weight":70},"newField":"keep"}';
+  const storage=new Map([[STORAGE_KEY,v2]]);
+  const errors={};
+  const sandbox={document:{readyState:'loading',addEventListener(){},getElementById:id=>errors[id]||(errors[id]={hidden:true,textContent:''})},
+    localStorage:{getItem:key=>storage.get(key)||null,setItem:(key,val)=>storage.set(key,val)}};
+  sandbox.window=sandbox;
+  vm.runInNewContext(src.replace('root.TrenerRecipes090=api;',
+    'root.TrenerRecipes090=api;root.__storeTest={read,save};'),sandbox);
+  sandbox.__storeTest.read();
+  assert.equal(sandbox.__storeTest.save(),false);
+  assert.equal(storage.get(STORAGE_KEY),v2);
+});
