@@ -38,6 +38,9 @@ jobs:
       - name: Food catalog regression tests
         run: node app/src/test/js/food-catalog.test.cjs
 
+      - name: Isolated recipes and 30-day planner regression tests
+        run: node --test app/src/test/js/recipes-090.test.cjs
+
       - name: Approved diet screen and all macro bars
         run: node app/src/test/js/diet-visual.test.cjs
       - name: Workout and Diet ergonomic stabilization
@@ -158,9 +161,12 @@ jobs:
           TAG="v${VERSION}"
           TITLE="Trener 2 ${VERSION}"
           NOTES=$(cat <<'EOF'
-          - Automatyczny kanał testowy Trener 2.
-          - Przed instalacją następnych aktualizacji aplikacja zapisuje kopię danych.
-          - APK jest podpisane tym samym certyfikatem i publikowane jako prerelease.
+          - Nowa zakładka Przepisy obok Diety: 50 przepisów z gramaturą, kcal i B/W/T.
+          - Kalkulator celu na podstawie wzrostu, wieku, masy, aktywności i liczby treningów.
+          - 30-dniowy jadłospis na 3 lub 4 posiłki, dopasowanie proporcji składników.
+          - Oddzielny moduł: nie zmienia historii Diety, celów kalorii ani treningów.
+          - Wersja testowa: wartości odżywcze są orientacyjne; sprawdzaj faktyczne produkty.
+          - Kopia danych przed instalacją; podpisane APK aktualizacji.
           EOF
           )
           if gh release view "$TAG" >/dev/null 2>&1; then
