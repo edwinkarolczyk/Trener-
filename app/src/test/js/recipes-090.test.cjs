@@ -65,8 +65,8 @@ test('30-day menu supports three and four meals without changing Diet data',()=>
   assert(html.includes('data-tab="diet"')&&html.includes('data-tab="recipes"'));
   assert(html.includes('id="recipes"')&&html.includes('id="diet"'));
   const gradle=fs.readFileSync(path.join(__dirname,'../../../build.gradle'),'utf8');
-  assert(gradle.includes("versionName '0.9.2'"));
-  assert(gradle.includes('versionCode 92'));
+  assert(gradle.includes("versionName '0.9.3'"));
+  assert(gradle.includes('versionCode 93'));
 
   assert.doesNotMatch(source,/localStorage\.setItem\(['"]trainer3\./);
 });
