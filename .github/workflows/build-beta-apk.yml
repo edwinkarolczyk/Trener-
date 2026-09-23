@@ -43,6 +43,12 @@ jobs:
       - name: Legacy Diet upgrade and user data retention
         run: node app/src/test/js/diet-upgrade.test.cjs
 
+      - name: Beta 0.8.9.3 shared diet and backup regression
+        run: node app/src/test/js/stabilization-0893.test.cjs
+
+      - name: Keyboard and workout widget regression
+        run: node app/src/test/js/phone-regression-0893.test.cjs
+
       - name: Meal composer and gram conversion tests
         run: node app/src/test/js/meal-composer.test.cjs
 
