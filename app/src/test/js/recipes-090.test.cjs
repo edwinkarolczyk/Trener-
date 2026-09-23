@@ -55,6 +55,19 @@ test('30-day menu supports three and four meals without changing Diet data',()=>
     }
   }
   assert.equal(STORAGE_KEY,'trainer2.recipes.v1');
+  const previous=fs.readFileSync(path.join(__dirname,'../../main/assets/v076-diet.js'),'utf8');
+  const backup=fs.readFileSync(path.join(__dirname,'../../main/assets/backup-addon.js'),'utf8');
+  const update=fs.readFileSync(path.join(__dirname,'../../main/assets/update-addon.js'),'utf8');
+  const html=fs.readFileSync(path.join(__dirname,'../../main/assets/index.html'),'utf8');
+  assert(previous.includes("trainer3.diet.v076"),'old diet namespace stays accessible');
+  assert(backup.includes("key.startsWith('trainer2.')"),'recipe profile is included in full backup');
+  assert(update.includes("key.startsWith('trainer2.')"),'recipe profile is included in pre-update backup');
+  assert(html.includes('data-tab="diet"')&&html.includes('data-tab="recipes"'));
+  assert(html.includes('id="recipes"')&&html.includes('id="diet"'));
+  const gradle=fs.readFileSync(path.join(__dirname,'../../build.gradle'),'utf8');
+  assert(gradle.includes("versionName '0.9.1'"));
+  assert(gradle.includes('versionCode 91'));
+
   assert.doesNotMatch(source,/localStorage\.setItem\(['"]trainer3\./);
 });
 test('ingredient proportions change independently to meet macro targets',()=>{
