@@ -118,6 +118,19 @@ public class MainActivityV077 extends MainActivity {
         }
 
         @JavascriptInterface
+        public String exportHydrationBackup() {
+            return HydrationStore.backupJson(getApplicationContext());
+        }
+
+        @JavascriptInterface
+        public boolean importHydrationBackup(String json) {
+            Context app = getApplicationContext();
+            boolean ok = HydrationStore.restoreBackup(app, json);
+            if (ok) HydrationScheduler.apply(app);
+            return ok;
+        }
+
+        @JavascriptInterface
         public int getDayMl(String date) {
             return HydrationStore.getDayMl(getApplicationContext(), date);
         }
