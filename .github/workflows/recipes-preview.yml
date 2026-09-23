@@ -24,6 +24,8 @@ jobs:
           done
       - name: Recipe planning regression
         run: node --test app/src/test/js/recipes-090.test.cjs
+      - name: Smart menu and data compatibility regression
+        run: node --test app/src/test/js/recipes-093.test.cjs
       - name: Existing JavaScript regressions
         run: |
           set -e
