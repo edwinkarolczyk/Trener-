@@ -90,6 +90,7 @@
 #v0890Sheet .v0885Composer{margin-top:18px}
 #v0890Sheet .v077QuickList{max-height:none}
 #v0890Overlay .v0890SheetCard{display:block}
+#v0890Overlay .v0890SheetCard.v0890PaneHidden{display:none!important}
 #v0890Overlay #v083FoodCard,#v0890Overlay #v077QuickCard,#v0890Overlay #v078HydrationCard{position:static}
 #v0890Overlay .v0890SheetHint{color:#a7a7a7;font-size:11px;margin:4px 0 9px}
 @media(max-width:370px){#diet .v0890MealBars{gap:4px}#diet .v0890MealMetric label{font-size:9px}#diet .v0890MealMetric b{font-size:9px}#diet .v0890Ring{width:39px;height:39px}#diet .v0890Ring::after{width:29px;height:29px}#diet .v0890RingValues{font-size:9px}#v0890SheetTabs button{font-size:10px!important}}
