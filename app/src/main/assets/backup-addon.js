@@ -23,7 +23,6 @@
       const key=localStorage.key(i);
       if(!key)continue;
       if(!(key.startsWith('trainer3.')||key.startsWith('trainer2.')))continue;
-      if(key==='trainer3.photos')continue;
       const value=localStorage.getItem(key);
       if(value!==null)storage[key]=value;
     }
@@ -33,14 +32,15 @@
   function buildBackup(){
     return {
       format:'trener2-backup',
-      version:5,
+      version:6,
       schemaVersion:schemaVersion(),
       appVersion:appVersion(),
       participantId:participantId(),
       exportedAt:new Date().toISOString(),
       metadata:{forwardCompatibleStorage:true,preserveUnknownKeys:true},
       storage:collectStorage(),
-      excludes:['trainer3.photos']
+      excludes:[],
+      includesPhotos:true
     };
   }
 
@@ -87,7 +87,6 @@
         if(!entries.length){toastMsg('Kopia nie zawiera danych.');return;}
         for(const [key,value] of entries){
           if(!(key.startsWith('trainer3.')||key.startsWith('trainer2.')))continue;
-          if(key==='trainer3.photos')continue;
           if(typeof value==='string')localStorage.setItem(key,value);
         }
         if(data.schemaVersion&&!localStorage.getItem('trainer3.schemaVersion'))localStorage.setItem('trainer3.schemaVersion',String(data.schemaVersion));
