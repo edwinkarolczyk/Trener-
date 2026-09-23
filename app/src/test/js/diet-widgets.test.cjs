@@ -82,7 +82,7 @@ assert(native.includes('R.id.waterWidget500'));
 const receiver=fs.readFileSync('app/src/main/java/pl/edwin/trener2/HydrationReceiver.java','utf8');
 assert(receiver.includes('ACTION_ADD_500'));
 const store=fs.readFileSync('app/src/main/java/pl/edwin/trener2/HydrationStore.java','utf8');
-assert.equal((store.match(/WaterWidgetProvider.updateAll\(context\)/g)||[]).length,2);
+assert.equal((store.match(/WaterWidgetProvider.updateAll\(context\)/g)||[]).length,3);
 const manifest=fs.readFileSync('app/src/main/AndroidManifest.xml','utf8');
 assert(manifest.includes('android:name=".WaterWidgetProvider"'));
 assert(manifest.includes('android:resource="@xml/water_widget_info"'));
