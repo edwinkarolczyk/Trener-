@@ -35,3 +35,9 @@ Od 0.8.3 wspólny trening ma własny `protocolVersion`.
 - 0.8.3 zachowuje tryb `KAŻDY NA SWOIM` dla zgodnego klienta 0.8.2.12.
 - Tryb `JEDEN TELEFON` jest dostępny tylko wtedy, gdy wszystkie telefony w sesji obsługują protokół 2.
 - Numer aplikacji i numer protokołu są niezależne: hotfix nie może zrywać wspólnego treningu, jeśli protokół pozostaje zgodny.
+
+## 0.9.2 — ujednolicenie main i Diety
+
+- Rozwój `main` obejmuje 0.9.2 z wcześniejszą Dietą, przepisami i sterownikiem wspólnego treningu protokołu 2.
+- Od 0.9.x natywne Wi-Fi wymaga identycznego `versionName` obu telefonów przed rozpoczęciem sesji. Zgodność samego `protocolVersion` nie wystarcza do nawiązania połączenia.
+- Oddzielne dane `trainer2.recipes.v1` pozostają izolowane od `trainer3.diet.v076`; starsze dane treningów, Diety, zdjęć i nawodnienia są zachowywane.
