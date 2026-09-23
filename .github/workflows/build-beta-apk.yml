@@ -41,6 +41,9 @@ jobs:
       - name: Isolated recipes and 30-day planner regression tests
         run: node --test app/src/test/js/recipes-090.test.cjs
 
+      - name: Older training and Diet data upgrade with full backup
+        run: node app/src/test/js/recipes-upgrade-091.test.cjs
+
       - name: Approved diet screen and all macro bars
         run: node app/src/test/js/diet-visual.test.cjs
       - name: Workout and Diet ergonomic stabilization
