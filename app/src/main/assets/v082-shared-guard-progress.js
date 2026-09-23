@@ -45,6 +45,9 @@
   }
   function protocolCompatible(obj){
     const protocol=protocolOf(obj);
+    const local=appVersion();
+    const actual=String(obj?.actualVersion||obj?.version||'').trim();
+    if(/^0\\.9\\./.test(local)&&actual!==local)return false;
     if(protocol===CURRENT_PROTOCOL)return true;
     if(protocol!==LEGACY_PROTOCOL)return false;
     const remote=String(obj?.version||'').trim();
