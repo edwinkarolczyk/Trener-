@@ -190,13 +190,24 @@
   const fmt=n=>Number(n).toLocaleString('pl-PL',{maximumFractionDigits:1});
   const escape=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   let profile={sex:'',age:'',weight:'',height:'',training:'',work:'moderate',trend:'stable',goal:'maintain',meals:4};
-  let selected=1,plan=null;
+  let selected=1,plan=null,storedRecord={};
   function read(){
-    try{const o=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');if(o&&o.schemaVersion===1&&o.profile)profile={...profile,...o.profile};}catch(e){}
+    try{
+      const o=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');
+      if(o&&o.schemaVersion===1&&o.profile&&typeof o.profile==='object'){
+        storedRecord=o;
+        profile={...profile,...o.profile};
+      }
+    }catch(e){}
   }
   function save(){
-    try{localStorage.setItem(STORAGE_KEY,JSON.stringify({schemaVersion:1,profile}));return true;}
-    catch(e){showError('Nie udało się zapisać ustawień przepisów. Sprawdź pamięć telefonu.');return false;}
+    try{
+      // Keep unknown v1 settings and profile fields from older/newer builds.
+      const data={...storedRecord,schemaVersion:1,profile:{...(storedRecord.profile||{}),...profile}};
+      localStorage.setItem(STORAGE_KEY,JSON.stringify(data));
+      storedRecord=data;
+      return true;
+    }catch(e){showError('Nie udało się zapisać ustawień przepisów. Sprawdź pamięć telefonu.');return false;}
   }
   function showError(msg){const e=byId('r090Error');if(e){e.textContent=msg;e.hidden=!msg;}}
   function form(){
@@ -241,15 +252,19 @@
       '<div class="r090Stats"><div><span>Białko</span><b>'+fmt(t.protein)+' g</b></div><div><span>Węgle</span><b>'+fmt(t.carbs)+' g</b></div><div><span>Tłuszcz</span><b>'+fmt(t.fat)+' g</b></div></div>'+
       '<p class="hint">'+escape(t.note)+'</p>'+
       '<label>Wybierz dzień<select id="r090Day">'+options+'</select></label>'+
-      '<div class="r090DayTotal">Dzień '+selected+': '+nutritionText(d.totals)+'</div>'+
+      '<div class="r090DayTotal">Dzień '+selected+': '+nutritionText(d.totals)+'</div>'+      '<p class="hint">Różnica względem celu: '+(d.totals.kcal>=t.kcal?'+':'')+fmt(d.totals.kcal-t.kcal)+' kcal · B '+(d.totals.protein>=t.protein?'+':'')+fmt(round(d.totals.protein-t.protein,1))+' g. Odchylenia są możliwe przy zachowaniu sensownych porcji.</p>'+
       '<p class="hint">Składniki białkowe, węglowodanowe i tłuszczowe są dopasowywane oddzielnie. Sprawdź sumę B/W/T: plan jest przykładem, a nie gwarancją idealnego trafienia makro.</p>'+
       d.meals.map(m=>'<article class="r090Meal"><div class="r090MealHead"><span>'+escape(m.hour)+' · '+names[m.type]+'</span><strong>'+fmt(m.portion*100)+'% porcji wyjściowej · skład dostosowany</strong></div><h3>'+escape(m.name)+'</h3><p>'+nutritionText(m)+'</p>'+details(m)+'</article>').join('');
     byId('r090Day').onchange=ev=>{selected=Number(ev.target.value)||1;draw();};
   }
   function generate(){
     showError('');
-    try{const next=collect(),target=calculate(next),days=month(next,30);profile=next;plan={target,days};selected=1;save();draw();}
-    catch(e){showError(String(e.message||e));}
+    try{
+      const next=collect(),target=calculate(next),days=month(next,30),previous=profile;
+      profile=next;
+      if(!save()){profile=previous;return;}
+      plan={target,days};selected=1;draw();
+    }catch(e){showError(String(e.message||e));}
   }
   function boot(){
     const el=byId('recipes');if(!el)return;
