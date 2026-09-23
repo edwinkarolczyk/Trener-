@@ -36,6 +36,15 @@ public class LocalSessionManagerTest {
     }
 
     @Test
+    public void nativeHandshakeRequiresMatchingVersionAndValidCode() {
+        assertTrue(LocalSessionManager.matchesHandshake("HELLO:123456:0.9.1", "123456", "0.9.1"));
+        assertFalse(LocalSessionManager.matchesHandshake("HELLO:123456:0.9.0", "123456", "0.9.1"));
+        assertFalse(LocalSessionManager.matchesHandshake("HELLO:123456", "123456", "0.9.1"));
+        assertFalse(LocalSessionManager.matchesHandshake("HELLO:000000:0.9.1", "123456", "0.9.1"));
+        assertFalse(LocalSessionManager.matchesHandshake("HELLO:123456:", "123456", ""));
+    }
+
+    @Test
     public void hostAllowsThreeGuestsForFourPersonSession() {
         assertEquals(3, LocalSessionManager.maxHostPeers());
     }
