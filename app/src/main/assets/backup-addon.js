@@ -121,8 +121,7 @@
           toastMsg('Nieprawidłowy format danych kopii.');return;
         }
         for(const [key,value] of Object.entries(data.storage)){
-          if(!(key.startsWith('trainer3.')||key.startsWith('trainer2.'))||
-            false)continue;
+          if(!(key.startsWith('trainer3.')||key.startsWith('trainer2.')))continue;
           if(typeof value!=='string'){toastMsg('Nieprawidłowa wartość w kopii danych.');return;}
           entries.push([key,value]);
         }
