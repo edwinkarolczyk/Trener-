@@ -6,6 +6,7 @@
 
   function q(){try{return window.TrenerBeta070||null;}catch(e){return null;}}
   function group(){try{return window.TrenerGroup||null;}catch(e){return null;}}
+  function control(){try{return window.TrenerSharedControl083||null;}catch(e){return null;}}
   function active(){const s=q();try{return !!(s&&s.active&&running&&net?.active&&net.sessionId);}catch(e){return false;}}
   function own(){try{return Number(net.localAthlete)||0;}catch(e){return 0;}}
   function participants(){
@@ -75,42 +76,80 @@
 
   function patchMain(){
     const s=q(),e=ex();if(!s||!e)return;
-    const me=own(),turn=Number(s.turn),myStatus=statusFor(me,e),turnName=nameOf(turn);
+    const me=own(),turn=Number(s.turn),turnName=nameOf(turn);
+    const ctrl=control(),single=!!ctrl?.isSingleController?.(),controllerLocal=!!ctrl?.isLocalController?.();
+    const inputAthlete=single&&controllerLocal?turn:me;
+    const inputStatus=statusFor(inputAthlete,e);
     const save=$('saveSetBtn');
     if(save){
       const stale=net?.role==='guest'&&window.TrenerBeta070Sync?.health&&window.TrenerBeta070Sync.health().ageMs>8000;
-      if(stale||!net?.connected){save.disabled=true;save.textContent='BRAK SYNCHRONIZACJI';}
-      else if(s.pending){save.disabled=true;save.textContent='CZEKAM NA POTWIERDZENIE…';}
-      else if(turn!==me){save.disabled=true;save.textContent='CZEKAJ — '+turnName.toUpperCase();}
-      else if(myStatus.rest>0){save.disabled=true;save.textContent='ODPOCZYNEK '+fmt(myStatus.rest);}
-      else{save.disabled=!!paused;save.textContent=paused?'TRENING WSTRZYMANY':'ZAPISZ SERIĘ — '+nameOf(me).toUpperCase();}
+      if(single){
+        const controllerId=String(ctrl?.state?.controllerDeviceId||'');
+        const controllerName=participants().find(p=>String(p.deviceId||'')===controllerId)?.name||'INNY TELEFON';
+        if(!controllerLocal){save.disabled=true;save.textContent='STERUJE — '+String(controllerName).toUpperCase();}
+        else if(net?.role==='guest'&&(stale||!net?.connected)){save.disabled=true;save.textContent='BRAK SYNCHRONIZACJI';}
+        else if(ctrl?.state?.pending){save.disabled=true;save.textContent='CZEKAM NA HOSTA…';}
+        else if(inputStatus.rest>0){save.disabled=true;save.textContent='ODPOCZYNEK '+fmt(inputStatus.rest);}
+        else{save.disabled=!!paused;save.textContent=paused?'TRENING WSTRZYMANY':'ZAPISZ SERIĘ — '+nameOf(turn).toUpperCase();}
+      }else{
+        const myStatus=statusFor(me,e);
+        if(stale||!net?.connected){save.disabled=true;save.textContent='BRAK SYNCHRONIZACJI';}
+        else if(s.pending){save.disabled=true;save.textContent='CZEKAM NA POTWIERDZENIE…';}
+        else if(turn!==me){save.disabled=true;save.textContent='CZEKAJ — '+turnName.toUpperCase();}
+        else if(myStatus.rest>0){save.disabled=true;save.textContent='ODPOCZYNEK '+fmt(myStatus.rest);}
+        else{save.disabled=!!paused;save.textContent=paused?'TRENING WSTRZYMANY':'ZAPISZ SERIĘ — '+nameOf(me).toUpperCase();}
+      }
     }
 
     const queueTurn=$('v070Turn');
     if(queueTurn){
-      if(turn===me&&myStatus.rest>0)queueTurn.textContent='ODPOCZYNEK '+fmt(myStatus.rest);
-      else if(turn===me&&!s.pending)queueTurn.textContent='TWOJA KOLEJ — ĆWICZ TERAZ';
-      else if(s.pending)queueTurn.textContent='ZAPISUJĘ SERIĘ…';
-      else queueTurn.textContent='CZEKAJ — ĆWICZY '+turnName;
+      if(single&&controllerLocal){
+        if(inputStatus.rest>0)queueTurn.textContent=nameOf(turn)+' — ODPOCZYNEK '+fmt(inputStatus.rest);
+        else if(ctrl?.state?.pending)queueTurn.textContent='ZAPISUJĘ SERIĘ U HOSTA…';
+        else queueTurn.textContent='WPISZ SERIĘ — '+nameOf(turn);
+      }else if(single){
+        const controllerId=String(ctrl?.state?.controllerDeviceId||'');
+        const controllerName=participants().find(p=>String(p.deviceId||'')===controllerId)?.name||'inny telefon';
+        queueTurn.textContent='ĆWICZY '+turnName+' • wpisuje '+controllerName;
+      }else{
+        const myStatus=statusFor(me,e);
+        if(turn===me&&myStatus.rest>0)queueTurn.textContent='ODPOCZYNEK '+fmt(myStatus.rest);
+        else if(turn===me&&!s.pending)queueTurn.textContent='TWOJA KOLEJ — ĆWICZ TERAZ';
+        else if(s.pending)queueTurn.textContent='ZAPISUJĘ SERIĘ…';
+        else queueTurn.textContent='CZEKAJ — ĆWICZY '+turnName;
+      }
     }
 
-    const series=$('v062Series');if(series)series.textContent=(Math.min(count(me)+1,target(me,e)))+' / '+target(me,e);
+    const series=$('v062Series');
+    if(series)series.textContent=(Math.min(count(inputAthlete)+1,target(inputAthlete,e)))+' / '+target(inputAthlete,e);
     const leftLabel=$('v062Summary')?.querySelector('.v062Stat.gold span');if(leftLabel)leftLabel.textContent='DO KOŃCA';
     const left=$('v062Left');
     if(left){
-      let totalLeft=0;try{for(let i=Number(s.exercise)||0;i<(currentPlan?.ex?.length||0);i++){const ce=currentPlan.ex[i],base=Math.max(1,Number(ce.sets)||1),done=(records||[]).filter(r=>Number(r.athlete)===me&&Number(r.ex)===i).length;totalLeft+=Math.max(0,base-done);}}catch(err){}
+      let totalLeft=0;
+      try{
+        for(let i=Number(s.exercise)||0;i<(currentPlan?.ex?.length||0);i++){
+          const ce=currentPlan.ex[i],base=target(inputAthlete,ce),done=(records||[]).filter(r=>Number(r.athlete)===inputAthlete&&Number(r.ex)===i).length;
+          totalLeft+=Math.max(0,base-done);
+        }
+      }catch(err){}
       left.textContent=totalLeft+' serii';
+    }
+
+    if(single&&controllerLocal){
+      if($('athlete'))$('athlete').textContent=nameOf(turn);
+      if($('series'))$('series').textContent='Seria '+(Math.min(count(turn)+1,target(turn,e)))+'/'+target(turn,e)+' • '+nameOf(turn);
     }
 
     const rest=$('restBox');
     if(rest){
-      const myRest=Math.max(0,readyAt(me)-Date.now());
-      rest.classList.toggle('v071Hidden',myRest<=0);
-      rest.classList.toggle('v063RestActive',myRest>0);
-      const small=rest.querySelector('.small');if(small)small.textContent='TWÓJ ODPOCZYNEK';
-      if($('restTime'))$('restTime').textContent=myRest>0?fmt(myRest):'';
+      const shownRest=Math.max(0,readyAt(inputAthlete)-Date.now());
+      rest.classList.toggle('v071Hidden',shownRest<=0);
+      rest.classList.toggle('v063RestActive',shownRest>0);
+      const small=rest.querySelector('.small');
+      if(small)small.textContent=single&&controllerLocal?(nameOf(inputAthlete).toUpperCase()+' — ODPOCZYNEK'):'TWÓJ ODPOCZYNEK';
+      if($('restTime'))$('restTime').textContent=shownRest>0?fmt(shownRest):'';
       const targetEl=$('v062RestTarget');if(targetEl)targetEl.textContent='';
-      if($('skipRestBtn'))$('skipRestBtn').classList.toggle('hidden',myRest<=0);
+      if($('skipRestBtn'))$('skipRestBtn').classList.toggle('hidden',shownRest<=0||(single&&!controllerLocal));
     }
   }
 
