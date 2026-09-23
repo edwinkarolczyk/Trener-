@@ -22,6 +22,18 @@ public final class HydrationStore {
         return prefs(context).getInt(DAY_PREFIX + LocalDate.now(), 0);
     }
 
+    /** -1 = no recorded value for the requested date; never substitute today's intake. */
+    public static int getDayMl(Context context, String isoDay) {
+        if (isoDay == null || !isoDay.matches("\\d{4}-\\d{2}-\\d{2}")) return -1;
+        try {
+            LocalDate day = LocalDate.parse(isoDay);
+            if (day.isAfter(LocalDate.now())) return -1;
+            SharedPreferences p = prefs(context);
+            String key = DAY_PREFIX + day;
+            return p.contains(key) ? p.getInt(key, 0) : -1;
+        } catch (Exception ignored) { return -1; }
+    }
+
     public static int getTargetMl(Context context) {
         return prefs(context).getInt("target_ml", 2500);
     }
@@ -91,6 +103,53 @@ public final class HydrationStore {
         if (start == end) return false;
         if (start < end) return now >= start && now < end;
         return now >= start || now < end;
+    }
+
+    /** Full native hydration snapshot, including dates older than the 7-day UI history. */
+    public static String backupJson(Context context) {
+        try {
+            JSONObject data = new JSONObject();
+            for (java.util.Map.Entry<String, ?> entry : prefs(context).getAll().entrySet()) {
+                Object v = entry.getValue();
+                if (v instanceof Boolean || v instanceof Number || v instanceof String) {
+                    data.put(entry.getKey(), v);
+                }
+            }
+            return data.toString();
+        } catch (Exception ignored) { return ""; }
+    }
+
+    /** Import only the existing hydration preference schema; do not clear unknown/new keys. */
+    public static boolean restoreBackup(Context context, String raw) {
+        if (raw == null || raw.isEmpty()) return false;
+        try {
+            JSONObject data = new JSONObject(raw);
+            if (data.length() == 0) return true;
+            SharedPreferences.Editor editor = prefs(context).edit();
+            java.util.Iterator<String> keys = data.keys();
+            while (keys.hasNext()) {
+                String key = keys.next();
+                Object value = data.get(key);
+                if (key.matches("water_\\d{4}-\\d{2}-\\d{2}") && value instanceof Number) {
+                    editor.putInt(key, Math.max(0, Math.min(15000, ((Number) value).intValue())));
+                } else if ("target_ml".equals(key) && value instanceof Number) {
+                    editor.putInt(key, Math.max(500, Math.min(6000, ((Number) value).intValue())));
+                } else if (("interval_minutes".equals(key) || "quiet_start_minutes".equals(key)
+                        || "quiet_end_minutes".equals(key)) && value instanceof Number) {
+                    editor.putInt(key, ((Number) value).intValue());
+                } else if ("updated_at".equals(key) && value instanceof Number) {
+                    editor.putLong(key, ((Number) value).longValue());
+                } else if (("initialized".equals(key) || "reminders_enabled".equals(key)
+                        || "workout_enabled".equals(key)) && value instanceof Boolean) {
+                    editor.putBoolean(key, (Boolean) value);
+                } else if ("workout_frequency".equals(key) && value instanceof String) {
+                    editor.putString(key, (String) value);
+                }
+            }
+            boolean ok = editor.commit();
+            if (ok) WaterWidgetProvider.updateAll(context);
+            return ok;
+        } catch (Exception ignored) { return false; }
     }
 
     public static String stateJson(Context context) {
