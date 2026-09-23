@@ -12,7 +12,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 
 final class PreUpdateBackupStore {
-    private static final int MAX_BYTES = 5 * 1024 * 1024;
+    private static final int MAX_BYTES = 32 * 1024 * 1024;
     private static final int MAX_FILES = 5;
     private static final String DIR_NAME = "pre-update-backups";
 
