@@ -1,3 +1,14 @@
+## 0.8.9.3 (beta) — stabilizacja wcześniejszych błędów
+
+- Wspólny trening: wersja APK jest częścią natywnego handshake Wi-Fi. Kod i wersja muszą się zgadzać przed połączeniem; stare niezgodne wydania są odrzucane.
+- Zapisane zestawy są dodawane do daty otwartej w dzienniku. Duplikaty zachowują typ posiłku zamiast zmieniać go według bieżącej godziny.
+- Bilans wody jest przypisany do wybranej daty. Brak historycznego pomiaru wyświetla „—”, nie dzisiejszą wartość; przegląd dawnego dnia nie pozwala przypadkiem dopisywać wody dzisiaj.
+- Pełna kopia eksportowa i automatyczna przed aktualizacją obejmują teraz również `trainer3.photos`. Limit kopii przed aktualizacją podwyższono do 32 MB; jeśli pełna kopia jest zbyt duża, automatyczna aktualizacja pozostaje zatrzymana.
+- Poprawione ukrywanie nieaktywnych paneli kreatora w nowej Diecie.
+- Dodane testy zgodności wersji, historii posiłków, wody, kopii zdjęć, przewijania przy klawiaturze i synchronizacji widgetu.
+- Kontrola fizycznego telefonu jest odrębnym krokiem przed uznaniem stabilizacji za ostatecznie zatwierdzoną.
+- `main` bez zmian; format dotychczasowych danych diety i identyfikator aplikacji bez zmian.
+
 ## 0.8.9.2 (beta) — wspólna nawigacja, zachowane dane
 
 - Przywrócono klasyczny nagłówek TRENER 2 i sześć górnych zakładek w całej aplikacji, również w Diecie.
