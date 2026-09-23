@@ -83,7 +83,7 @@ for(const old of ['#56d487','#69b9ff','#ffd062','#ff925b','#61caeb']){
 const loader=fs.readFileSync('app/src/main/assets/feature-loader.js','utf8');
 assert(loader.includes("['0.8.9.0','v0890-diet-visual.js']"));
 const build=fs.readFileSync('app/build.gradle','utf8');
-assert(build.includes("versionName '0.8.9.2'"));
+assert(build.includes("versionName '0.8.9.3'"));
 const activity=fs.readFileSync('app/src/main/java/pl/edwin/trener2/MainActivity.java','utf8');
 assert(activity.includes('image_front_small_url,image_small_url'),'Android must actually request the food pictures');
-console.log('Diet 0.8.9.2 with shared navigation: 4 full bars, compound totals, colors, sorting, sanitization and version OK');
+console.log('Diet 0.8.9.3 with shared navigation: 4 full bars, compound totals, colors, sorting, sanitization and version OK');
