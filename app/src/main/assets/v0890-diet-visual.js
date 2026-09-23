@@ -200,7 +200,8 @@ function duplicate(m){
  const d=data(),copy=clone(m);
  copy.id='m'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
  copy.date=date();copy.createdAt=Date.now();
- copy.type=window.TrenerMealTime0889?.typeForRepeat?.(copy.type)||copy.type;
+ // A duplicate must retain its classification, especially when entered for a past day.
+ copy.type=copy.type||'other';
  d.meals.push(copy);
  if(writeMeal(d)){state.menu='';refresh();notify('Dodano kopię: '+copy.name);}
  else notify('Nie udało się zapisać kopii.');
