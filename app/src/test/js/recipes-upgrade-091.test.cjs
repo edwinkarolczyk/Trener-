@@ -19,7 +19,8 @@ const window={
  TrenerHydration:{exportHydrationBackup:()=>JSON.stringify(water),importHydrationBackup:s=>{restored=JSON.parse(s);return true;}},
  location:{reload(){reloaded++;}}
 };
-const document={readyState:'loading',addEventListener(){},getElementById(){return null;}};
+const document={readyState:'loading',addEventListener(){},getElementById(){return null;},
+ createElement(){return {id:'',src:''};},body:{appendChild(){}}};
 vm.runInNewContext(read('backup-addon.js'),{window,document,localStorage,setTimeout:fn=>fn()},{timeout:2000});
 const backup=window.TrenerBackup.buildBackup();
 assert.equal(backup.version,6);
