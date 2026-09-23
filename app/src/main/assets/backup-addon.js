@@ -29,6 +29,14 @@
     return storage;
   }
 
+  function nativeHydration(){
+    const api=window.TrenerHydration;
+    if(!api||typeof api.exportHydrationBackup!=='function')return null;
+    const raw=String(api.exportHydrationBackup()||'');
+    if(!raw)throw new Error('Nie udało się odczytać pełnej historii wody.');
+    return JSON.parse(raw);
+  }
+
   function buildBackup(){
     return {
       format:'trener2-backup',
@@ -39,6 +47,7 @@
       exportedAt:new Date().toISOString(),
       metadata:{forwardCompatibleStorage:true,preserveUnknownKeys:true},
       storage:collectStorage(),
+      nativeHydration:nativeHydration(),
       excludes:[],
       includesPhotos:true
     };
@@ -91,6 +100,11 @@
         }
         if(data.schemaVersion&&!localStorage.getItem('trainer3.schemaVersion'))localStorage.setItem('trainer3.schemaVersion',String(data.schemaVersion));
         if(data.participantId&&!localStorage.getItem('trainer3.participantId.v070'))localStorage.setItem('trainer3.participantId.v070',String(data.participantId));
+        if(data.nativeHydration&&window.TrenerHydration?.importHydrationBackup){
+          if(!window.TrenerHydration.importHydrationBackup(JSON.stringify(data.nativeHydration))){
+            throw new Error('Nie udało się odtworzyć natywnej historii wody.');
+          }
+        }
       }else if(data&&typeof data==='object'){
         applyLegacy(data);
       }else{
