@@ -50,10 +50,19 @@ function kind(m){return typeNames[m.type]||'Posiłek';}
 function emoji(m){const type=m.type||'other';return ({breakfast:'🥪',lunch:'🍲',afternoon:'🍎',
  dinner:'🥗',snack:'🍫',other:'🍽️'})[type]||'🍽️';}
 function label(x){return '<span class="v0890BalanceLabel">'+x+'</span>';}
+function waterForDay(state,selected,today=localDate(),native=window.TrenerHydration){
+ if(selected===today)return n(state.todayMl);
+ try{if(native&&typeof native.getDayMl==='function'){
+   const stored=Number(native.getDayMl(selected));
+   return Number.isFinite(stored)&&stored>=0?stored:null;
+ }}catch(e){}
+ const row=(Array.isArray(state.history)?state.history:[]).find(x=>x.date===selected);
+ return row&&Number.isFinite(Number(row.ml))?n(row.ml):null;
+}
 function ring(name,value,target,color){
- const v=bar(value,target),percent=v.known?fmt(v.pct)+'%':'—';
- return '<div class="v0890RingCell" style="--ring:'+color+'"><div class="v0890Ring" style="--pct:'+v.width+'%;--ring:'+color+'"></div>'+
-  '<div class="v0890RingLabel">'+name+'</div><div class="v0890RingValues">'+fmt(value,1)+
+ const v=bar(value,target),missing=value===null,percent=!missing&&v.known?fmt(v.pct)+'%':'—';
+ return '<div class="v0890RingCell" style="--ring:'+color+'"><div class="v0890Ring" style="--pct:'+(missing?0:v.width)+'%;--ring:'+color+'"></div>'+
+  '<div class="v0890RingLabel">'+name+'</div><div class="v0890RingValues">'+(missing?'—':fmt(value,1))+
   (v.known?' / '+fmt(target,1):' / —')+'</div><div class="v0890RingPercent">'+percent+'</div></div>';
 }
 function summary(d){
@@ -62,7 +71,8 @@ function summary(d){
  const remain=n(t.kcal)-value.kcal;
  let water={todayMl:0,targetMl:0};
  try{water=window.TrenerHydration078?.state?.()||water;}catch(e){}
- const waterL=n(water.todayMl)/1000,waterT=n(water.targetMl)/1000;
+ const selected=date(),today=localDate(),waterMl=waterForDay(water,selected,today);
+ const waterL=waterMl===null?null:waterMl/1000,waterT=n(water.targetMl)/1000;
  node.innerHTML='<div class="v0890BalanceLabel"><span>Bilans dnia</span><span class="v0890Remaining'+(k.over?' v0890RemainingExceeded':'')+'">'+
   (k.known?(remain>=0?'Jeszcze '+fmt(remain)+' kcal':'Przekroczono o '+fmt(-remain)+' kcal'):'Ustaw cel kcal')+
   '</span></div><div class="v0890KcalLine"><strong>'+fmt(value.kcal)+'</strong><span>/ '+
@@ -74,9 +84,10 @@ function summary(d){
   ring('Tłuszcz',value.fat,t.fat,'var(--d-orange)')+
   ring('Woda',waterL,waterT,'var(--d-water)')+'</div>';
  if($('v0890WaterMini')){
-   const w=bar(n(water.todayMl),n(water.targetMl));
-   $('v0890WaterMini').innerHTML='<span>💧 Woda <b>'+fmt(waterL,2)+' / '+fmt(waterT,2)+' l</b></span>'+
-     '<small>'+ (w.known?fmt(w.pct)+'%':'Cel —')+' · Dodaj wodę ›</small>';
+   const w=bar(waterMl,n(water.targetMl));
+   $('v0890WaterMini').innerHTML='<span>💧 Woda <b>'+(waterL===null?'—':fmt(waterL,2))+' / '+fmt(waterT,2)+' l</b></span>'+
+     '<small>'+ (waterMl===null?'Brak zapisu':w.known?fmt(w.pct)+'%':'Cel —')+
+       (selected===today?' · Dodaj wodę ›':' · '+selected)+'</small>';
  }
 }
 function metricMarkup(m,t,x){
@@ -366,7 +377,10 @@ function install(){
  root.addEventListener('pointerup',dragEnd);
  root.addEventListener('pointercancel',dragEnd);
  root.addEventListener('click',e=>{if(e.target.closest('#v0890Calendar'))openSheet('history');});
- $('v0890WaterMini').onclick=()=>openSheet('water');
+ $('v0890WaterMini').onclick=()=>{
+  if(date()===localDate())openSheet('water');
+  else notify('Woda z wybranego dnia jest tylko do podglądu. Dodawanie wody dotyczy dzisiaj.');
+ };
  $('v0890Sort').addEventListener('change',e=>{const prefs=ui();prefs.sort=e.target.value;store(VISUAL,prefs);refresh();});
  $('v0890Close').onclick=closeSheet;
  overlay.addEventListener('click',e=>{if(e.target===overlay)closeSheet();});
@@ -381,7 +395,7 @@ function boot(){
  count++;if(install()||count>=100)clearInterval(t);
 },120);}
 window.TrenerDietVisual0890={refresh,openSheet,pane,closeSheet,bar,totals,orderMeals,signature,renderMeal:meal,renderRing:ring,
- get ready(){return state.ready;}};
+ waterForDay,get ready(){return state.ready;}};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});
 else boot();
 })();
