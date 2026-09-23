@@ -1,3 +1,11 @@
+## 0.9.3 (beta) — stabilizacja i inteligentny jadłospis
+
+- Stabilizacja planera: kontrolowane zakresy gramatur zapobiegają nienaturalnym porcjom oleju, jaj i mięsa.
+- Deterministyczne dobieranie przepisów według celu kalorii i makro, częściowa korekta kolejnych posiłków oraz kara za niedawne powtórki.
+- Warianty 3 i 4 posiłków zachowują pełny obrót bazy przepisów w 30-dniowym jadłospisie.
+- Zachowany schemat `trainer2.recipes.v1`, dawne klucze Diety, treningi, zdjęcia, backup i wspólny trening bez zmian.
+- Wyniki są szacunkami; nie gwarantują dokładnego trafienia makro przy każdym zestawie produktów.
+
 ## 0.9.2 — wspólna gałąź główna + Przepisy
 
 - Scalenie zmian głównej gałęzi dotyczących sterowania jednym telefonem z funkcjami 0.9.1.
