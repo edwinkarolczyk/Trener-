@@ -22,6 +22,18 @@ public final class HydrationStore {
         return prefs(context).getInt(DAY_PREFIX + LocalDate.now(), 0);
     }
 
+    /** -1 = no recorded value for the requested date; never substitute today's intake. */
+    public static int getDayMl(Context context, String isoDay) {
+        if (isoDay == null || !isoDay.matches("\\d{4}-\\d{2}-\\d{2}")) return -1;
+        try {
+            LocalDate day = LocalDate.parse(isoDay);
+            if (day.isAfter(LocalDate.now())) return -1;
+            SharedPreferences p = prefs(context);
+            String key = DAY_PREFIX + day;
+            return p.contains(key) ? p.getInt(key, 0) : -1;
+        } catch (Exception ignored) { return -1; }
+    }
+
     public static int getTargetMl(Context context) {
         return prefs(context).getInt("target_ml", 2500);
     }
