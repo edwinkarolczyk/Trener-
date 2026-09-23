@@ -41,6 +41,9 @@ jobs:
       - name: Isolated recipes and 30-day planner regression tests
         run: node --test app/src/test/js/recipes-090.test.cjs
 
+      - name: Intelligent menu and backward-compatibility regression tests
+        run: node --test app/src/test/js/recipes-093.test.cjs
+
       - name: Main shared controller and recipes integration
         run: node app/src/test/js/main-integration-092.test.cjs
 
@@ -167,12 +170,12 @@ jobs:
           TAG="v${VERSION}"
           TITLE="Trener 2 ${VERSION}"
           NOTES=$(cat <<'EOF'
-          - Nowa zakładka Przepisy obok Diety: 50 przepisów z gramaturą, kcal i B/W/T.
-          - Kalkulator celu na podstawie wzrostu, wieku, masy, aktywności i liczby treningów.
-          - 30-dniowy jadłospis na 3 lub 4 posiłki, dopasowanie proporcji składników.
-          - Oddzielny moduł: nie zmienia historii Diety, celów kalorii ani treningów.
-          - Wersja testowa: wartości odżywcze są orientacyjne; sprawdzaj faktyczne produkty.
-          - Kopia danych przed instalacją; podpisane APK aktualizacji.
+          - Stabilizacja 50 przepisów i 30-dniowego jadłospisu: kontrola składników i porcji.
+          - Inteligentne dobieranie potraw według kalorii oraz B/W/T z kontrolą powtórek.
+          - Osobne korygowanie gramatur, bez skrajnych ilości oleju, jajek i mięsa.
+          - Pełny wybór 50 przepisów dla 4 posiłków, 42 dla 3 posiłków na miesiąc.
+          - Widoczne odchylenia od celu; wartości odżywcze są orientacyjne.
+          - Bez zmiany historii Diety i treningów; kopia danych przed aktualizacją.
           EOF
           )
           if gh release view "$TAG" >/dev/null 2>&1; then
