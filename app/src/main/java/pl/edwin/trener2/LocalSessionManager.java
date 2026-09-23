@@ -54,6 +54,7 @@ public final class LocalSessionManager {
     }
 
     private final Listener listener;
+    private final String appVersion;
     private final ExecutorService io = Executors.newCachedThreadPool();
     private final Object writeLock = new Object();
     private final Object hostPeersLock = new Object();
@@ -76,9 +77,20 @@ public final class LocalSessionManager {
     private volatile String lastCloseReason = "";
     private volatile long lastCloseAtMs = 0L;
 
-    public LocalSessionManager(Listener listener) {
+    public LocalSessionManager(Listener listener, String appVersion) {
         this.listener = listener;
+        this.appVersion = appVersion == null ? "" : appVersion.trim();
     }
+
+    // Kept for older Java callers; sessions without a version are never accepted.
+    public LocalSessionManager(Listener listener) {
+        this(listener, "");
+    }
+
+    static boolean matchesHandshake(String hello, String code, String version) {
+        return ("HELLO:" + code + ":" + version).equals(hello) && !version.isEmpty();
+    }
+
 
     public void host(String code) {
         String normalized = normalizeCode(code);
@@ -201,10 +213,16 @@ public final class LocalSessionManager {
 
                     DataOutputStream out = new DataOutputStream(socket.getOutputStream());
                     DataInputStream in = new DataInputStream(socket.getInputStream());
-                    out.writeUTF("HELLO:" + normalized);
+                    out.writeUTF("HELLO:" + normalized + ":" + appVersion);
                     out.flush();
 
                     String reply = in.readUTF();
+                    if (reply.startsWith("VERSION")) {
+                        emitStatus("error", "Niezgodna wersja Trenera 2. Oba telefony muszą mieć tę samą wersję aplikacji. Gospodarz: " +
+                                (reply.startsWith("VERSION:") ? reply.substring(8) : "nieznana") + ", ten telefon: " + appVersion + ".");
+                        closeQuietly(socket);
+                        return;
+                    }
                     if ("FULL".equals(reply)) {
                         emitStatus("error", "Sesja jest pełna. Maksymalnie mogą ćwiczyć 4 osoby razem z gospodarzem.");
                         closeQuietly(socket);
@@ -391,8 +409,9 @@ public final class LocalSessionManager {
             DataInputStream in = new DataInputStream(socket.getInputStream());
             DataOutputStream out = new DataOutputStream(socket.getOutputStream());
             String hello = in.readUTF();
-            if (!("HELLO:" + expectedCode).equals(hello)) {
-                out.writeUTF("DENY");
+            if (!matchesHandshake(hello, expectedCode, appVersion)) {
+                out.writeUTF(hello != null && hello.startsWith("HELLO:" + expectedCode) ?
+                        "VERSION:" + appVersion : "DENY");
                 out.flush();
                 return false;
             }
