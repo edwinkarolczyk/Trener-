@@ -1,3 +1,10 @@
+## 0.9.1 — przepisy połączone z Trenerem 2
+
+- Zachowano 50 przepisów i jadłospis na 30 dni (3 lub 4 posiłki).
+- Dodano instrukcje przygotowania i wyjaśnienie gramatury surowych składników.
+- Przepisy pozostają osobnym modułem; cele i historia Diety nie są automatycznie nadpisywane.
+- Zgodność aktualizacji i zapisów starszych wydań podlega testom przed udostępnieniem.
+
 ## 0.9.0 (feature preview) — odrębna zakładka Przepisy
 
 - Osobna zakładka obok Diety, kalkulator zapotrzebowania, 50 bazowych przepisów i przykładowy 30-dniowy plan na 3 lub 4 posiłki.
