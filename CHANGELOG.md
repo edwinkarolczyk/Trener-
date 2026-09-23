@@ -1,3 +1,10 @@
+## 0.9.2 — wspólna gałąź główna + Przepisy
+
+- Scalenie zmian głównej gałęzi dotyczących sterowania jednym telefonem z funkcjami 0.9.1.
+- Pełny moduł 50 przepisów i jadłospis na 30 dni pozostaje osobny od Diety.
+- Zabezpieczenie wersji APK na poziomie połączenia oraz odczyt wcześniejszych danych.
+- Zgodność aktualizacji sprawdzana testami; stary format Diety nie jest migrowany destrukcyjnie.
+
 ## 0.9.1 — przepisy połączone z Trenerem 2
 
 - Zachowano 50 przepisów i jadłospis na 30 dni (3 lub 4 posiłki).
