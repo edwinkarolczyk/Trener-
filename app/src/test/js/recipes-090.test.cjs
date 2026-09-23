@@ -7,7 +7,7 @@ const path=require('node:path');
 const source=fs.readFileSync(path.join(__dirname,'../../main/assets/v090-recipes.js'),'utf8');
 const sandbox={};
 vm.runInNewContext(source,sandbox,{filename:'v090-recipes.js'});
-const {RECIPES,FOODS,nutrition,personalized,calculate,month,STORAGE_KEY}=sandbox.TrenerRecipes090;
+const {RECIPES,FOODS,nutrition,personalized,preparation,calculate,month,STORAGE_KEY}=sandbox.TrenerRecipes090;
 const profile={sex:'male',age:34,weight:70,height:170,work:'moderate',training:3,trend:'falling',goal:'recomp',meals:4};
 test('50 distinct recipes with valid ingredients and nutrition',()=>{
   assert.equal(RECIPES.length,50);
@@ -18,6 +18,9 @@ test('50 distinct recipes with valid ingredients and nutrition',()=>{
     assert.ok(r.name && r.items.length>=2,r.id);
     for(const [key,g] of r.items){assert.ok(FOODS[key],r.id+':'+key);assert.ok(g>0,r.id);}
     const v=nutrition(r,1);
+    const steps=preparation(v);
+    assert.ok(steps.length>=2&&steps.every(x=>typeof x==='string'&&x.length>20),r.id+': preparation');
+    assert.ok(v.items.every(x=>x.key&&x.grams>0),r.id+': item identity');
     for(const k of ['kcal','protein','carbs','fat'])assert.ok(Number.isFinite(v[k])&&v[k]>=0,r.id+':'+k);
   }
 });
@@ -46,7 +49,8 @@ test('30-day menu supports three and four meals without changing Diet data',()=>
     assert.ok(seen.size>=(count===4?50:42),'recipe variety '+count);
     for(const d of days){
       assert.equal(d.totals.kcal,d.meals.reduce((sum,m)=>sum+m.kcal,0));
-      assert.ok(d.meals.every(m=>m.items.every(i=>i.grams>0)));
+      assert.ok(d.meals.every(m=>m.items.every(i=>i.grams>0&&i.key)));
+      assert.ok(d.meals.every(m=>preparation(m).length>=2));
       assert.ok(d.totals.kcal>1500 && d.totals.kcal<3500,'daily calories '+d.day+': '+d.totals.kcal);
     }
   }
