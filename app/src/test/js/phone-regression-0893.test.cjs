@@ -4,7 +4,7 @@ let running=false,exIdx=0,scrolls=0,resize;
 const document={
  readyState:'complete',
  head:{appendChild(el){if(el.id==='v0631-workout-scroll-style')this.sheet=el.textContent;}},
- createElement(){return {id:'',textContent:''};},
+ createElement(){return {id:'',textContent:'',type:'',addEventListener(){}};},
  getElementById(id){if(id==='v0631-workout-scroll-style')return null;if(id==='training')return {id};return null;},
  querySelector(s){if(s==='#training .inputs')return {scrollIntoView(){scrolls++;}};return null;}
 };
