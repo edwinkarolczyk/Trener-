@@ -128,6 +128,13 @@
       exportedAt:new Date().toISOString(),
       metadata:{forwardCompatibleStorage:true,preserveUnknownKeys:true,automaticPreUpdate:true},
       storage,
+      nativeHydration:(()=>{
+        const api=window.TrenerHydration;
+        if(!api||typeof api.exportHydrationBackup!=='function')return null;
+        const raw=String(api.exportHydrationBackup()||'');
+        if(!raw)throw new Error('Brak kopii natywnej historii wody.');
+        return JSON.parse(raw);
+      })(),
       excludes:[],
       includesPhotos:true
     };
