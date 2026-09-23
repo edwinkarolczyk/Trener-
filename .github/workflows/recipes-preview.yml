@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - 'feature/trener2-0.9.0-przepisy'
+      - 'feature/trener2-0.9.3-stabilizacja-jadlospis'
   workflow_dispatch:
 
 permissions:
