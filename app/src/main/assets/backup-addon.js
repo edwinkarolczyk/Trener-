@@ -23,7 +23,6 @@
       const key=localStorage.key(i);
       if(!key)continue;
       if(!(key.startsWith('trainer3.')||key.startsWith('trainer2.')))continue;
-      if(key==='trainer3.photos')continue;
       const value=localStorage.getItem(key);
       if(value!==null)storage[key]=value;
     }
@@ -33,14 +32,20 @@
   function buildBackup(){
     return {
       format:'trener2-backup',
-      version:5,
+      version:6,
       schemaVersion:schemaVersion(),
       appVersion:appVersion(),
       participantId:participantId(),
       exportedAt:new Date().toISOString(),
       metadata:{forwardCompatibleStorage:true,preserveUnknownKeys:true},
       storage:collectStorage(),
-      excludes:['trainer3.photos']
+      nativeHydration:(()=>{
+        if(!window.TrenerHydration?.exportHydrationBackup)return null;
+        const raw=String(window.TrenerHydration.exportHydrationBackup()||'');
+        if(!raw)throw Error('Brak pełnej historii wody do kopii.');
+        return JSON.parse(raw);
+      })(),
+      excludes:[],includesPhotos:true
     };
   }
 
@@ -117,7 +122,7 @@
         }
         for(const [key,value] of Object.entries(data.storage)){
           if(!(key.startsWith('trainer3.')||key.startsWith('trainer2.'))||
-            key==='trainer3.photos')continue;
+            false)continue;
           if(typeof value!=='string'){toastMsg('Nieprawidłowa wartość w kopii danych.');return;}
           entries.push([key,value]);
         }
@@ -132,7 +137,22 @@
       }else entries=legacyEntries(data);
     }catch(e){toastMsg('Nie udało się odczytać danych kopii.');return;}
     if(!entries.length){toastMsg('Kopia nie zawiera danych.');return;}
-    if(!writeBackupEntries(entries))return;
+    let previousNative=null;
+    if(data.nativeHydration){
+      const bridge=window.TrenerHydration;
+      if(!bridge?.exportHydrationBackup||!bridge?.importHydrationBackup){
+        toastMsg('Ta kopia wymaga nowszego Trenera do odtworzenia historii wody.');return;
+      }
+      try{
+        previousNative=String(bridge.exportHydrationBackup()||'');
+        if(!previousNative||!bridge.importHydrationBackup(JSON.stringify(data.nativeHydration)))
+          throw Error('native hydration import failed');
+      }catch(e){toastMsg('Nie udało się odtworzyć historii wody. Nie zmieniono danych Diety.');return;}
+    }
+    if(!writeBackupEntries(entries)){
+      if(previousNative)try{window.TrenerHydration.importHydrationBackup(previousNative);}catch(e){}
+      return;
+    }
     toastMsg('Kopia danych wczytana. Uruchamiam ponownie aplikację…');
     setTimeout(()=>window.location.reload(),650);
   }
