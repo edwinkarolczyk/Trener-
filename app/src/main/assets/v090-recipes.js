@@ -190,10 +190,11 @@
   const fmt=n=>Number(n).toLocaleString('pl-PL',{maximumFractionDigits:1});
   const escape=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   let profile={sex:'',age:'',weight:'',height:'',training:'',work:'moderate',trend:'stable',goal:'maintain',meals:4};
-  let selected=1,plan=null,storedRecord={};
+  let selected=1,plan=null,storedRecord={},futureSchema=false;
   function read(){
     try{
       const o=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');
+      if(o&&Number(o.schemaVersion)>1){futureSchema=true;return;}
       if(o&&o.schemaVersion===1&&o.profile&&typeof o.profile==='object'){
         storedRecord=o;
         profile={...profile,...o.profile};
@@ -201,6 +202,7 @@
     }catch(e){}
   }
   function save(){
+    if(futureSchema){showError('Dane przepisów pochodzą z nowszej wersji. Nie nadpisuję ich — zaktualizuj aplikację.');return false;}
     try{
       // Keep unknown v1 settings and profile fields from older/newer builds.
       const data={...storedRecord,schemaVersion:1,profile:{...(storedRecord.profile||{}),...profile}};
