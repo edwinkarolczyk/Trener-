@@ -15,7 +15,7 @@
       if(!food)throw Error('Nieznany produkt: '+key);
       const values=[1,2,3,4].map(i=>food[i]*g/100);
       ['kcal','protein','carbs','fat'].forEach((k,i)=>sum[k]+=values[i]);
-      return {name:food[0],grams:g};
+      return {key,name:food[0],grams:g};
     });
     Object.keys(sum).forEach(k=>sum[k]=round(sum[k],k==='kcal'?0:1));
     return {...sum,items};
@@ -73,6 +73,42 @@
     }
     return {portion:round(portion,2),...nutrition({items},1)};
   }
+  function preparation(recipe){
+    const ks=new Set(recipe.items.map(x=>Array.isArray(x)?x[0]:x.key));
+    const steps=[];
+    const has=(...x)=>x.some(k=>ks.has(k));
+    if(has('chicken','chickenCooked','turkey','fish','tuna','lentils','beans')){
+      if(has('rice','pasta','buckwheat','lentils'))
+        steps.push('Odważ suchy ryż, makaron, kaszę lub soczewicę. Ugotuj zgodnie z czasem na opakowaniu; wagę do obliczeń przyjmij PRZED gotowaniem.');
+      if(has('potato'))steps.push('Ziemniaki obierz lub umyj, pokrój i ugotuj albo upiecz do miękkości bez dodatkowego tłuszczu poza podanym w składnikach.');
+      if(has('chicken','turkey','fish')){
+        steps.push('Mięso lub rybę pokrój, dopraw i przygotuj na patelni albo w piekarniku, odmierzając olej z przepisu. Drób doprowadź do co najmniej 74°C wewnątrz; rybę do 63°C.');
+      }else if(has('tuna'))steps.push('Tuńczyka odsącz z zalewy i dodaj do pozostałych składników; nie dodawaj wagi zalewy.');
+      if(has('beans'))steps.push('Fasolę z puszki odsącz i opłucz; podgrzej lub wymieszaj z pozostałymi składnikami.');
+      if(has('veg','tomato'))steps.push('Warzywa umyj, pokrój i dodaj na surowo lub ugotuj krótko do preferowanej miękkości.');
+      if(has('twarog','quark','skyr'))steps.push('Twaróg lub skyr dodaj na końcu, po ostudzeniu ciepłych składników.');
+      steps.push('Połącz składniki i podziel na porcję o gramaturach pokazanych wyżej; nie doliczaj tłuszczu ani sosu spoza listy.');
+    }else if(has('oats','rice')&&has('milk','skyr','twarog','quark')){
+      steps.push('Odmierz płatki lub suchy ryż. Gotuj w odmierzonej ilości mleka albo wody, aż zmiękną; do wersji nocnej płatki namocz w lodówce.');
+      if(has('egg'))steps.push('Jajka ugotuj lub usmaż osobno bez nieujętego oleju; podawaj z owsianką.');
+      if(has('skyr','twarog','quark'))steps.push('Skyr lub twaróg wmieszaj po lekkim przestudzeniu, żeby zachować konsystencję.');
+      steps.push('Dodaj odważone owoce, orzechy i pozostałe dodatki. Masa banana i jaj jest liczona bez skórki i skorupki.');
+    }else if(has('egg')){
+      steps.push('Odważ jajka bez skorupek, pieczywo i pozostałe składniki.');
+      steps.push(has('flour','oats')?'Wymieszaj jajka z mąką lub płatkami i przygotuj omlet na patelni bez dodatkowego tłuszczu.':'Jajka ugotuj, zrób jajecznicę lub omlet; użyj tylko tłuszczu wymienionego w składnikach.');
+      steps.push('Dodaj pieczywo, odważone warzywa lub owoce i nabiał zgodnie z wyświetloną gramaturą.');
+    }else if(has('bread','tortilla')){
+      steps.push('Odważ pieczywo lub tortillę oraz wszystkie dodatki.');
+      steps.push('Pokrój warzywa, wymieszaj składniki pasty lub ułóż dodatki na pieczywie; mięso oznaczone jako „po obróbce” waż po przygotowaniu.');
+      steps.push('Podawaj na zimno albo zapiecz, bez nieujętych sosów i tłuszczu.');
+    }else{
+      steps.push('Odważ każdy składnik według gramatury powyżej.');
+      steps.push('Umyj owoce i warzywa, pokrój, wymieszaj z nabiałem lub przygotuj koktajl.');
+      steps.push('Podawaj jako jedną porcję; dodatki nieuwzględnione w składzie zmieniają makro.');
+    }
+    return steps;
+  }
+
   function month(p,days=30){
     const target=calculate(p),count=Number(p.meals)===3?3:4;
     const shares=count===3?{breakfast:.29,lunch:.41,dinner:.30}:{breakfast:.25,lunch:.34,snack:.16,dinner:.25};
@@ -91,7 +127,7 @@
       return {day:day+1,meals,totals};
     });
   }
-  const api=Object.freeze({FOODS,RECIPES,names,nutrition,personalized,calculate,month,STORAGE_KEY});
+  const api=Object.freeze({FOODS,RECIPES,names,nutrition,personalized,preparation,calculate,month,STORAGE_KEY});
   root.TrenerRecipes090=api;
   if(typeof document==='undefined')return;
   const byId=id=>document.getElementById(id);
@@ -131,7 +167,7 @@
     Object.entries({Sex:'sex',Age:'age',Weight:'weight',Height:'height',Work:'work',Training:'training',Goal:'goal',Trend:'trend',Meals:'meals'}).forEach(([id,k])=>byId('r090'+id).value=profile[k]);
   }
   function nutritionText(m){return fmt(m.kcal)+' kcal · B '+fmt(m.protein)+' g · W '+fmt(m.carbs)+' g · T '+fmt(m.fat)+' g';}
-  function details(m){return '<details><summary>Składniki i gramatury</summary><div class="r090Ingredients">'+m.items.map(x=>'<div>'+escape(x.name)+' <b>'+fmt(x.grams)+' g</b></div>').join('')+'</div><p class="hint">Gramatury produktów suchych i mięsa są przed przygotowaniem, chyba że w nazwie zaznaczono inaczej.</p></details>';}
+  function details(m){return '<details><summary>Składniki i sposób przygotowania</summary><div class="r090Ingredients">'+m.items.map(x=>'<div>'+escape(x.name)+' <b>'+fmt(x.grams)+' g</b></div>').join('')+'</div><p class="hint">Gramatury ryżu, makaronu i kaszy są przed gotowaniem; drób surowy, chyba że nazwano go „po obróbce”.</p><ol class="r090Steps">'+preparation(m).map(x=>'<li>'+escape(x)+'</li>').join('')+'</ol></details>';}
   function drawLibrary(){
     const el=byId('r090Library');if(!el)return;
     el.innerHTML=['breakfast','lunch','dinner','snack'].map(type=>
