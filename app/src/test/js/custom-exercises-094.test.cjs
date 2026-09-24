@@ -76,6 +76,17 @@ test('deleting custom exercise does not delete history, diet or old plans',()=>{
   assert.equal(JSON.parse(data.get('trainer3.customPlans.v050'))[0].id,'p1');
 });
 
+test('photos stay in personal backup, not in shared plan payload',()=>{
+  const picture='data:image/jpeg;base64,AAABBB==';
+  const ex=s.save({...basic,imageStart:picture,imageEnd:picture});
+  assert.equal(s.get(ex.id).imageStart,picture);
+  const live=exerciseLibrary.find(e=>e.id===ex.id);
+  assert.equal(live.imageStart,undefined);
+  assert.equal(live.imageEnd,undefined);
+  assert.ok(JSON.stringify({title:'Duet',ex:[live]}).length<20000);
+  s.remove(ex.id);
+});
+
 test('corrupt saved library refuses overwrite and leaves live exercises intact',()=>{
   const snapshot=localStorage.getItem(s.KEY);
   data.set(s.KEY,'{broken-json');
