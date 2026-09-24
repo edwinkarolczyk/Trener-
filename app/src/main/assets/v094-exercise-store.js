@@ -9,10 +9,13 @@
 
   function clone(x){return JSON.parse(JSON.stringify(x));}
   function read(){
-    try{
-      const raw=JSON.parse(localStorage.getItem(KEY)||'null');
-      return raw&&raw.schemaVersion===SCHEMA&&Array.isArray(raw.exercises)?raw.exercises:[];
-    }catch(e){return [];}
+    const saved=localStorage.getItem(KEY);
+    if(saved===null)return [];
+    let raw;
+    try{raw=JSON.parse(saved);}catch(e){throw Error('Uszkodzony zapis biblioteki — nie nadpisuję danych. Wykonaj kopię.');}
+    if(!raw||raw.schemaVersion!==SCHEMA||!Array.isArray(raw.exercises))
+      throw Error('Nieznany format biblioteki — nie nadpisuję danych.');
+    return raw.exercises;
   }
   function validMedia(s){
     return !s||(typeof s==='string'&&s.length<=MAX_MEDIA_CHARS&&/^data:image\/(?:jpeg|png|webp);base64,[a-z0-9+/=]+$/i.test(s));
@@ -58,7 +61,9 @@
     const lib=library();if(!lib)return false;
     for(let i=lib.length-1;i>=0;i--)if(String(lib[i]?.id||'').startsWith('user:'))lib.splice(i,1);
     const seen=new Set(lib.map(e=>e.id));
-    for(const raw of read()){
+    let saved;
+    try{saved=read();}catch(e){return false;}
+    for(const raw of saved){
       try{const ex=validate(raw);if(!seen.has(ex.id)){lib.push(ex);seen.add(ex.id);}}catch(e){}
     }
     return true;
@@ -86,9 +91,20 @@
     if(index<0)prev.push(item);else prev[index]=item;
     store(prev);return clone(item);
   }
+  function references(id){
+    const safe=k=>{try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){return null;}};
+    const single=safe('trainer3.customPlan');
+    if(single?.ex?.some(e=>(e?.id||e)===id))return true;
+    const multi=safe('trainer3.customPlans.v050');
+    if(Array.isArray(multi)&&multi.some(p=>p?.ex?.some(e=>(e?.id||e)===id)))return true;
+    const week=safe('trainer3.weekPlan.v070');
+    if(week?.days&&Object.values(week.days).some(d=>d?.exerciseIds?.includes(id)))return true;
+    return false;
+  }
   function remove(id){
     const previous=read(),next=previous.filter(x=>x.id!==id);
     if(previous.length===next.length)return false;
+    if(references(id))throw Error('Ćwiczenie jest używane w zapisanym planie. Najpierw usuń je z planu.');
     store(next);return true;
   }
   function get(id){return read().find(x=>x.id===id)||null;}
