@@ -43,7 +43,12 @@ function saveApproved(preview,date,confirm){
  try{root.TrenerDiet076?.render?.();root.TrenerWidget077?.sync?.(true);}catch(e){}
  return meal;
 }
-const api=Object.freeze({prepare,saveApproved,validDay,localDate,totals});
+function previewForPrint(){
+ if(!original||!selected)throw Error('Najpierw otwórz przepis.');
+ const p=prepare(original,selected.grams);
+ return {recipe:{...original,items:p.ingredients.map(x=>[x.key,x.grams])},grams:p.ingredients.map(x=>x.grams)};
+}
+const api=Object.freeze({prepare,saveApproved,validDay,localDate,totals,previewForPrint});
 root.TrenerRecipeDiet093=api;
 if(typeof document==='undefined')return;
 let selected=null,original=null,kind='',index=0;
@@ -59,6 +64,7 @@ function editor(meal,mode,idx){
  '<label>Data w dzienniku<input id="r093Date" type="date" value="'+esc(date)+'"></label>'+
  '<div id="r093Ingredients"></div><p id="r093Totals" aria-live="polite"></p>'+
  '<button type="button" class="primary bigBtn" id="r093Approve">DODAJ DO DIETY — POTWIERDZAM</button>'+
+ '<button type="button" class="secondary bigBtn" data-r096-preview>DRUKUJ / ZAPISZ JAKO PDF</button>'+ 
  '<button type="button" class="secondary bigBtn" id="r093Cancel">Anuluj</button>'+
  '<p id="r093Info" role="status"></p>';
  $('r093Date').addEventListener('change',e=>{selected.date=e.target.value;});
