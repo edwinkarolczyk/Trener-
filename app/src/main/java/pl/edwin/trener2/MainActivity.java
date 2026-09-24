@@ -67,6 +67,7 @@ public class MainActivity extends Activity {
             "https://raw.githubusercontent.com/edwinkarolczyk/Trener-/main/update.json";
 
     private WebView webView;
+    private RecipePrintManager recipePrintManager;
     private LocalSessionManager localSession;
     private NearbyProfileManager nearbyProfiles;
     private GmsBarcodeScanner qrScanner;
@@ -1058,6 +1059,7 @@ public class MainActivity extends Activity {
         }
         if (nearbyProfiles != null) nearbyProfiles.shutdown();
         if (localSession != null) localSession.shutdown();
+        if (recipePrintManager != null) recipePrintManager.close();
         if (webView != null) webView.destroy();
         super.onDestroy();
     }
@@ -1264,6 +1266,14 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void searchFoodCatalog(String source, String query, String apiKey, int requestId) {
             searchFoodCatalogNative(source, query, apiKey, requestId);
+        }
+
+        @JavascriptInterface
+        public void printRecipe(String html, String title) {
+            runOnUiThread(() -> {
+                if (recipePrintManager == null) recipePrintManager = new RecipePrintManager(MainActivity.this);
+                recipePrintManager.print(html, title);
+            });
         }
 
         @JavascriptInterface
