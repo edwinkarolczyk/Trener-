@@ -83,8 +83,8 @@ for(const old of ['#56d487','#69b9ff','#ffd062','#ff925b','#61caeb']){
 const loader=fs.readFileSync('app/src/main/assets/feature-loader.js','utf8');
 assert(loader.includes("['0.8.9.0','v0890-diet-visual.js']"));
 const build=fs.readFileSync('app/build.gradle','utf8');
-assert(build.includes("versionName '0.9.3'"));
-assert(build.includes('versionCode 93'));
+assert(build.includes("versionName '0.9.4'"));
+assert(build.includes('versionCode 94'));
 assert(css.includes('--d-panel:var(--panel)'),'diet card palette should follow app theme');
 assert(css.includes('--d-red:var(--red)'),'diet accent should follow app theme');
 assert(css.includes('background:var(--red)!important'),'add-meal button should use app red');
