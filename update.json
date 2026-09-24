@@ -1,12 +1,12 @@
 {
-  "version": "0.9.5",
-  "versionCode": 95,
-  "title": "Trener 2 v0.9.5",
+  "version": "0.9.5.1",
+  "versionCode": 96,
+  "title": "Trener 2 v0.9.5.1",
   "notes": [
-    "Przepisy: sugerowane posiłki z planu i biblioteki dodajesz do Diety dopiero po potwierdzeniu.",
-    "Przed zapisem możesz zmienić gramatury i zobaczyć przeliczone kalorie i B/W/T.",
-    "Zachowano starsze dane Diety i treningów oraz nowe własne ćwiczenia."
+    "Stabilizacja własnych ćwiczeń i planów partii mięśniowych.",
+    "Bezpieczniejsza obsługa zdjęć START/KONIEC oraz wyboru JPG, PNG i WebP.",
+    "Zachowano historię treningów, Dietę, przepisy, zdjęcia i ustawienia."
   ],
-  "pageUrl": "https://github.com/edwinkarolczyk/Trener-/releases/tag/v0.9.5",
-  "apkUrl": "https://github.com/edwinkarolczyk/Trener-/releases/download/v0.9.5/Trener2-v0.9.5.apk"
+  "pageUrl": "https://github.com/edwinkarolczyk/Trener-/releases/tag/v0.9.5.1",
+  "apkUrl": "https://github.com/edwinkarolczyk/Trener-/releases/download/v0.9.5.1/Trener2-v0.9.5.1.apk"
 }
