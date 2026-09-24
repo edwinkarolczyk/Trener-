@@ -1,3 +1,11 @@
+## 0.9.5 Beta — Przepisy → Dieta, z zachowaniem 0.9.4
+
+- Sugerowane posiłki z jadłospisu i biblioteki 50 przepisów: przycisk „Dodaj do Diety…” otwiera podgląd i edycję gramatury.
+- Zapis wyłącznie po osobnym potwierdzeniu. Jeden przepis to jeden złożony posiłek w historycznym schemacie `trainer3.diet.v076`.
+- Przed zapisem data z otwartego dziennika (z możliwością zmiany), składniki i przeliczone kcal/B/W/T.
+- Zachowane poprzednie wpisy Diety, treningi, zdjęcia, cele, kopie i nowe ćwiczenia z 0.9.4.
+- Kontrole regresyjne przed wydaniem APK.
+
 ## 0.9.4 (beta, etap 1 — w trakcie odbioru) — własne ćwiczenia
 
 - Odrębny magazyn `trainer3.userExercises.v094` z trwałymi identyfikatorami `user:...`, walidacją wpisów i odmową nadpisania uszkodzonej biblioteki.
