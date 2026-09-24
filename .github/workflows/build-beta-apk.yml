@@ -44,6 +44,9 @@ jobs:
       - name: Isolated recipes and 30-day planner regression tests
         run: node --test app/src/test/js/recipes-090.test.cjs
 
+      - name: Recipe-to-Diet explicit approval and old data regression
+        run: node app/src/test/js/recipe-diet-095.test.cjs
+
       - name: Intelligent menu and backward-compatibility regression tests
         run: node --test app/src/test/js/recipes-093.test.cjs
 
