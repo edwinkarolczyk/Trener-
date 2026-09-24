@@ -65,12 +65,25 @@ test('deleting custom exercise does not delete history, diet or old plans',()=>{
   data.set('trainer3.history','[{"id":"w1","records":[{"id":"'+ex.id+'"}]}]');
   data.set('trainer3.diet.v076','{"meals":[{"id":"m1"}]}');
   data.set('trainer3.customPlans.v050','[{"id":"p1","ex":["'+ex.id+'"]}]');
+  assert.throws(()=>s.remove(ex.id),/używane w zapisanym planie/);
+  assert.equal(s.list().length,1,'referenced plan remains resolvable');
+  data.delete('trainer3.customPlans.v050');
   s.remove(ex.id);
   assert.equal(s.list().length,0);
   assert.equal(exerciseLibrary.length,1);
   assert.equal(JSON.parse(data.get('trainer3.history'))[0].records[0].id,ex.id);
   assert.equal(JSON.parse(data.get('trainer3.diet.v076')).meals[0].id,'m1');
   assert.equal(JSON.parse(data.get('trainer3.customPlans.v050'))[0].id,'p1');
+});
+
+test('corrupt saved library refuses overwrite and leaves live exercises intact',()=>{
+  const snapshot=localStorage.getItem(s.KEY);
+  data.set(s.KEY,'{broken-json');
+  assert.equal(s.hydrate(),false);
+  assert.throws(()=>s.save(basic),/Uszkodzony zapis biblioteki/);
+  assert.equal(data.get(s.KEY),'{broken-json');
+  assert.equal(exerciseLibrary[0].n,'Wyciskanie');
+  data.set(s.KEY,snapshot);
 });
 
 test('old-format backup and planner still include custom exercise data',()=>{
