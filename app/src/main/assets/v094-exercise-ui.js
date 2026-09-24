@@ -4,7 +4,7 @@
   if(!store)return;
   const $=id=>document.getElementById(id);
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  let editing='',images={imageStart:'',imageEnd:''},pendingImages=0,editRevision=0,dirty=false,editingForm=false;
+  let editing='',images={imageStart:'',imageEnd:''},pendingImages=0,editRevision=0,dirty=false,editingForm=false,imageRequest={imageStart:0,imageEnd:0};
   function leaveEditor(next){
     if(pendingImages>0){msg('Zakończ wybieranie zdjęć przed wyjściem.');return;}
     if(dirty&&!confirm('Masz niezapisane zmiany. Odrzucić je?'))return;
@@ -81,7 +81,7 @@
     editRevision++;const thisEdit=editRevision;
     editingForm=true;dirty=false;pendingImages=0;
     if(id&&!old){msg('Nie znaleziono ćwiczenia.');return list();}
-    images={imageStart:old?.imageStart||'',imageEnd:old?.imageEnd||''};
+    images={imageStart:old?.imageStart||'',imageEnd:old?.imageEnd||''};imageRequest={imageStart:0,imageEnd:0};
     shell(id?'Edytuj ćwiczenie':'Dodaj ćwiczenie',
       '<label for="v094Name">Nazwa *</label><input id="v094Name" maxlength="110" placeholder="np. Uginanie młotkowe">'+
       '<div class="v094Grid"><div class="v094Field"><label for="v094Group">Partia *</label><select id="v094Group"></select></div>'+
@@ -109,10 +109,11 @@
       if(images[key]){img.src=images[key];img.hidden=false;}
       $('v094'+suffix).onchange=async e=>{
         const file=e.target.files?.[0];if(!file)return;
+        const request=++imageRequest[key];
         pendingImages++;$('v094Save').disabled=true;
         try{
           const compressed=await compress(file);
-          if(thisEdit!==editRevision||!img.isConnected)return;
+          if(thisEdit!==editRevision||imageRequest[key]!==request||!img.isConnected)return;
           images[key]=compressed;img.src=compressed;img.hidden=false;dirty=true;$('v094Error').textContent='';
         }catch(err){if(thisEdit===editRevision&&$('v094Error'))$('v094Error').textContent=err.message;}
         finally{
@@ -122,7 +123,7 @@
           e.target.value='';
         }
       };
-      $('v094Remove'+suffix).onclick=()=>{images[key]='';img.removeAttribute('src');img.hidden=true;dirty=true;};
+      $('v094Remove'+suffix).onclick=()=>{imageRequest[key]++;images[key]='';img.removeAttribute('src');img.hidden=true;dirty=true;};
     }
     const editPanel=$('v094Shade');
     editPanel.addEventListener('input',()=>{dirty=true;});
