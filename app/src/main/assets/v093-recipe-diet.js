@@ -1,7 +1,6 @@
 (function(root){
 'use strict';
 const DIET_KEY='trainer3.diet.v076';
-const PENDING_KEY='trainer2.recipeDiet.pending.v1';
 const round=(x,n=1)=>Math.round(x*10**n)/10**n;
 const num=x=>{const v=Number(String(x??'').replace(',','.'));return Number.isFinite(v)&&v>=0?v:null;};
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
@@ -102,7 +101,7 @@ function openFromPlan(day,mealIndex){
 function openLibrary(recipeId){
  const recipe=root.TrenerRecipes090?.RECIPES.find(x=>x.id===recipeId);
  if(!recipe)return;
- editor(root.TrenerRecipes090.nutrition(recipe,1),'library',0);
+ editor({...root.TrenerRecipes090.nutrition(recipe,1),name:recipe.name,type:recipe.type,recipeId:recipe.id},'library',0);
 }
 function boot(){
  const host=$('recipes');if(!host)return;
