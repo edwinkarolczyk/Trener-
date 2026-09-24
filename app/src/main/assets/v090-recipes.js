@@ -191,6 +191,7 @@
   const escape=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   let profile={sex:'',age:'',weight:'',height:'',training:'',work:'moderate',trend:'stable',goal:'maintain',meals:4};
   let selected=1,plan=null,storedRecord={},futureSchema=false;
+  root.TrenerRecipePlan090=()=>plan;
   function read(){
     try{
       const o=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');
@@ -213,7 +214,7 @@
   }
   function showError(msg){const e=byId('r090Error');if(e){e.textContent=msg;e.hidden=!msg;}}
   function form(){
-    return '<div class="card r090Hero"><div class="eyebrow">PRZEPISY • OSOBNY MODUŁ</div><h2>Jadłospis na 30 dni</h2><p class="hint">Własny kalkulator i 50 przepisów. Nic nie zapisuje do Diety ani treningów.</p>'+
+    return '<div class="card r090Hero"><div class="eyebrow">PRZEPISY • SUGEROWANE POSIŁKI</div><h2>Jadłospis na 30 dni</h2><p class="hint">Plan to sugestia. Do Diety zapisuje się wyłącznie posiłek, który osobno zatwierdzisz, z możliwością edycji gramów.</p>'+
     '<div class="r090Fields">'+
     '<label>Wariant wzoru BMR<select id="r090Sex"><option value="">Wybierz</option><option value="male">Męski</option><option value="female">Żeński</option></select></label>'+
     '<label>Wiek [lata]<input id="r090Age" type="number" min="18" max="100"></label>'+
@@ -225,7 +226,7 @@
     '<label>Trend masy<select id="r090Trend"><option value="falling">Spada</option><option value="stable">Stoi</option><option value="rising">Rośnie</option></select></label>'+
     '<label>Posiłki dziennie<select id="r090Meals"><option value="3">3 posiłki</option><option value="4">4 posiłki</option></select></label>'+
     '</div><button class="primary bigBtn" id="r090Generate" type="button">OBLICZ I UŁÓŻ 30 DNI</button><p id="r090Error" class="r090Error" role="alert" hidden></p></div>'+
-    '<div class="card" id="r090Result" hidden></div><div class="card"><h2>Biblioteka 50 przepisów</h2><div id="r090Library"></div></div>';
+    '<div class="card" id="r090Result" hidden></div><p id="r090DietMessage" role="status"></p><div class="card"><h2>Biblioteka 50 przepisów</h2><div id="r090Library"></div></div>';
   }
   function collect(){
     const text=(id)=>byId('r090'+id).value;
@@ -241,7 +242,7 @@
     const el=byId('r090Library');if(!el)return;
     el.innerHTML=['breakfast','lunch','dinner','snack'].map(type=>
       '<details class="r090Category"><summary>'+names[type]+' ('+RECIPES.filter(x=>x.type===type).length+')</summary>'+
-      RECIPES.filter(x=>x.type===type).map(r=>{const n=nutrition(r,1);return '<div class="r090Recipe"><b>'+escape(r.name)+'</b><small>'+nutritionText(n)+'</small>'+details(n)+'</div>';}).join('')+'</details>'
+      RECIPES.filter(x=>x.type===type).map(r=>{const n=nutrition(r,1);return '<div class="r090Recipe"><b>'+escape(r.name)+'</b><small>'+nutritionText(n)+'</small>'+details(n)+'<button type="button" class="secondary" data-r093-recipe="'+escape(r.id)+'">Dodaj do Diety…</button></div>';}).join('')+'</details>'
     ).join('');
   }
   function draw(){
@@ -256,7 +257,7 @@
       '<label>Wybierz dzień<select id="r090Day">'+options+'</select></label>'+
       '<div class="r090DayTotal">Dzień '+selected+': '+nutritionText(d.totals)+'</div>'+      '<p class="hint">Różnica względem celu: '+(d.totals.kcal>=t.kcal?'+':'')+fmt(d.totals.kcal-t.kcal)+' kcal · B '+(d.totals.protein>=t.protein?'+':'')+fmt(round(d.totals.protein-t.protein,1))+' g. Odchylenia są możliwe przy zachowaniu sensownych porcji.</p>'+
       '<p class="hint">Składniki białkowe, węglowodanowe i tłuszczowe są dopasowywane oddzielnie. Sprawdź sumę B/W/T: plan jest przykładem, a nie gwarancją idealnego trafienia makro.</p>'+
-      d.meals.map(m=>'<article class="r090Meal"><div class="r090MealHead"><span>'+escape(m.hour)+' · '+names[m.type]+'</span><strong>'+fmt(m.portion*100)+'% porcji wyjściowej · skład dostosowany</strong></div><h3>'+escape(m.name)+'</h3><p>'+nutritionText(m)+'</p>'+details(m)+'</article>').join('');
+      d.meals.map((m,i)=>'<article class="r090Meal"><div class="r090MealHead"><span>'+escape(m.hour)+' · '+names[m.type]+'</span><strong>'+fmt(m.portion*100)+'% porcji wyjściowej · skład dostosowany</strong></div><h3>'+escape(m.name)+'</h3><p>'+nutritionText(m)+'</p>'+details(m)+'<button type="button" class="secondary" data-r093-plan="'+selected+'" data-meal="'+i+'">Dodaj do Diety…</button></article>').join('');
     byId('r090Day').onchange=ev=>{selected=Number(ev.target.value)||1;draw();};
   }
   function generate(){
