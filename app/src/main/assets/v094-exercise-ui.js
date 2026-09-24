@@ -4,7 +4,12 @@
   if(!store)return;
   const $=id=>document.getElementById(id);
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  let editing='',images={imageStart:'',imageEnd:''};
+  let editing='',images={imageStart:'',imageEnd:''},pendingImages=0,editRevision=0,dirty=false,editingForm=false;
+  function leaveEditor(next){
+    if(pendingImages>0){msg('Zakończ wybieranie zdjęć przed wyjściem.');return;}
+    if(dirty&&!confirm('Masz niezapisane zmiany. Odrzucić je?'))return;
+    dirty=false;editingForm=false;editRevision++;next();
+  }
   function msg(s){if(typeof window.toast==='function')window.toast(s);else alert(s);}
   function style(){
     if($('v094Css'))return;
@@ -30,7 +35,10 @@
     const panel=document.createElement('div');panel.className='v094Panel';panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');
     panel.innerHTML='<div class="v094Actions" style="justify-content:space-between"><h2>'+esc(title)+'</h2><button id="v094Close" type="button">ZAMKNIJ ✕</button></div>'+html;
     shade.appendChild(panel);document.body.appendChild(shade);
-    $('v094Close').onclick=()=>shade.remove();
+    $('v094Close').onclick=()=>{
+      if(editingForm){leaveEditor(()=>shade.remove());return;}
+      shade.remove();
+    };
     return panel;
   }
   function list(){
@@ -39,7 +47,13 @@
       '<button id="v094New" type="button">＋ NOWE ĆWICZENIE</button>'+
       '<p id="v094Count"></p><div id="v094Rows"></div>');
     $('v094New').onclick=()=>edit('');
-    const items=store.list();
+    let items;
+    try{items=store.list();}
+    catch(e){
+      $('v094Count').textContent='Biblioteka wymaga odzyskania danych.';
+      $('v094Rows').textContent=String(e.message||e)+' Nie zapisuj nowych ćwiczeń ani nie czyść danych aplikacji. Wykonaj pełną kopię danych i przywróć poprawną bibliotekę.';
+      return pane;
+    }
     $('v094Count').textContent='Zapisano własnych ćwiczeń: '+items.length;
     const host=$('v094Rows');
     if(!items.length)host.textContent='Brak własnych ćwiczeń. Dodaj pierwsze.';
@@ -62,7 +76,10 @@
       '<button type="button" id="v094Remove'+id+'">USUŃ ZDJĘCIE</button></div>';
   }
   function edit(id){
-    editing=id;const old=id?store.get(id):null;
+    editing=id;let old=null;
+    try{old=id?store.get(id):null;}catch(e){msg(String(e.message||e));return list();}
+    editRevision++;const thisEdit=editRevision;
+    editingForm=true;dirty=false;pendingImages=0;
     if(id&&!old){msg('Nie znaleziono ćwiczenia.');return list();}
     images={imageStart:old?.imageStart||'',imageEnd:old?.imageEnd||''};
     shell(id?'Edytuj ćwiczenie':'Dodaj ćwiczenie',
@@ -92,16 +109,27 @@
       if(images[key]){img.src=images[key];img.hidden=false;}
       $('v094'+suffix).onchange=async e=>{
         const file=e.target.files?.[0];if(!file)return;
+        pendingImages++;$('v094Save').disabled=true;
         try{
           const compressed=await compress(file);
-          images[key]=compressed;img.src=compressed;img.hidden=false;$('v094Error').textContent='';
-        }catch(err){$('v094Error').textContent=err.message;}
-        e.target.value='';
+          if(thisEdit!==editRevision||!img.isConnected)return;
+          images[key]=compressed;img.src=compressed;img.hidden=false;dirty=true;$('v094Error').textContent='';
+        }catch(err){if(thisEdit===editRevision&&$('v094Error'))$('v094Error').textContent=err.message;}
+        finally{
+          if(thisEdit===editRevision){
+            pendingImages--;if($('v094Save'))$('v094Save').disabled=pendingImages>0;
+          }
+          e.target.value='';
+        }
       };
-      $('v094Remove'+suffix).onclick=()=>{images[key]='';img.removeAttribute('src');img.hidden=true;};
+      $('v094Remove'+suffix).onclick=()=>{images[key]='';img.removeAttribute('src');img.hidden=true;dirty=true;};
     }
-    $('v094Cancel').onclick=list;
+    const editPanel=$('v094Shade');
+    editPanel.addEventListener('input',()=>{dirty=true;});
+    editPanel.addEventListener('change',()=>{dirty=true;});
+    $('v094Cancel').onclick=()=>leaveEditor(list);
     $('v094Save').onclick=()=>{
+      if(pendingImages>0){$('v094Error').textContent='Poczekaj na przetworzenie zdjęć.';return;}
       try{
         const item=store.save({
           id:editing||undefined,n:$('v094Name').value,group:$('v094Group').value,equipment:$('v094Equipment').value,
@@ -110,12 +138,13 @@
           setup:$('v094Setup').value,movement:$('v094Movement').value,mistake:$('v094Mistake').value,
           tip:$('v094Tip').value,imageStart:images.imageStart,imageEnd:images.imageEnd
         });
+        dirty=false;editingForm=false;editRevision++;
         store.refresh();msg('Zapisano: '+item.n);list();
       }catch(err){$('v094Error').textContent=err.message||'Nie udało się zapisać.';}
     };
     if(id)$('v094Delete').onclick=()=>{
       if(!confirm('Usunąć z biblioteki? Historia wcześniejszych treningów zostanie zachowana.'))return;
-      try{store.remove(id);store.refresh();list();}catch(err){$('v094Error').textContent=err.message;}
+      try{store.remove(id);dirty=false;editingForm=false;editRevision++;store.refresh();list();}catch(err){$('v094Error').textContent=err.message;}
     };
   }
   function compress(file){
