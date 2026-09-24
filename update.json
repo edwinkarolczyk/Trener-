@@ -1,13 +1,12 @@
 {
-  "version": "0.9.2",
-  "versionCode": 92,
-  "title": "Trener 2 v0.9.2",
+  "version": "0.9.5",
+  "versionCode": 95,
+  "title": "Trener 2 v0.9.5",
   "notes": [
-    "Przepisy: 50 propozycji z gramaturą, kaloriami, makro i instrukcjami.",
-    "Jadłospis na 30 dni z 3 lub 4 posiłkami i indywidualnym kalkulatorem.",
-    "Zachowane treningi, Dieta, postępy i kompatybilne kopie użytkownika.",
-    "Połączenie z dotychczasowym modułem wspólnego treningu."
+    "Przepisy: sugerowane posiłki z planu i biblioteki dodajesz do Diety dopiero po potwierdzeniu.",
+    "Przed zapisem możesz zmienić gramatury i zobaczyć przeliczone kalorie i B/W/T.",
+    "Zachowano starsze dane Diety i treningów oraz nowe własne ćwiczenia."
   ],
-  "pageUrl": "https://github.com/edwinkarolczyk/Trener-/releases/tag/v0.9.2",
-  "apkUrl": "https://github.com/edwinkarolczyk/Trener-/releases/download/v0.9.2/Trener2-v0.9.2.apk"
+  "pageUrl": "https://github.com/edwinkarolczyk/Trener-/releases/tag/v0.9.5",
+  "apkUrl": "https://github.com/edwinkarolczyk/Trener-/releases/download/v0.9.5/Trener2-v0.9.5.apk"
 }
