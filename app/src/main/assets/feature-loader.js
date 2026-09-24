@@ -59,7 +59,8 @@
     ['0.9.2','v083-shared-controller.js'],
     ['0.9.4','v094-exercise-store.js'],
     ['0.9.4','v094-exercise-ui.js'],
-    ['0.9.5','v093-recipe-diet.js']
+    ['0.9.5','v093-recipe-diet.js'],
+    ['0.9.5.2','v096-recipe-print.js']
   ];
   features.forEach(([min,src])=>{
     if(!gte(current,min))return;
