@@ -50,6 +50,13 @@ jobs:
           node --check app/src/main/assets/backup-addon.js
           node --check app/src/main/assets/exercise-visuals.js
           node --check app/src/main/assets/live-status.js
+          node --check app/src/main/assets/v093-recipe-diet.js
+          node --check app/src/main/assets/v096-recipe-print.js
+
+      - name: Recipe printing and Diet regression
+        run: |
+          node app/src/test/js/recipe-diet-095.test.cjs
+          node app/src/test/js/recipe-print-096.test.cjs
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
