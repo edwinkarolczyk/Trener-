@@ -133,9 +133,9 @@
     if(!hydrate())return false;
     try{
       if(typeof renderBuilder==='function'){
-        const selected=new Set([...document.querySelectorAll('.builderCheck:checked')].map(el=>el.value));
+        const selected=new Set([...(document.querySelectorAll?.('.builderCheck:checked')||[])].map(el=>el.value));
         renderBuilder();
-        for(const el of document.querySelectorAll('.builderCheck'))if(selected.has(el.value))el.checked=true;
+        for(const el of (document.querySelectorAll?.('.builderCheck')||[]))if(selected.has(el.value))el.checked=true;
       }
     }catch(e){}
     try{document.getElementById('v070LibrarySearch')?.dispatchEvent(new Event('input'));}catch(e){}
