@@ -41,3 +41,14 @@
 #recipes .r090Steps{margin:12px 0 0;padding-left:22px;color:#d7d7d7;font-size:12px;line-height:1.65}
 #recipes .r090Steps li{margin:7px 0}
 #recipes .r090Ingredients{padding-top:8px}
+
+#recipes .r093Preview{border:1px solid #5bcb7a;border-radius:20px;background:#191c1b;padding:16px;margin:14px 0}
+#recipes .r093Preview[hidden]{display:none!important}
+#recipes .r093Preview h3{color:#f1f1f1;margin:0 0 8px}
+#recipes .r093Preview label{display:block;color:#ccc;font-size:12px;margin:10px 0}
+#recipes .r093Preview input{width:100%;min-height:46px;border-radius:12px;margin-top:5px;font-size:16px}
+#recipes .r093Preview .r093Ingredient{display:grid;grid-template-columns:minmax(0,1fr) 100px 12px;align-items:center;gap:7px;border-bottom:1px solid #383838;padding:7px 0}
+#recipes .r093Preview .r093Ingredient input{min-width:0}
+#recipes #r093Totals{font-weight:800;font-size:14px;color:#7cdb9d;line-height:1.5}
+#recipes #r093Info{color:#f1b6b9;font-size:12px}
+#recipes .r090Meal>button,#recipes .r090Recipe>button{margin-top:12px;border-radius:13px;min-height:45px}
