@@ -3,9 +3,8 @@
   "versionCode": 96,
   "title": "Trener 2 v0.9.5.1",
   "notes": [
-    "Stabilizacja własnych ćwiczeń i planów partii mięśniowych.",
-    "Bezpieczniejsza obsługa zdjęć START/KONIEC oraz wyboru JPG, PNG i WebP.",
-    "Zachowano historię treningów, Dietę, przepisy, zdjęcia i ustawienia."
+    "Najnowsza stabilna wersja Trener 2",
+    "Metadane aktualizacji są synchronizowane automatycznie z każdym wydaniem"
   ],
   "pageUrl": "https://github.com/edwinkarolczyk/Trener-/releases/tag/v0.9.5.1",
   "apkUrl": "https://github.com/edwinkarolczyk/Trener-/releases/download/v0.9.5.1/Trener2-v0.9.5.1.apk"
