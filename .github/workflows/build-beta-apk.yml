@@ -35,6 +35,9 @@ jobs:
             node --check "$f"
           done
 
+      - name: Custom exercises and old data regression tests
+        run: node --test app/src/test/js/custom-exercises-094.test.cjs
+
       - name: Food catalog regression tests
         run: node app/src/test/js/food-catalog.test.cjs
 
