@@ -108,5 +108,5 @@ test('old-format backup and planner still include custom exercise data',()=>{
   assert.match(loader,/\['0\.9\.4','v094-exercise-ui\.js'\]/);
   const gradle=fs.readFileSync('app/build.gradle','utf8');
   assert.match(gradle,/versionName '0\.9\.4'/);
-  assert.match(gradle,/versionCode 94/);
+  assert.match(gradle,/versionCode 95/);
 });
