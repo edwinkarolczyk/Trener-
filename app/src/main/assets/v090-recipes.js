@@ -242,7 +242,7 @@
     const el=byId('r090Library');if(!el)return;
     el.innerHTML=['breakfast','lunch','dinner','snack'].map(type=>
       '<details class="r090Category"><summary>'+names[type]+' ('+RECIPES.filter(x=>x.type===type).length+')</summary>'+
-      RECIPES.filter(x=>x.type===type).map(r=>{const n=nutrition(r,1);return '<div class="r090Recipe"><b>'+escape(r.name)+'</b><small>'+nutritionText(n)+'</small>'+details(n)+'<button type="button" class="secondary" data-r093-recipe="'+escape(r.id)+'">Dodaj do Diety…</button></div>';}).join('')+'</details>'
+      RECIPES.filter(x=>x.type===type).map(r=>{const n=nutrition(r,1);return '<div class="r090Recipe"><b>'+escape(r.name)+'</b><small>'+nutritionText(n)+'</small>'+details(n)+'<button type="button" class="secondary" data-r093-recipe="'+escape(r.id)+'">Dodaj do Diety…</button><button type="button" class="secondary" data-r096-recipe="'+escape(r.id)+'">DRUKUJ / PDF</button></div>';}).join('')+'</details>'
     ).join('');
   }
   function draw(){
@@ -257,7 +257,7 @@
       '<label>Wybierz dzień<select id="r090Day">'+options+'</select></label>'+
       '<div class="r090DayTotal">Dzień '+selected+': '+nutritionText(d.totals)+'</div>'+      '<p class="hint">Różnica względem celu: '+(d.totals.kcal>=t.kcal?'+':'')+fmt(d.totals.kcal-t.kcal)+' kcal · B '+(d.totals.protein>=t.protein?'+':'')+fmt(round(d.totals.protein-t.protein,1))+' g. Odchylenia są możliwe przy zachowaniu sensownych porcji.</p>'+
       '<p class="hint">Składniki białkowe, węglowodanowe i tłuszczowe są dopasowywane oddzielnie. Sprawdź sumę B/W/T: plan jest przykładem, a nie gwarancją idealnego trafienia makro.</p>'+
-      d.meals.map((m,i)=>'<article class="r090Meal"><div class="r090MealHead"><span>'+escape(m.hour)+' · '+names[m.type]+'</span><strong>'+fmt(m.portion*100)+'% porcji wyjściowej · skład dostosowany</strong></div><h3>'+escape(m.name)+'</h3><p>'+nutritionText(m)+'</p>'+details(m)+'<button type="button" class="secondary" data-r093-plan="'+selected+'" data-meal="'+i+'">Dodaj do Diety…</button></article>').join('');
+      d.meals.map((m,i)=>'<article class="r090Meal"><div class="r090MealHead"><span>'+escape(m.hour)+' · '+names[m.type]+'</span><strong>'+fmt(m.portion*100)+'% porcji wyjściowej · skład dostosowany</strong></div><h3>'+escape(m.name)+'</h3><p>'+nutritionText(m)+'</p>'+details(m)+'<button type="button" class="secondary" data-r093-plan="'+selected+'" data-meal="'+i+'">Dodaj do Diety…</button><button type="button" class="secondary" data-r096-plan="'+selected+'" data-meal="'+i+'">DRUKUJ / PDF</button></article>').join('');
     byId('r090Day').onchange=ev=>{selected=Number(ev.target.value)||1;draw();};
   }
   function generate(){
