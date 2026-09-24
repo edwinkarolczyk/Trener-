@@ -38,40 +38,74 @@
     return {bmr:round(bmr),tdee,kcal,protein,carbs,fat,multiplier:round(multiplier,2),
       note:'Wartości szacunkowe. Zmiany energii oceniaj po 2 tygodniach na podstawie średniej masy, pasa i siły.'};
   }
-  // Adjust food proportions within each recipe rather than multiplying every ingredient identically.
-  // Keep vegetables and base recipes recognizable; adapt protein, starch and fat sources separately.
+  // v0.9.3: bounded, deterministic ingredient fitting. No new storage or Diet writes.
+  // Keep recipes recognizable: vegetables are not used as a calorie filler,
+  // oil is never increased past 20 g, and eggs/chicken have sensible portion caps.
+  function ingredientBounds(key,base){
+    const vegetables=['veg','tomato','berries'];
+    const starch=['oats','rice','pasta','buckwheat','bread','potato','tortilla'];
+    const protein=['chicken','chickenCooked','turkey','fish','tuna','quark','skyr','twarog','ham'];
+    const fats=['oil','nuts','pb','cheese'];
+    const cap=key==='potato'?650:key==='bread'?210:key==='rice'||key==='pasta'||key==='buckwheat'?165:
+      key==='chicken'||key==='turkey'||key==='fish'?280:key==='chickenCooked'||key==='tuna'?230:
+      key==='oil'?20:key==='egg'?220:key==='nuts'||key==='pb'?35:500;
+    const lowFactor=vegetables.includes(key)?.85:fats.includes(key)?.6:.65;
+    const highFactor=vegetables.includes(key)?1.25:starch.includes(key)?1.65:protein.includes(key)?1.65:
+      key==='egg'?1.3:fats.includes(key)?1.25:1.45;
+    return [Math.max(1,Math.ceil(base*lowFactor)),Math.max(1,Math.min(cap,Math.max(Math.ceil(base*lowFactor),Math.floor(base*highFactor))))];
+  }
+  function ingredientStep(key){return key==='oil'||key==='honey'?1:5;}
+  function normalizedTargets(targets){
+    const n={};
+    for(const k of ['kcal','protein','carbs','fat']){
+      n[k]=Number(targets[k]);if(!Number.isFinite(n[k])||n[k]<0)throw Error('Nieprawidłowy cel jadłospisu.');
+    }
+    if(n.kcal<=0)throw Error('Cel kalorii musi być dodatni.');
+    return n;
+  }
+  function scoreNutrition(actual,target){
+    const err=(key,floor)=>Math.abs(actual[key]-target[key])/Math.max(floor,target[key]);
+    return 5*err('kcal',200)+2.5*err('protein',18)+1.15*err('carbs',30)+.7*err('fat',10);
+  }
   function personalized(recipe,targets){
-    const base=nutrition(recipe,1);
-    const portion=clamp(targets.kcal/base.kcal,.65,1.85);
-    const items=recipe.items.map(([key,grams])=>[key,Math.max(1,round(grams*portion,0))]);
-    const original=items.map(([,grams])=>grams);
-    const groups=[
-      ['protein',['chicken','chickenCooked','turkey','fish','tuna','quark','skyr','twarog','ham','egg']],
-      ['carbs',['rice','pasta','buckwheat','oats','bread','potato','tortilla','banana','apple','lentils','beans']],
-      ['fat',['oil','nuts','pb','cheese','egg']]
-    ];
-    function adjust(metric,keys,goal){
-      let remaining=goal-nutrition({items},1)[metric];
-      const index=items.findIndex(([key])=>keys.includes(key) && FOODS[key][{protein:2,carbs:3,fat:4}[metric]]>0);
-      if(index<0 || Math.abs(remaining)<2)return;
-      const [key,current]=items[index],perGram=FOODS[key][{protein:2,carbs:3,fat:4}[metric]]/100;
-      const lo=Math.max(1,round(original[index]*.65)),hi=round(original[index]*2.1);
-      items[index][1]=clamp(round(current+remaining/perGram),lo,hi);
-    }
-    adjust('protein',groups[0][1],targets.protein);
-    adjust('carbs',groups[1][1],targets.carbs);
-    adjust('fat',groups[2][1],targets.fat);
-    const current=nutrition({items},1);
-    // Modest final energy correction via starch when one macro source is missing.
-    if(Math.abs(targets.kcal-current.kcal)>55){
-      const i=items.findIndex(([key])=>groups[1][1].includes(key));
-      if(i>=0){
-        const per=FOODS[items[i][0]][1]/100;
-        items[i][1]=clamp(round(items[i][1]+(targets.kcal-current.kcal)/per),
-          round(original[i]*.65),round(original[i]*2.1));
+    const goal=normalizedTargets(targets),base=nutrition(recipe,1);
+    if(!base.kcal)throw Error('Przepis bez wartości energetycznej.');
+    const portion=clamp(goal.kcal/base.kcal,.70,1.55);
+    const items=recipe.items.map(([key,grams])=>{
+      if(!FOODS[key]||!Number.isFinite(grams)||grams<=0)throw Error('Nieprawidłowy składnik przepisu.');
+      const [lo,hi]=ingredientBounds(key,grams);
+      return [key,clamp(round(grams*portion),lo,hi)];
+    });
+    function evaluate(){return nutrition({items},1);}
+    let best=evaluate();
+    // Coordinate search: adjust real ingredients, not just the whole plate.
+    // Work in grams (oil/honey in 1 g steps); do not chase perfect macros
+    // at the expense of e.g. 60 g oil or 10 eggs.
+    for(let pass=0;pass<3;pass++){
+      let changed=false;
+      for(let i=0;i<items.length;i++){
+        const [key,current]=items[i],food=FOODS[key],original=recipe.items[i][1];
+        const [lo,hi]=ingredientBounds(key,original),step=ingredientStep(key);
+        const options=new Set([current,lo,hi,clamp(round(original),lo,hi)]);
+        for(const [index,name] of [[1,'kcal'],[2,'protein'],[3,'carbs'],[4,'fat']]){
+          const per=food[index]/100;if(per<=0)continue;
+          const estimate=current+(goal[name]-best[name])/per;
+          for(const delta of [-step,0,step]){
+            options.add(clamp(Math.round(estimate/step)*step+delta,lo,hi));
+          }
+        }
+        let winning=current,winningScore=scoreNutrition(best,goal);
+        for(const proposal of options){
+          items[i][1]=proposal;
+          const candidate=evaluate(),points=scoreNutrition(candidate,goal);
+          if(points<winningScore-1e-7){winning=proposal;winningScore=points;}
+        }
+        items[i][1]=winning;
+        if(winning!==current){best=evaluate();changed=true;}
       }
+      if(!changed)break;
     }
-    return {portion:round(portion,2),...nutrition({items},1)};
+    return {portion:round(portion,2),...best};
   }
   function preparation(recipe){
     const ks=new Set(recipe.items.map(x=>Array.isArray(x)?x[0]:x.key));
@@ -110,20 +144,42 @@
   }
 
   function month(p,days=30){
-    const target=calculate(p),count=Number(p.meals)===3?3:4;
+    const target=calculate(p),count=Number(p.meals);
+    if(![3,4].includes(count))throw Error('Wybierz 3 albo 4 posiłki dziennie.');
+    if(!Number.isInteger(days)||days<1||days>366)throw Error('Nieprawidłowa liczba dni.');
     const shares=count===3?{breakfast:.29,lunch:.41,dinner:.30}:{breakfast:.25,lunch:.34,snack:.16,dinner:.25};
     const groups={breakfast:RECIPES.filter(x=>x.type==='breakfast'),lunch:RECIPES.filter(x=>x.type==='lunch'),dinner:RECIPES.filter(x=>x.type==='dinner'),snack:RECIPES.filter(x=>x.type==='snack')};
     const order=count===3?['breakfast','lunch','dinner']:['breakfast','snack','lunch','dinner'];
     const hours=count===3?['07:00','13:00','19:00']:['06:30','10:00','15:00','19:30'];
+    const recent={breakfast:[],lunch:[],dinner:[],snack:[]};
     return Array.from({length:days},(_,day)=>{
-      const meals=order.map((type,pos)=>{
-        const group=groups[type],recipe=group[(day*(type==='snack'?3:5)+Math.floor(day/group.length)+pos)%group.length];
-        const portions={kcal:target.kcal*shares[type],protein:target.protein*shares[type],carbs:target.carbs*shares[type],fat:target.fat*shares[type]};
-        return {hour:hours[pos],type,recipeId:recipe.id,name:recipe.name,...personalized(recipe,portions)};
-      });
       const totals={kcal:0,protein:0,carbs:0,fat:0};
-      meals.forEach(m=>Object.keys(totals).forEach(k=>totals[k]+=m[k]));
-      Object.keys(totals).forEach(k=>totals[k]=round(totals[k],k==='kcal'?0:1));
+      const meals=order.map((type,pos)=>{
+        const group=groups[type],remaining=order.length-pos;
+        const objectives={};
+        for(const key of ['kcal','protein','carbs','fat']){
+          const nominal=target[key]*shares[type];
+          // Correct earlier deviations gently; do not assign a whole day of
+          // missed protein or energy to one last dinner.
+          const balance=(target[key]-totals[key])/remaining;
+          objectives[key]=clamp((nominal+balance)/2,nominal*.77,nominal*1.24);
+        }
+        // In the first complete rotation every recipe occurs once. This
+        // preserves the entire 50-recipe library (42 for three meals).
+        const indices=day<group.length?[day]:
+          [day%group.length,(day+3)%group.length,(day+7)%group.length,(day+11)%group.length];
+        let chosen=null,winning=Infinity;
+        for(const i of new Set(indices)){
+          const recipe=group[i],meal=personalized(recipe,objectives);
+          const repeated=recent[type].includes(recipe.id)? .22 : 0;
+          const score=scoreNutrition(meal,objectives)+repeated;
+          if(score<winning){winning=score;chosen={hour:hours[pos],type,recipeId:recipe.id,name:recipe.name,...meal};}
+        }
+        recent[type].push(chosen.recipeId);if(recent[type].length>3)recent[type].shift();
+        for(const key of ['kcal','protein','carbs','fat'])totals[key]+=chosen[key];
+        return chosen;
+      });
+      for(const key of ['kcal','protein','carbs','fat'])totals[key]=round(totals[key],key==='kcal'?0:1);
       return {day:day+1,meals,totals};
     });
   }
@@ -134,17 +190,31 @@
   const fmt=n=>Number(n).toLocaleString('pl-PL',{maximumFractionDigits:1});
   const escape=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   let profile={sex:'',age:'',weight:'',height:'',training:'',work:'moderate',trend:'stable',goal:'maintain',meals:4};
-  let selected=1,plan=null;
+  let selected=1,plan=null,storedRecord={},futureSchema=false;
+  root.TrenerRecipePlan090=()=>plan;
   function read(){
-    try{const o=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');if(o&&o.schemaVersion===1&&o.profile)profile={...profile,...o.profile};}catch(e){}
+    try{
+      const o=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');
+      if(o&&Number(o.schemaVersion)>1){futureSchema=true;return;}
+      if(o&&o.schemaVersion===1&&o.profile&&typeof o.profile==='object'){
+        storedRecord=o;
+        profile={...profile,...o.profile};
+      }
+    }catch(e){}
   }
   function save(){
-    try{localStorage.setItem(STORAGE_KEY,JSON.stringify({schemaVersion:1,profile}));return true;}
-    catch(e){showError('Nie udało się zapisać ustawień przepisów. Sprawdź pamięć telefonu.');return false;}
+    if(futureSchema){showError('Dane przepisów pochodzą z nowszej wersji. Nie nadpisuję ich — zaktualizuj aplikację.');return false;}
+    try{
+      // Keep unknown v1 settings and profile fields from older/newer builds.
+      const data={...storedRecord,schemaVersion:1,profile:{...(storedRecord.profile||{}),...profile}};
+      localStorage.setItem(STORAGE_KEY,JSON.stringify(data));
+      storedRecord=data;
+      return true;
+    }catch(e){showError('Nie udało się zapisać ustawień przepisów. Sprawdź pamięć telefonu.');return false;}
   }
   function showError(msg){const e=byId('r090Error');if(e){e.textContent=msg;e.hidden=!msg;}}
   function form(){
-    return '<div class="card r090Hero"><div class="eyebrow">PRZEPISY • OSOBNY MODUŁ</div><h2>Jadłospis na 30 dni</h2><p class="hint">Własny kalkulator i 50 przepisów. Nic nie zapisuje do Diety ani treningów.</p>'+
+    return '<div class="card r090Hero"><div class="eyebrow">PRZEPISY • SUGEROWANE POSIŁKI</div><h2>Jadłospis na 30 dni</h2><p class="hint">Plan to sugestia. Do Diety zapisuje się wyłącznie posiłek, który osobno zatwierdzisz, z możliwością edycji gramów.</p>'+
     '<div class="r090Fields">'+
     '<label>Wariant wzoru BMR<select id="r090Sex"><option value="">Wybierz</option><option value="male">Męski</option><option value="female">Żeński</option></select></label>'+
     '<label>Wiek [lata]<input id="r090Age" type="number" min="18" max="100"></label>'+
@@ -156,7 +226,7 @@
     '<label>Trend masy<select id="r090Trend"><option value="falling">Spada</option><option value="stable">Stoi</option><option value="rising">Rośnie</option></select></label>'+
     '<label>Posiłki dziennie<select id="r090Meals"><option value="3">3 posiłki</option><option value="4">4 posiłki</option></select></label>'+
     '</div><button class="primary bigBtn" id="r090Generate" type="button">OBLICZ I UŁÓŻ 30 DNI</button><p id="r090Error" class="r090Error" role="alert" hidden></p></div>'+
-    '<div class="card" id="r090Result" hidden></div><div class="card"><h2>Biblioteka 50 przepisów</h2><div id="r090Library"></div></div>';
+    '<div class="card" id="r090Result" hidden></div><p id="r090DietMessage" role="status"></p><div class="card"><h2>Biblioteka 50 przepisów</h2><div id="r090Library"></div></div>';
   }
   function collect(){
     const text=(id)=>byId('r090'+id).value;
@@ -172,7 +242,7 @@
     const el=byId('r090Library');if(!el)return;
     el.innerHTML=['breakfast','lunch','dinner','snack'].map(type=>
       '<details class="r090Category"><summary>'+names[type]+' ('+RECIPES.filter(x=>x.type===type).length+')</summary>'+
-      RECIPES.filter(x=>x.type===type).map(r=>{const n=nutrition(r,1);return '<div class="r090Recipe"><b>'+escape(r.name)+'</b><small>'+nutritionText(n)+'</small>'+details(n)+'</div>';}).join('')+'</details>'
+      RECIPES.filter(x=>x.type===type).map(r=>{const n=nutrition(r,1);return '<div class="r090Recipe"><b>'+escape(r.name)+'</b><small>'+nutritionText(n)+'</small>'+details(n)+'<button type="button" class="secondary" data-r093-recipe="'+escape(r.id)+'">Dodaj do Diety…</button></div>';}).join('')+'</details>'
     ).join('');
   }
   function draw(){
@@ -185,15 +255,19 @@
       '<div class="r090Stats"><div><span>Białko</span><b>'+fmt(t.protein)+' g</b></div><div><span>Węgle</span><b>'+fmt(t.carbs)+' g</b></div><div><span>Tłuszcz</span><b>'+fmt(t.fat)+' g</b></div></div>'+
       '<p class="hint">'+escape(t.note)+'</p>'+
       '<label>Wybierz dzień<select id="r090Day">'+options+'</select></label>'+
-      '<div class="r090DayTotal">Dzień '+selected+': '+nutritionText(d.totals)+'</div>'+
+      '<div class="r090DayTotal">Dzień '+selected+': '+nutritionText(d.totals)+'</div>'+      '<p class="hint">Różnica względem celu: '+(d.totals.kcal>=t.kcal?'+':'')+fmt(d.totals.kcal-t.kcal)+' kcal · B '+(d.totals.protein>=t.protein?'+':'')+fmt(round(d.totals.protein-t.protein,1))+' g. Odchylenia są możliwe przy zachowaniu sensownych porcji.</p>'+
       '<p class="hint">Składniki białkowe, węglowodanowe i tłuszczowe są dopasowywane oddzielnie. Sprawdź sumę B/W/T: plan jest przykładem, a nie gwarancją idealnego trafienia makro.</p>'+
-      d.meals.map(m=>'<article class="r090Meal"><div class="r090MealHead"><span>'+escape(m.hour)+' · '+names[m.type]+'</span><strong>'+fmt(m.portion*100)+'% porcji wyjściowej · skład dostosowany</strong></div><h3>'+escape(m.name)+'</h3><p>'+nutritionText(m)+'</p>'+details(m)+'</article>').join('');
+      d.meals.map((m,i)=>'<article class="r090Meal"><div class="r090MealHead"><span>'+escape(m.hour)+' · '+names[m.type]+'</span><strong>'+fmt(m.portion*100)+'% porcji wyjściowej · skład dostosowany</strong></div><h3>'+escape(m.name)+'</h3><p>'+nutritionText(m)+'</p>'+details(m)+'<button type="button" class="secondary" data-r093-plan="'+selected+'" data-meal="'+i+'">Dodaj do Diety…</button></article>').join('');
     byId('r090Day').onchange=ev=>{selected=Number(ev.target.value)||1;draw();};
   }
   function generate(){
     showError('');
-    try{const next=collect(),target=calculate(next),days=month(next,30);profile=next;plan={target,days};selected=1;save();draw();}
-    catch(e){showError(String(e.message||e));}
+    try{
+      const next=collect(),target=calculate(next),days=month(next,30),previous=profile;
+      profile=next;
+      if(!save()){profile=previous;return;}
+      plan={target,days};selected=1;draw();
+    }catch(e){showError(String(e.message||e));}
   }
   function boot(){
     const el=byId('recipes');if(!el)return;

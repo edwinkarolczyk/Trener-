@@ -1,3 +1,30 @@
+## 0.9.5 Beta — Przepisy → Dieta, z zachowaniem 0.9.4
+
+- Sugerowane posiłki z jadłospisu i biblioteki 50 przepisów: przycisk „Dodaj do Diety…” otwiera podgląd i edycję gramatury.
+- Zapis wyłącznie po osobnym potwierdzeniu. Jeden przepis to jeden złożony posiłek w historycznym schemacie `trainer3.diet.v076`.
+- Przed zapisem data z otwartego dziennika (z możliwością zmiany), składniki i przeliczone kcal/B/W/T.
+- Zachowane poprzednie wpisy Diety, treningi, zdjęcia, cele, kopie i nowe ćwiczenia z 0.9.4.
+- Kontrole regresyjne przed wydaniem APK.
+
+## 0.9.4 (beta, etap 1 — w trakcie odbioru) — własne ćwiczenia
+
+- Odrębny magazyn `trainer3.userExercises.v094` z trwałymi identyfikatorami `user:...`, walidacją wpisów i odmową nadpisania uszkodzonej biblioteki.
+- Tworzenie, edycja i usuwanie własnych ćwiczeń, opisy pozycji/techniki/błędów, serie, powtórzenia lub czas, przerwa oraz własne zdjęcia START/KONIEC.
+- Własne ćwiczenia dostępne w globalnej bibliotece i przy wyborze partii w planie tygodniowym; podgląd techniki z danych ćwiczenia w trakcie treningu.
+- Zapis zdjęć po kompresji z limitem wielkości; pełna kopia JSON zbiera ten sam klucz co inne dane użytkownika. Nie jest to jeszcze docelowy magazyn zdjęć/wideo Androida.
+- Blokada usunięcia ćwiczenia używanego w zapisanym planie. Istniejące klucze historii, treningów, Diety, przepisów, zdjęć sylwetki oraz ustawień pozostają bez migracji destrukcyjnej.
+- Dodany test regresji ćwiczeń i kompatybilności do procesu budowy beta APK.
+- **Pozostaje:** import XLSX/CSV i ZIP, krótkie filmy, pełny magazyn mediów, przesyłanie całej biblioteki między telefonami, fabryczne minimum 120 pozycji oraz odbiór na telefonie. Wspólna sesja przesyła definicje ćwiczeń w bieżącym planie; to nie jest synchronizacja całej biblioteki.
+- Nie scalać z `main` przed zakończeniem testów i akceptacją Edwina.
+
+## 0.9.3 (beta) — stabilizacja i inteligentny jadłospis
+
+- Stabilizacja planera: kontrolowane zakresy gramatur zapobiegają nienaturalnym porcjom oleju, jaj i mięsa.
+- Deterministyczne dobieranie przepisów według celu kalorii i makro, częściowa korekta kolejnych posiłków oraz kara za niedawne powtórki.
+- Warianty 3 i 4 posiłków zachowują pełny obrót bazy przepisów w 30-dniowym jadłospisie.
+- Zachowany schemat `trainer2.recipes.v1`, dawne klucze Diety, treningi, zdjęcia, backup i wspólny trening bez zmian.
+- Wyniki są szacunkami; nie gwarantują dokładnego trafienia makro przy każdym zestawie produktów.
+
 ## 0.9.2 — wspólna gałąź główna + Przepisy
 
 - Scalenie zmian głównej gałęzi dotyczących sterowania jednym telefonem z funkcjami 0.9.1.

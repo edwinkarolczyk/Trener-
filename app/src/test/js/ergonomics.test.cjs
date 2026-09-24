@@ -6,8 +6,8 @@ const source=fs.readFileSync('app/src/main/assets/v0895-ergonomics.js','utf8');
 const loader=fs.readFileSync('app/src/main/assets/feature-loader.js','utf8');
 const gradle=fs.readFileSync('app/build.gradle','utf8');
 assert(loader.includes("['0.8.9.5','v0895-ergonomics.js']"),'ergonomic layer must be gated to 0.8.9.5');
-assert(gradle.includes("versionName '0.9.2'"));
-assert(gradle.includes('versionCode 92'));
+assert(gradle.includes("versionName '0.9.5'"));
+assert(gradle.includes('versionCode 95'));
 assert(css.includes('body.v062Active #training .inputs input:focus'),'workout inputs need visible focus');
 assert(css.includes('body.v062Active:has(#training .inputs:focus-within) #v072FixedTimers'),
   'timer dock must not cover keyboard entry fields');

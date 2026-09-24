@@ -14,7 +14,12 @@
     triceps:{label:'Triceps',ids:['closebench']},
     shoulders:{label:'Barki',ids:['ohp']},
     legs:{label:'Nogi',ids:['squat','lunges']},
-    core:{label:'Brzuch',ids:['plank']}
+    core:{label:'Brzuch',ids:['plank']},
+    forearms:{label:'Przedramiona',ids:[]},
+    hamstrings:{label:'Dwugłowe uda',ids:[]},
+    glutes:{label:'Pośladki',ids:[]},
+    calves:{label:'Łydki',ids:[]},
+    fullbody:{label:'Całe ciało',ids:[]}
   };
   const PRESETS={
     mon:{label:'Klatka + triceps'},
@@ -32,6 +37,7 @@
   function clone(v){try{return JSON.parse(JSON.stringify(v));}catch(e){return v;}}
   function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
   function unique(a){return [...new Set((a||[]).filter(Boolean))];}
+  function idsForPart(k){const p=PARTS[k];if(!p)return [];return unique([...(p.ids||[]),...(exerciseLibrary||[]).filter(ex=>String(ex.group||'').split('/').map(x=>x.trim()).includes(p.label)).map(ex=>ex.id)]);}
   function dayMeta(day){return DAYS.find(x=>x[0]===String(day))||['','Dzień','—'];}
   function today(){return String(new Date().getDay());}
   function exById(id){try{return clone(exerciseLibrary.find(x=>x.id===id)||null);}catch(e){return null;}}
@@ -81,7 +87,7 @@
       return p;
     }
     let ids=[];
-    if(d.kind==='parts')ids=unique((d.parts||[]).flatMap(k=>PARTS[k]?.ids||[]));
+    if(d.kind==='parts')ids=unique((d.parts||[]).flatMap(idsForPart));
     else if(d.kind==='exercises')ids=unique(d.exerciseIds||[]);
     const ex=ids.map(exById).filter(Boolean);
     if(!ex.length)return null;
@@ -202,7 +208,7 @@
     $('v070ExerciseSearch').oninput=e=>{state.exerciseQuery=e.target.value;renderExerciseChoices();};renderExerciseChoices();
   }
 
-  function exercisePartLabel(id){for(const p of Object.values(PARTS))if(p.ids.includes(id))return p.label;return 'Inne';}
+  function exercisePartLabel(id){const ex=(exerciseLibrary||[]).find(x=>x.id===id);if(ex?.group)return ex.group;for(const p of Object.values(PARTS))if(p.ids.includes(id))return p.label;return 'Inne';}
   function renderExerciseChoices(){
     const host=$('v070ExerciseList');if(!host)return;const q=state.exerciseQuery.trim().toLowerCase();const selected=new Set(state.editExercises);
     const rows=(exerciseLibrary||[]).filter(ex=>!q||`${ex.n} ${exercisePartLabel(ex.id)}`.toLowerCase().includes(q));
@@ -214,7 +220,7 @@
     if(state.editKind==='off')return null;
     if(state.editKind==='preset'){const p=rawBasePlan(state.editPreset);if(p)p.title=normalizeTitle(state.editPreset,p);return p;}
     if(state.editKind==='parts'){
-      const ids=unique(state.editParts.flatMap(k=>PARTS[k]?.ids||[]));const ex=ids.map(exById).filter(Boolean);return ex.length?{title:state.editParts.map(k=>PARTS[k]?.label).filter(Boolean).join(' + '),ex}:null;
+      const ids=unique(state.editParts.flatMap(idsForPart));const ex=ids.map(exById).filter(Boolean);return ex.length?{title:state.editParts.map(k=>PARTS[k]?.label).filter(Boolean).join(' + '),ex}:null;
     }
     const ex=unique(state.editExercises).map(exById).filter(Boolean);return ex.length?{title:'Własny zestaw',ex}:null;
   }
@@ -256,7 +262,7 @@
   function renderLibraryItems(){
     const host=$('v070Library');if(!host)return;const q=($('v070LibrarySearch')?.value||'').trim().toLowerCase();
     host.innerHTML=Object.entries(PARTS).map(([k,p])=>{
-      const items=p.ids.map(id=>exerciseLibrary.find(x=>x.id===id)).filter(Boolean).filter(ex=>!q||`${ex.n} ${p.label}`.toLowerCase().includes(q));
+      const items=idsForPart(k).map(id=>exerciseLibrary.find(x=>x.id===id)).filter(Boolean).filter(ex=>!q||`${ex.n} ${p.label}`.toLowerCase().includes(q));
       if(!items.length)return '';
       return `<div class="v070LibraryGroup"><h3>${esc(p.label)}</h3>${items.map(ex=>`<div class="v070LibraryItem"><b>${esc(ex.n)}</b><span>${Number(ex.sets)||1} serie • ${ex.min}${ex.min===ex.max?'':'–'+ex.max} ${ex.time?'sek.':'powt.'} • przerwa ${typeof formatRest==='function'?formatRest(ex.rest):ex.rest+' s'}</span></div>`).join('')}</div>`;
     }).join('')||'<p class="hint">Brak pasujących ćwiczeń.</p>';
