@@ -1,3 +1,15 @@
+## 0.9.5.1 (beta) — stabilizacja ćwiczeń, planisty i zdjęć
+
+- Baza oparta na 0.9.5; starsza niezaliczona gałąź 0.9.4 nie jest bazą wydania.
+- Własna biblioteka nie jest częściowo zastępowana przy uszkodzonym zapisie; nieprawidłowy rekord blokuje zmianę, zamiast po cichu wypadać z katalogu.
+- W planach wybieranych po partiach sprawdzane są referencje przed usunięciem ćwiczenia.
+- Podgląd partii i wynikowy plan korzystają z tej samej listy ID, również dla typowych aliasów partii.
+- Kreator zachowuje niezapisane zaznaczenia, a formularz ćwiczenia chroni niezapisane zmiany i czeka na kompresję zdjęć.
+- Wybranie kolejnego zdjęcia lub usunięcie zdjęcia nie pozwala starszej kompresji przywrócić wcześniejszego obrazu.
+- Android poprawnie obsługuje listę JPG/PNG/WebP w wyborze plików.
+- Naprawa publikacji istniejącego prerelease na kanale main wymaga promocji przed oznaczeniem jako latest.
+- Bez migracji/wymazywania kluczy wcześniejszych wersji, bez nowych funkcji bazy 120 ćwiczeń, importu Excel/ZIP czy wideo; testy regresji wymagane przed wydaniem.
+
 ## 0.9.5 Beta — Przepisy → Dieta, z zachowaniem 0.9.4
 
 - Sugerowane posiłki z jadłospisu i biblioteki 50 przepisów: przycisk „Dodaj do Diety…” otwiera podgląd i edycję gramatury.
