@@ -57,15 +57,25 @@
   function library(){
     try{return exerciseLibrary;}catch(e){return null;}
   }
+  let lastError='';
   function hydrate(){
     const lib=library();if(!lib)return false;
-    let saved;
-    try{saved=read();}catch(e){return false;}
+    let saved,ready;
+    try{
+      saved=read();
+      const ids=new Set(lib.filter(e=>!String(e?.id||'').startsWith('user:')).map(e=>e.id));
+      ready=saved.map(raw=>{
+        const ex=validate(raw);
+        if(ids.has(ex.id))throw Error('Duplikat identyfikatora ćwiczenia: '+ex.id);
+        ids.add(ex.id);
+        const planEx=Object.assign({},ex);
+        delete planEx.imageStart;delete planEx.imageEnd;
+        return planEx;
+      });
+    }catch(e){lastError=String(e.message||e);return false;}
+    lastError='';
     for(let i=lib.length-1;i>=0;i--)if(String(lib[i]?.id||'').startsWith('user:'))lib.splice(i,1);
-    const seen=new Set(lib.map(e=>e.id));
-    for(const raw of saved){
-      try{const ex=validate(raw);if(!seen.has(ex.id)){const planEx=Object.assign({},ex);delete planEx.imageStart;delete planEx.imageEnd;lib.push(planEx);seen.add(ex.id);}}catch(e){}
-    }
+    lib.push(...ready);
     return true;
   }
   function store(list){
@@ -91,14 +101,24 @@
     if(index<0)prev.push(item);else prev[index]=item;
     store(prev);return clone(item);
   }
+  const PART_LABELS={chest:'Klatka',back:'Plecy',biceps:'Biceps',triceps:'Triceps',
+    shoulders:'Barki',legs:'Nogi',core:'Brzuch',forearms:'Przedramiona',hamstrings:'Dwugłowe uda',
+    glutes:'Pośladki',calves:'Łydki',fullbody:'Całe ciało'};
   function references(id){
-    const safe=k=>{try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){return null;}};
+    // If a dependent plan is damaged, fail closed instead of silently deleting an exercise.
+    const safe=k=>{
+      const raw=localStorage.getItem(k);
+      if(raw===null)return null;
+      try{return JSON.parse(raw);}catch(e){throw Error('Nie można odczytać planów. Najpierw wykonaj kopię danych.');}
+    };
     const single=safe('trainer3.customPlan');
     if(single?.ex?.some(e=>(e?.id||e)===id))return true;
     const multi=safe('trainer3.customPlans.v050');
     if(Array.isArray(multi)&&multi.some(p=>p?.ex?.some(e=>(e?.id||e)===id)))return true;
-    const week=safe('trainer3.weekPlan.v070');
-    if(week?.days&&Object.values(week.days).some(d=>d?.exerciseIds?.includes(id)))return true;
+    const week=safe('trainer3.weekPlan.v070'),exercise=get(id);
+    if(week?.days&&Object.values(week.days).some(d=>
+      d?.exerciseIds?.includes(id)||
+      (d?.kind==='parts'&&d?.parts?.some(k=>PART_LABELS[k]===exercise?.group))))return true;
     return false;
   }
   function remove(id){
@@ -110,9 +130,16 @@
   function get(id){return read().find(x=>x.id===id)||null;}
   function list(){return clone(read());}
   function refresh(){
-    hydrate();
-    try{if(typeof renderBuilder==='function')renderBuilder();}catch(e){}
+    if(!hydrate())return false;
+    try{
+      if(typeof renderBuilder==='function'){
+        const selected=new Set([...document.querySelectorAll('.builderCheck:checked')].map(el=>el.value));
+        renderBuilder();
+        for(const el of document.querySelectorAll('.builderCheck'))if(selected.has(el.value))el.checked=true;
+      }
+    }catch(e){}
     try{document.getElementById('v070LibrarySearch')?.dispatchEvent(new Event('input'));}catch(e){}
+    return true;
   }
-  window.TrenerCustomExercises094={KEY,SCHEMA,groups,list,get,save,remove,hydrate,refresh,validate};
+  window.TrenerCustomExercises094={KEY,SCHEMA,groups,list,get,save,remove,hydrate,refresh,validate,getLastError:()=>lastError};
 })();
