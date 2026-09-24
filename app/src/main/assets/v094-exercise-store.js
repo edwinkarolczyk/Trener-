@@ -64,7 +64,7 @@
     for(let i=lib.length-1;i>=0;i--)if(String(lib[i]?.id||'').startsWith('user:'))lib.splice(i,1);
     const seen=new Set(lib.map(e=>e.id));
     for(const raw of saved){
-      try{const ex=validate(raw);if(!seen.has(ex.id)){lib.push(ex);seen.add(ex.id);}}catch(e){}
+      try{const ex=validate(raw);if(!seen.has(ex.id)){const planEx=Object.assign({},ex);delete planEx.imageStart;delete planEx.imageEnd;lib.push(planEx);seen.add(ex.id);}}catch(e){}
     }
     return true;
   }
