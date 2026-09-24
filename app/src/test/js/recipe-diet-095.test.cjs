@@ -62,7 +62,7 @@ const fromLibrary=api.prepare({...root.TrenerRecipes090.nutrition(plain,1),
  name:plain.name,type:plain.type,recipeId:plain.id});
 assert.equal(fromLibrary.name,plain.name);assert.equal(fromLibrary.type,'breakfast');
 const loader=read('feature-loader.js');
-assert(loader.includes("['0.9.3','v093-recipe-diet.js']"));
+assert(loader.includes("['0.9.5','v093-recipe-diet.js']"));
 const old=fs.readFileSync('app/src/main/assets/v076-diet.js','utf8');
 assert(old.includes("const KEY='trainer3.diet.v076'"));
 const v=fs.readFileSync('app/build.gradle','utf8');
