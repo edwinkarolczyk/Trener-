@@ -1,3 +1,14 @@
+## 0.9.4 (beta, etap 1 — w trakcie odbioru) — własne ćwiczenia
+
+- Odrębny magazyn `trainer3.userExercises.v094` z trwałymi identyfikatorami `user:...`, walidacją wpisów i odmową nadpisania uszkodzonej biblioteki.
+- Tworzenie, edycja i usuwanie własnych ćwiczeń, opisy pozycji/techniki/błędów, serie, powtórzenia lub czas, przerwa oraz własne zdjęcia START/KONIEC.
+- Własne ćwiczenia dostępne w globalnej bibliotece i przy wyborze partii w planie tygodniowym; podgląd techniki z danych ćwiczenia w trakcie treningu.
+- Zapis zdjęć po kompresji z limitem wielkości; pełna kopia JSON zbiera ten sam klucz co inne dane użytkownika. Nie jest to jeszcze docelowy magazyn zdjęć/wideo Androida.
+- Blokada usunięcia ćwiczenia używanego w zapisanym planie. Istniejące klucze historii, treningów, Diety, przepisów, zdjęć sylwetki oraz ustawień pozostają bez migracji destrukcyjnej.
+- Dodany test regresji ćwiczeń i kompatybilności do procesu budowy beta APK.
+- **Pozostaje:** import XLSX/CSV i ZIP, krótkie filmy, pełny magazyn mediów, przesyłanie całej biblioteki między telefonami, fabryczne minimum 120 pozycji oraz odbiór na telefonie. Wspólna sesja przesyła definicje ćwiczeń w bieżącym planie; to nie jest synchronizacja całej biblioteki.
+- Nie scalać z `main` przed zakończeniem testów i akceptacją Edwina.
+
 ## 0.9.3 (beta) — stabilizacja i inteligentny jadłospis
 
 - Stabilizacja planera: kontrolowane zakresy gramatur zapobiegają nienaturalnym porcjom oleju, jaj i mięsa.
