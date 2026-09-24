@@ -93,6 +93,7 @@
     return normalized;
   }
   function save(raw){
+    if(!raw||typeof raw!=='object'||Array.isArray(raw))throw Error('Nieprawidłowe ćwiczenie.');
     const prev=read(),id=raw.id||newId();
     const item=validate(Object.assign({},raw,{id}),id);
     const lib=library()||[];
@@ -103,7 +104,7 @@
   }
   const PART_LABELS={chest:'Klatka',back:'Plecy',biceps:'Biceps',triceps:'Triceps',
     shoulders:'Barki',legs:'Nogi',core:'Brzuch',forearms:'Przedramiona',hamstrings:'Dwugłowe uda',
-    glutes:'Pośladki',calves:'Łydki',fullbody:'Całe ciało'};
+    glutes:'Pośladki',calves:'Łydki',fullbody:'Całe ciało',other:'Inne'};
   function references(id){
     // If a dependent plan is damaged, fail closed instead of silently deleting an exercise.
     const safe=k=>{
@@ -118,7 +119,9 @@
     const week=safe('trainer3.weekPlan.v070'),exercise=get(id);
     if(week?.days&&Object.values(week.days).some(d=>
       d?.exerciseIds?.includes(id)||
-      (d?.kind==='parts'&&d?.parts?.some(k=>PART_LABELS[k]===exercise?.group))))return true;
+      (d?.kind==='parts'&&d?.parts?.some(k=>PART_LABELS[k]===exercise?.group||
+        (k==='hamstrings'&&String(exercise?.group||'').includes('tył uda'))||
+        (k==='forearms'&&String(exercise?.group||'').includes('przedramię'))))))return true;
     return false;
   }
   function remove(id){
