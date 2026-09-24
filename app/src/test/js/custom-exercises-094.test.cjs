@@ -97,6 +97,38 @@ test('corrupt saved library refuses overwrite and leaves live exercises intact',
   data.set(s.KEY,snapshot);
 });
 
+test('group-based weekly plans cannot lose referenced exercise',()=>{
+  const ex=s.save({...basic,group:'Biceps'});
+  data.set('trainer3.weekPlan.v070',JSON.stringify({days:{'1':{kind:'parts',parts:['biceps']}}}));
+  assert.throws(()=>s.remove(ex.id),/używane w zapisanym planie/);
+  assert.equal(s.get(ex.id).id,ex.id);
+  data.delete('trainer3.weekPlan.v070');
+  s.remove(ex.id);
+});
+
+test('damaged exercise row blocks destructive hydration without deleting live data',()=>{
+  const ex=s.save(basic),saved=localStorage.getItem(s.KEY),live=exerciseLibrary.length;
+  data.set(s.KEY,JSON.stringify({schemaVersion:1,exercises:[{id:ex.id,n:'?',group:'Biceps'}]}));
+  assert.equal(s.hydrate(),false);
+  assert.equal(exerciseLibrary.length,live);
+  assert.equal(exerciseLibrary.some(x=>x.id===ex.id),true);
+  assert.match(s.getLastError(),/Nazwa/);
+  data.set(s.KEY,saved);
+  s.remove(ex.id);
+});
+
+test('unsaved checked exercises remain selected when library refreshes',()=>{
+  const ex=s.save(basic);
+  const selected={value:'bench',checked:true};
+  const other={value:ex.id,checked:false};
+  const orig=ctx.document.querySelectorAll;
+  ctx.document.querySelectorAll=(q)=>q==='.builderCheck:checked'?[selected]:[selected,other];
+  s.refresh();
+  assert.equal(selected.checked,true);
+  ctx.document.querySelectorAll=orig;
+  s.remove(ex.id);
+});
+
 test('old-format backup and planner still include custom exercise data',()=>{
   const backup=fs.readFileSync('app/src/main/assets/backup-addon.js','utf8');
   const planner=fs.readFileSync('app/src/main/assets/v070-beta-planner.js','utf8');
@@ -107,6 +139,6 @@ test('old-format backup and planner still include custom exercise data',()=>{
   assert.match(loader,/\['0\.9\.4','v094-exercise-store\.js'\]/);
   assert.match(loader,/\['0\.9\.4','v094-exercise-ui\.js'\]/);
   const gradle=fs.readFileSync('app/build.gradle','utf8');
-  assert.ok(gradle.includes("versionName '0.9.5'"));
-  assert.match(gradle,/versionCode 95/);
+  assert.ok(gradle.includes("versionName '0.9.5.1'"));
+  assert.match(gradle,/versionCode 96/);
 });

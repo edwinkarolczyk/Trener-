@@ -176,12 +176,11 @@ jobs:
           TAG="v${VERSION}"
           TITLE="Trener 2 ${VERSION}"
           NOTES=$(cat <<'EOF'
-          - Stabilizacja 50 przepisów i 30-dniowego jadłospisu: kontrola składników i porcji.
-          - Inteligentne dobieranie potraw według kalorii oraz B/W/T z kontrolą powtórek.
-          - Osobne korygowanie gramatur, bez skrajnych ilości oleju, jajek i mięsa.
-          - Pełny wybór 50 przepisów dla 4 posiłków, 42 dla 3 posiłków na miesiąc.
-          - Widoczne odchylenia od celu; wartości odżywcze są orientacyjne.
-          - Bez zmiany historii Diety i treningów; kopia danych przed aktualizacją.
+          - Stabilizacja własnych ćwiczeń, bez zmiany wcześniejszych danych Trenera 2.
+          - Ochrona planów partii mięśniowych oraz niezapisanych zaznaczeń.
+          - Bezpieczniejszy odczyt biblioteki, obsługa zdjęć i selektor plików Androida.
+          - Zachowane 50 przepisów, jadłospis, Dieta, historia, zdjęcia i duet.
+          - Wymagany odbiór funkcji na telefonie; import XLSX/ZIP oraz filmy pozostają poza zakresem tego wydania.
           EOF
           )
           if gh release view "$TAG" >/dev/null 2>&1; then

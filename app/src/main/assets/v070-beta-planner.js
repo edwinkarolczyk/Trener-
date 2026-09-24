@@ -19,7 +19,8 @@
     hamstrings:{label:'Dwugłowe uda',ids:[]},
     glutes:{label:'Pośladki',ids:[]},
     calves:{label:'Łydki',ids:[]},
-    fullbody:{label:'Całe ciało',ids:[]}
+    fullbody:{label:'Całe ciało',ids:[]},
+    other:{label:'Inne',ids:[]}
   };
   const PRESETS={
     mon:{label:'Klatka + triceps'},
@@ -37,7 +38,22 @@
   function clone(v){try{return JSON.parse(JSON.stringify(v));}catch(e){return v;}}
   function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
   function unique(a){return [...new Set((a||[]).filter(Boolean))];}
-  function idsForPart(k){const p=PARTS[k];if(!p)return [];return unique([...(p.ids||[]),...(exerciseLibrary||[]).filter(ex=>String(ex.group||'').split('/').map(x=>x.trim()).includes(p.label)).map(ex=>ex.id)]);}
+  function idsForPart(k){
+    const p=PARTS[k];if(!p)return [];
+    const matches=ex=>{
+      const label=String(ex.group||'Inne').trim().toLowerCase();
+      const parts=label.split('/').map(x=>x.trim());
+      if(parts.includes(p.label.toLowerCase()))return true;
+      if(k==='hamstrings'&&parts.some(x=>x==='tył uda'))return true;
+      if(k==='forearms'&&parts.some(x=>x==='przedramię'))return true;
+      if(k==='shoulders'&&parts.some(x=>x.startsWith('barki')))return true;
+      if(k==='back'&&parts.some(x=>x.startsWith('plecy')))return true;
+      if(k==='legs'&&parts.some(x=>['tył uda','nogi'].includes(x)))return true;
+      return k==='other'&&!Object.values(PARTS).some(group=>group!==PARTS.other&&
+        (parts.includes(group.label.toLowerCase())||(group.label==='Dwugłowe uda'&&parts.includes('tył uda'))));
+    };
+    return unique([...(p.ids||[]),...(exerciseLibrary||[]).filter(matches).map(ex=>ex.id)]);
+  }
   function dayMeta(day){return DAYS.find(x=>x[0]===String(day))||['','Dzień','—'];}
   function today(){return String(new Date().getDay());}
   function exById(id){try{return clone(exerciseLibrary.find(x=>x.id===id)||null);}catch(e){return null;}}
@@ -201,7 +217,7 @@
       host.querySelectorAll('.v070Preset').forEach(x=>x.onchange=()=>{state.editPreset=x.value;renderDaySummary();});return;
     }
     if(state.editKind==='parts'){
-      const selected=new Set(state.editParts);host.innerHTML=`<div class="v070PartGrid">${Object.entries(PARTS).map(([k,p])=>`<label class="v070Pick"><input class="v070Part" type="checkbox" value="${k}" ${selected.has(k)?'checked':''}><div><strong>${esc(p.label)}</strong><span>${esc(p.ids.map(id=>exerciseLibrary.find(x=>x.id===id)?.n).filter(Boolean).join(', '))}</span></div></label>`).join('')}</div>`;
+      const selected=new Set(state.editParts);host.innerHTML=`<div class="v070PartGrid">${Object.entries(PARTS).map(([k,p])=>`<label class="v070Pick"><input class="v070Part" type="checkbox" value="${k}" ${selected.has(k)?'checked':''}><div><strong>${esc(p.label)}</strong><span>${esc(idsForPart(k).map(id=>exerciseLibrary.find(x=>x.id===id)?.n).filter(Boolean).join(', '))}</span></div></label>`).join('')}</div>`;
       host.querySelectorAll('.v070Part').forEach(x=>x.onchange=()=>{state.editParts=[...host.querySelectorAll('.v070Part:checked')].map(i=>i.value);renderDaySummary();});return;
     }
     host.innerHTML=`<input id="v070ExerciseSearch" class="v070Search" placeholder="Szukaj ćwiczenia, np. klatka, sztanga, brzuch…" value="${esc(state.exerciseQuery)}"><div id="v070ExerciseList" class="v070ExerciseList"></div>`;

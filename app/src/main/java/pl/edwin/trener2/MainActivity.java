@@ -149,23 +149,33 @@ public class MainActivity extends Activity {
                 fileChooserCallback = filePathCallback;
 
                 String mimeType = "*/*";
+                java.util.LinkedHashSet<String> accepted = new java.util.LinkedHashSet<>();
                 try {
                     String[] acceptTypes = fileChooserParams == null ? null : fileChooserParams.getAcceptTypes();
                     if (acceptTypes != null) {
                         for (String accept : acceptTypes) {
-                            if (accept != null && !accept.trim().isEmpty()) {
-                                mimeType = accept.trim();
-                                break;
+                            if (accept == null) continue;
+                            for (String part : accept.split(",")) {
+                                String value = part.trim().toLowerCase(java.util.Locale.ROOT);
+                                if (value.contains("/") && !value.contains(" ")) accepted.add(value);
                             }
                         }
                     }
+                    if (accepted.size() == 1) mimeType = accepted.iterator().next();
+                    else if (!accepted.isEmpty()) {
+                        boolean onlyImages = true;
+                        for (String value : accepted) if (!value.startsWith("image/")) onlyImages = false;
+                        mimeType = onlyImages ? "image/*" : "*/*";
+                    }
                 } catch (Throwable ignored) {
                     mimeType = "*/*";
+                    accepted.clear();
                 }
 
                 Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
                 intent.addCategory(Intent.CATEGORY_OPENABLE);
                 intent.setType(mimeType);
+                if (accepted.size() > 1) intent.putExtra(Intent.EXTRA_MIME_TYPES, accepted.toArray(new String[0]));
                 intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, false);
                 try {
                     startActivityForResult(

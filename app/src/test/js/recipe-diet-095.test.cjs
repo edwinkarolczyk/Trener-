@@ -66,5 +66,5 @@ assert(loader.includes("['0.9.5','v093-recipe-diet.js']"));
 const old=fs.readFileSync('app/src/main/assets/v076-diet.js','utf8');
 assert(old.includes("const KEY='trainer3.diet.v076'"));
 const v=fs.readFileSync('app/build.gradle','utf8');
-assert(v.includes("versionName '0.9.5'")&&v.includes('versionCode 95'));
+assert(v.includes("versionName '0.9.5.1'")&&v.includes('versionCode 96'));
 console.log('Recipe-to-Diet 0.9.5: confirmation, ingredients, gram scaling, one record and legacy data OK');

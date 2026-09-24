@@ -142,7 +142,7 @@ jobs:
           publish_release() {
             if gh release view "$TAG" >/dev/null 2>&1; then
               gh release upload "$TAG" "$APK_NAME" --clobber
-              gh release edit "$TAG" --draft=false --latest
+              gh release edit "$TAG" --draft=false --prerelease=false --latest
             else
               gh release create "$TAG" "$APK_NAME" --target "$GITHUB_SHA" --title "Trener 2 ${VERSION}" --notes "Signed release build Trener 2 ${VERSION}. Future updates use the same release certificate." --latest
             fi
