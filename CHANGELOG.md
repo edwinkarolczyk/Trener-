@@ -1,3 +1,11 @@
+## 0.9.3 Beta — Przepisy → Dieta
+
+- Sugestie z 30-dniowego planu i 50 przepisów mogą zostać wpisane do Diety wyłącznie po potwierdzeniu.
+- Podgląd pozwala edytować gramaturę każdego składnika oraz automatycznie przelicza kcal/B/W/T przed zapisaniem.
+- Jeden przepis jest jednym złożonym posiłkiem w dotychczasowym formacie `trainer3.diet.v076`; plan nie jest automatycznie uznawany za zjedzony.
+- Data wpisu domyślnie odpowiada otwartemu dziennikowi, można ją wybrać przed zatwierdzeniem.
+- Zachowane istniejące dane, zdjęcia, treningi, historia i kopie oraz wcześniejsza blokada wersji wspólnego treningu.
+
 ## 0.9.2 — wspólna gałąź główna + Przepisy
 
 - Scalenie zmian głównej gałęzi dotyczących sterowania jednym telefonem z funkcjami 0.9.1.
