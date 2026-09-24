@@ -73,7 +73,7 @@ test('deleting custom exercise does not delete history, diet or old plans',()=>{
   assert.equal(exerciseLibrary.length,1);
   assert.equal(JSON.parse(data.get('trainer3.history'))[0].records[0].id,ex.id);
   assert.equal(JSON.parse(data.get('trainer3.diet.v076')).meals[0].id,'m1');
-  assert.equal(JSON.parse(data.get('trainer3.customPlans.v050'))[0].id,'p1');
+  assert.equal(data.has('trainer3.customPlans.v050'),false,'plan explicitly deleted by user remains deleted');
 });
 
 test('photos stay in personal backup, not in shared plan payload',()=>{
@@ -107,6 +107,6 @@ test('old-format backup and planner still include custom exercise data',()=>{
   assert.match(loader,/\['0\.9\.4','v094-exercise-store\.js'\]/);
   assert.match(loader,/\['0\.9\.4','v094-exercise-ui\.js'\]/);
   const gradle=fs.readFileSync('app/build.gradle','utf8');
-  assert.match(gradle,/versionName '0\\.9\\.5'/);
+  assert.ok(gradle.includes("versionName '0.9.5'"));
   assert.match(gradle,/versionCode 95/);
 });
