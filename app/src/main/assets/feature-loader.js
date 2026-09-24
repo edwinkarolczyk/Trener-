@@ -56,7 +56,8 @@
     ['0.8.2.11','v08211-workout-attention.js'],
     ['0.8.9.5','v0895-ergonomics.js'],
     ['0.9.0','v090-recipes.js'],
-    ['0.9.2','v083-shared-controller.js']
+    ['0.9.2','v083-shared-controller.js'],
+    ['0.9.3','v093-recipe-diet.js']
   ];
   features.forEach(([min,src])=>{
     if(!gte(current,min))return;
