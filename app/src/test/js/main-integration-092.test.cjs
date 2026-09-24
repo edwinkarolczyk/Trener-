@@ -28,5 +28,5 @@ assert.equal(typeof control.requestTransfer,'function');
 assert.equal(typeof control.submitControlledSet,'function');
 assert.equal(typeof control.allSupportSingle,'function');
 const gradle=fs.readFileSync('app/build.gradle','utf8');
-assert(gradle.includes("versionName '0.9.5'")&&gradle.includes('versionCode 95'));
+assert(gradle.includes("versionName '0.9.5.1'")&&gradle.includes('versionCode 96'));
 console.log('Main reconciliation 0.9.2: recipes, native guard, shared-controller and protocol 2 kept OK');
