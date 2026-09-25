@@ -52,6 +52,7 @@ jobs:
           node --check app/src/main/assets/live-status.js
           node --check app/src/main/assets/v093-recipe-diet.js
           node --check app/src/main/assets/v096-recipe-print.js
+          node --check app/src/main/assets/v0886-food-entry.js
 
       - name: Recipe printing and Diet regression
         run: |

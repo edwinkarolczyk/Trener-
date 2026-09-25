@@ -15,11 +15,13 @@ function open(action){
   const catalog=$('v083FoodCard');
   const choice=String(action||'WRITE').toUpperCase();
   if(window.TrenerDietVisual0890?.ready){
-    window.TrenerDietVisual0890.openSheet('add',choice==='SET'?'sets':choice==='SCAN'?'compose':'search');
+    const pane=choice==='SET'?'sets':(choice==='SCAN'||choice==='MEAL')?'compose':'search';
+    window.TrenerDietVisual0890.openSheet('add',pane);
     if(choice==='SCAN'){
       if(window.Android&&typeof Android.scanFoodBarcode==='function')Android.scanFoodBarcode();
       else $('v0802Scan')?.click();
     }else if(choice==='SET')focus('v0885Templates');
+    else if(choice==='MEAL')focus('v076MealName');
     else focus('v083Query');
     return;
   }
@@ -33,6 +35,9 @@ function open(action){
     reveal(add);
     focus('v0885Templates');
     if(!$('v0885Templates'))focus('v0885Composer');
+  }else if(choice==='MEAL'){
+    reveal(add);
+    focus('v076MealName');
   }else{
     reveal(catalog);focus('v083Query');
     if(!$('v083Query')){reveal(add);focus('v076MealName');}

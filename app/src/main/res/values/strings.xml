@@ -5,4 +5,12 @@
     <string name="water_widget_description">Woda na dziś i szybkie dodawanie 100, 250 lub 500 ml</string>
     <string name="workout_widget_description">Aktywny trening, seria, czas i odpoczynek w Trener 2</string>
     <string name="meal_entry_widget_description">Szybkie dodawanie posiłku: skanuj, wpisz lub wybierz zestaw</string>
+    <string name="shortcut_meal_short">Posiłek</string>
+    <string name="shortcut_meal_long">Dodaj posiłek</string>
+    <string name="shortcut_water_short">Woda +250</string>
+    <string name="shortcut_water_long">Dodaj 250 ml wody</string>
+    <string name="shortcut_scan_short">Skanuj</string>
+    <string name="shortcut_scan_long">Skanuj produkt</string>
+    <string name="shortcut_search_short">Szukaj</string>
+    <string name="shortcut_search_long">Szukaj produktu</string>
 </resources>

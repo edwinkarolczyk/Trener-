@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="quick_meal"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_meal"
+        android:shortcutShortLabel="@string/shortcut_meal_short"
+        android:shortcutLongLabel="@string/shortcut_meal_long">
+        <intent
+            android:action="pl.edwin.trener2.shortcut.ADD_MEAL"
+            android:targetPackage="pl.edwin.trener2"
+            android:targetClass="pl.edwin.trener2.MainActivityV077" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="quick_water_250"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_water"
+        android:shortcutShortLabel="@string/shortcut_water_short"
+        android:shortcutLongLabel="@string/shortcut_water_long">
+        <intent
+            android:action="pl.edwin.trener2.shortcut.ADD_WATER"
+            android:targetPackage="pl.edwin.trener2"
+            android:targetClass="pl.edwin.trener2.QuickWaterActivity" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="quick_scan_food"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_scan"
+        android:shortcutShortLabel="@string/shortcut_scan_short"
+        android:shortcutLongLabel="@string/shortcut_scan_long">
+        <intent
+            android:action="pl.edwin.trener2.shortcut.SCAN_FOOD"
+            android:targetPackage="pl.edwin.trener2"
+            android:targetClass="pl.edwin.trener2.MainActivityV077" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="quick_search_food"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_search"
+        android:shortcutShortLabel="@string/shortcut_search_short"
+        android:shortcutLongLabel="@string/shortcut_search_long">
+        <intent
+            android:action="pl.edwin.trener2.shortcut.SEARCH_FOOD"
+            android:targetPackage="pl.edwin.trener2"
+            android:targetClass="pl.edwin.trener2.MainActivityV077" />
+    </shortcut>
+</shortcuts>

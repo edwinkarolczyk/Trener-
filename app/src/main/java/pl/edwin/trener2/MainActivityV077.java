@@ -11,6 +11,9 @@ import android.webkit.WebView;
 
 public class MainActivityV077 extends MainActivity {
     private static final int HYDRATION_NOTIFICATION_PERMISSION_REQUEST = 178;
+    private static final String ACTION_SHORTCUT_MEAL = "pl.edwin.trener2.shortcut.ADD_MEAL";
+    private static final String ACTION_SHORTCUT_SCAN = "pl.edwin.trener2.shortcut.SCAN_FOOD";
+    private static final String ACTION_SHORTCUT_SEARCH = "pl.edwin.trener2.shortcut.SEARCH_FOOD";
     private WebView betaWebView;
 
     @Override
@@ -43,10 +46,18 @@ public class MainActivityV077 extends MainActivity {
         if (betaWebView == null || incoming == null) return;
         final boolean workout = incoming.getBooleanExtra("open_workout", false);
         final boolean diet = incoming.getBooleanExtra("open_diet", false);
+        final String shortcutAction = incoming.getAction();
+        final boolean shortcutMeal = ACTION_SHORTCUT_MEAL.equals(shortcutAction);
+        final boolean shortcutScan = ACTION_SHORTCUT_SCAN.equals(shortcutAction);
+        final boolean shortcutSearch = ACTION_SHORTCUT_SEARCH.equals(shortcutAction);
         final String meal = incoming.getStringExtra("open_food_action");
-        final String action = "SCAN".equals(meal) || "WRITE".equals(meal) || "SET".equals(meal)
-                ? meal : "";
+        final String action = shortcutMeal ? "MEAL"
+                : shortcutScan ? "SCAN"
+                : shortcutSearch ? "WRITE"
+                : ("SCAN".equals(meal) || "WRITE".equals(meal) || "SET".equals(meal) || "MEAL".equals(meal)
+                    ? meal : "");
         if (!workout && !diet && action.isEmpty()) return;
+        if (shortcutMeal || shortcutScan || shortcutSearch) incoming.setAction(Intent.ACTION_MAIN);
         final String destination = workout ? "start" : "diet";
         final int request = ++widgetNavigationGeneration;
         betaWebView.postDelayed(new Runnable() {

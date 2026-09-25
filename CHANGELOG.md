@@ -1,3 +1,11 @@
+## 0.9.5.3 — szybkie akcje z ikony aplikacji
+
+- Przytrzymanie ikony Trener 2 pokazuje cztery skróty: Posiłek, Woda +250, Skanuj i Szukaj.
+- „Posiłek” otwiera bezpośrednio ręczny formularz nowego posiłku w Diecie.
+- „Woda +250” dopisuje 250 ml natychmiast, aktualizuje istniejący magazyn nawodnienia i widget, bez dodatkowego ekranu.
+- „Skanuj” uruchamia istniejący skaner EAN/UPC i Open Food Facts; „Szukaj” prowadzi prosto do wyszukiwarki produktów.
+- Skróty wykorzystują istniejące mechanizmy Diety i nawodnienia; bez migracji i bez zmiany dotychczasowej historii użytkownika.
+
 ## 0.9.5.1 (beta) — stabilizacja ćwiczeń, planisty i zdjęć
 
 - Baza oparta na 0.9.5; starsza niezaliczona gałąź 0.9.4 nie jest bazą wydania.
