@@ -33,7 +33,7 @@ assert(java.includes('public void printRecipe(String html, String title)'));
 assert(fs.readFileSync('app/src/main/java/pl/edwin/trener2/RecipePrintManager.java','utf8').includes('createPrintDocumentAdapter'));
 assert(fs.readFileSync(dir+'feature-loader.js','utf8').includes("['0.9.5.2','v096-recipe-print.js']"));
 const gradle=fs.readFileSync('app/build.gradle','utf8');
-const versionName=(gradle.match(/versionName\\s+'([^']+)'/)||[])[1]||'0';
+const versionName=(gradle.match(/versionName\s+'([^']+)'/)||[])[1]||'0';
 const atLeast=(actual,minimum)=>{const a=String(actual).split('.').map(Number),m=String(minimum).split('.').map(Number),n=Math.max(a.length,m.length);for(let i=0;i<n;i++){const x=a[i]||0,y=m[i]||0;if(x>y)return true;if(x<y)return false;}return true;};
 assert(atLeast(versionName,'0.9.5.2'));
 console.log('Recipe printing: library, live grams, escaped HTML, native bridge, no Diet writes OK');
