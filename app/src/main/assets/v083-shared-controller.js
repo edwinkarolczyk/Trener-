@@ -269,22 +269,28 @@
     const allNew=allSupportSingle();
     const mode=$('v083Mode');
     if(mode){
-      mode.value=state.mode;
-      mode.disabled=net?.role!=='host'||!!running;
+      if(mode.value!==state.mode)mode.value=state.mode;
+      const disabled=net?.role!=='host'||!!running;
+      if(mode.disabled!==disabled)mode.disabled=disabled;
       const single=[...mode.options].find(o=>o.value==='single-controller');
-      if(single)single.disabled=list.length>1&&!allNew;
+      if(single){
+        const singleDisabled=list.length>1&&!allNew;
+        if(single.disabled!==singleDisabled)single.disabled=singleDisabled;
+      }
     }
     const setupSel=$('v083ControllerSetup');
     if(setupSel){
       const html=controllerOptions();if(setupSel.innerHTML!==html)setupSel.innerHTML=html;
-      if(state.controllerDeviceId)setupSel.value=state.controllerDeviceId;
-      setupSel.disabled=state.mode!=='single-controller'||net?.role!=='host'||!!running;
+      if(state.controllerDeviceId&&setupSel.value!==state.controllerDeviceId)setupSel.value=state.controllerDeviceId;
+      const disabled=state.mode!=='single-controller'||net?.role!=='host'||!!running;
+      if(setupSel.disabled!==disabled)setupSel.disabled=disabled;
     }
     const note=$('v083SetupNote');
     if(note){
-      note.textContent=state.mode==='single-controller'
+      const text=state.mode==='single-controller'
         ?(allNew?'Jedno urządzenie wpisuje kg i powtórzenia za wszystkich. Historia i progres pozostają osobne dla każdej osoby.':'Starszy uczestnik: dostępny pozostaje tryb KAŻDY NA SWOIM.')
         :'Każda osoba wpisuje swoją serię na własnym telefonie.';
+      if(note.textContent!==text)note.textContent=text;
     }
 
     const bar=$('v083ControlBar');
@@ -294,19 +300,26 @@
     if(!on)return;
     const controller=controllerParticipant();
     const status=$('v083ControlStatus');
-    if(status)status.textContent='STEROWANIE: '+(controller?.name||'—')+(isLocalController()?' • TEN TELEFON':'');
+    if(status){
+      const text='STEROWANIE: '+(controller?.name||'—')+(isLocalController()?' • TEN TELEFON':'');
+      if(status.textContent!==text)status.textContent=text;
+    }
     const live=$('v083ControllerLive');
     if(live){
       const html=controllerOptions();if(live.innerHTML!==html)live.innerHTML=html;
-      live.value=state.controllerDeviceId;
-      live.disabled=!canTransfer();
+      if(live.value!==state.controllerDeviceId)live.value=state.controllerDeviceId;
+      const disabled=!canTransfer();
+      if(live.disabled!==disabled)live.disabled=disabled;
     }
-    const transfer=$('v083TransferBtn');if(transfer)transfer.disabled=!canTransfer();
+    const transfer=$('v083TransferBtn');if(transfer){const disabled=!canTransfer();if(transfer.disabled!==disabled)transfer.disabled=disabled;}
     const q=queue(),turn=participantByAthlete(Number(q?.turn)||0);
     const controlNote=$('v083ControlNote');
-    if(controlNote)controlNote.textContent=isLocalController()
-      ?'Wpisujesz teraz serię dla: '+(turn?.name||'uczestnika')+'.'
-      :'Tryb podglądu. Dane wpisuje '+(controller?.name||'wybrany telefon')+'.';
+    if(controlNote){
+      const text=isLocalController()
+        ?'Wpisujesz teraz serię dla: '+(turn?.name||'uczestnika')+'.'
+        :'Tryb podglądu. Dane wpisuje '+(controller?.name||'wybrany telefon')+'.';
+      if(controlNote.textContent!==text)controlNote.textContent=text;
+    }
   }
 
   function updateInputOwnership(){
@@ -318,8 +331,8 @@
       return;
     }
     const mine=isLocalController();
-    weight.disabled=!mine;
-    reps.disabled=!mine;
+    if(weight.disabled===mine)weight.disabled=!mine;
+    if(reps.disabled===mine)reps.disabled=!mine;
     state.ownedInputs=true;
     if(!mine)return;
     const q=queue();

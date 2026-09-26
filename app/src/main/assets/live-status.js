@@ -125,14 +125,16 @@
     else if(st.phase==='paused'){phase='PAUZA';cls='live053Paused';}
     else if(!st.online&&partner){phase='BRAK POŁĄCZENIA';cls='live053Offline';}
     const series=st.sets?('Seria '+Math.min(st.set+1,st.sets)+'/'+st.sets+' • postęp '+done+'/'+total):('Postęp '+done+'/'+total);
-    node.className='livePerson live053 '+cls+(partner?' live053Partner':'');
-    node.innerHTML='<span class="live053Who">'+(partner?'KUMPEL':'TY')+'</span>'+
+    const className='livePerson live053 '+cls+(partner?' live053Partner':'');
+    const html='<span class="live053Who">'+(partner?'KUMPEL':'TY')+'</span>'+
       '<strong>'+esc(name)+'</strong>'+
       '<div class="live053Phase">'+phase+'</div>'+
       (timer?'<div class="live053Timer">'+timer+'</div>':'')+
       (st.exercise?'<div class="live053Exercise">'+esc(st.exercise)+'</div>':'')+
       '<div class="live053Series">'+esc(series)+'</div>'+
       '<div class="live053Last">'+lastResult(a)+'</div>';
+    if(node.className!==className)node.className=className;
+    if(node.innerHTML!==html)node.innerHTML=html;
   }
 
   function render(){
@@ -142,7 +144,10 @@
     wrap.classList.add('live053Wrap');
     renderCard(0);renderCard(1);
     const link=byId('liveLink');
-    if(link)link.textContent=net.connected?'NA ŻYWO • Wi‑Fi':'OFFLINE • zapis lokalny';
+    if(link){
+      const text=net.connected?'NA ŻYWO • Wi‑Fi':'OFFLINE • zapis lokalny';
+      if(link.textContent!==text)link.textContent=text;
+    }
   }
 
   function heartbeat(){

@@ -1,3 +1,12 @@
+## 0.9.5.5 — stabilizacja interfejsu i wspólnego treningu
+
+- ograniczono zbędne przebudowy DOM w kartach stanu wspólnego treningu bez zmiany częstotliwości synchronizacji sieciowej,
+- status LIVE nie podmienia ponownie całej zawartości kart, jeżeli widoczny stan się nie zmienił,
+- status jakości synchronizacji nie usuwa i nie dodaje klas ani tekstu przy każdym cyklu, jeśli komunikat jest identyczny,
+- sterowanie trybem „jeden telefon” nie ustawia ponownie tych samych wartości pól, selektorów i blokad co 250 ms,
+- zachowano dotychczasowe timeouty, heartbeat, resync i mechanizmy odzyskiwania sesji,
+- brak migracji danych; Dieta, Przepisy, nawodnienie, historia, zdjęcia i plany pozostają zgodne.
+
 ## 0.9.5.4 — naprawa kanału aktualizacji beta
 
 - Naprawiono publikację aktualizacji: aplikacja ma kanał `beta`, więc nowe wydania są ponownie publikowane jako prerelease i są widoczne dla wbudowanego aktualizatora.
