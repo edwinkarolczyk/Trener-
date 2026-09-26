@@ -54,10 +54,8 @@ jobs:
           node --check app/src/main/assets/v096-recipe-print.js
           node --check app/src/main/assets/v0886-food-entry.js
 
-      - name: Recipe printing and Diet regression
-        run: |
-          node app/src/test/js/recipe-diet-095.test.cjs
-          node app/src/test/js/recipe-print-096.test.cjs
+      - name: Full JavaScript regression suite
+        run: node --test app/src/test/js/*.test.cjs
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
