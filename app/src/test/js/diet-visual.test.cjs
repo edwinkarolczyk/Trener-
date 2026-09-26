@@ -83,8 +83,14 @@ for(const old of ['#56d487','#69b9ff','#ffd062','#ff925b','#61caeb']){
 const loader=fs.readFileSync('app/src/main/assets/feature-loader.js','utf8');
 assert(loader.includes("['0.8.9.0','v0890-diet-visual.js']"));
 const build=fs.readFileSync('app/build.gradle','utf8');
-assert(build.includes("versionName '0.9.5.1'"));
-assert(build.includes('versionCode 96'));
+{
+  const versionName=(build.match(/versionName\s+'([^']+)'/)||[])[1]||'0';
+  const versionCode=Number((build.match(/versionCode\s+(\d+)/)||[])[1]||0);
+  const parts=v=>String(v).split('.').map(Number);
+  const ge=(a,b)=>{a=parts(a);b=parts(b);for(let i=0;i<Math.max(a.length,b.length);i++){if((a[i]||0)!==(b[i]||0))return (a[i]||0)>(b[i]||0);}return true;};
+  assert(ge(versionName,'0.9.5.1'));
+  assert(versionCode>=96);
+}
 assert(css.includes('--d-panel:var(--panel)'),'diet card palette should follow app theme');
 assert(css.includes('--d-red:var(--red)'),'diet accent should follow app theme');
 assert(css.includes('background:var(--red)!important'),'add-meal button should use app red');

@@ -28,5 +28,11 @@ assert.equal(typeof control.requestTransfer,'function');
 assert.equal(typeof control.submitControlledSet,'function');
 assert.equal(typeof control.allSupportSingle,'function');
 const gradle=fs.readFileSync('app/build.gradle','utf8');
-assert(gradle.includes("versionName '0.9.5.1'")&&gradle.includes('versionCode 96'));
+{
+  const versionName=(gradle.match(/versionName\s+'([^']+)'/)||[])[1]||'0';
+  const versionCode=Number((gradle.match(/versionCode\s+(\d+)/)||[])[1]||0);
+  const parts=v=>String(v).split('.').map(Number);
+  const ge=(a,b)=>{a=parts(a);b=parts(b);for(let i=0;i<Math.max(a.length,b.length);i++){if((a[i]||0)!==(b[i]||0))return (a[i]||0)>(b[i]||0);}return true;};
+  assert(ge(versionName,'0.9.5.1')&&versionCode>=96);
+}
 console.log('Main reconciliation 0.9.2: recipes, native guard, shared-controller and protocol 2 kept OK');

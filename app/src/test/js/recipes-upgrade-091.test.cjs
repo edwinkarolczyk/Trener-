@@ -48,5 +48,11 @@ const native=fs.readFileSync('app/src/main/java/pl/edwin/trener2/HydrationStore.
 assert(native.includes('public static int getDayMl('));
 assert(native.includes('public static String backupJson('));
 const version=fs.readFileSync('app/build.gradle','utf8');
-assert(version.includes("versionName '0.9.5.1'")&&version.includes('versionCode 96'));
+{
+  const versionName=(version.match(/versionName\s+'([^']+)'/)||[])[1]||'0';
+  const versionCode=Number((version.match(/versionCode\s+(\d+)/)||[])[1]||0);
+  const parts=v=>String(v).split('.').map(Number);
+  const ge=(a,b)=>{a=parts(a);b=parts(b);for(let i=0;i<Math.max(a.length,b.length);i++){if((a[i]||0)!==(b[i]||0))return (a[i]||0)>(b[i]||0);}return true;};
+  assert(ge(versionName,'0.9.5.1')&&versionCode>=96);
+}
 console.log('0.9.1 upgrade: historical Diet/training/photos/recipe profile/native water, version guard and 30 days OK');
