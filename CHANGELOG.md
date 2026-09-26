@@ -1,3 +1,13 @@
+## 0.9.5.6 — stabilizacja wspólnego treningu na jednym telefonie
+
+- wzmocniono lokalny tryb „WSPÓLNY 2–4 • JEDEN TELEFON”, bez Wi‑Fi,
+- zakończenie treningu nie zakłada już, że pierwszy wpis historii ma identyczną liczbę rekordów jak snapshot sesji,
+- aplikacja identyfikuje nowy wpis historii po rzeczywiście utworzonym ID i zawsze dopisuje metadane wszystkich uczestników,
+- jeśli starsza warstwa kończenia nie utworzy wpisu historii, tryb jednego telefonu tworzy bezpieczny wpis awaryjny zamiast gubić sesję,
+- zapis końcowy zawsze zachowuje participantId, sessionId, osobne rekordy uczestników, nazwy, przerwany/zakończony stan i maksymalny limit 100 wpisów,
+- po zapisie ponownie przeliczane są dane pochodne Trenera,
+- brak migracji danych i brak zmian w formacie istniejących zapisów.
+
 ## 0.9.5.5 — stabilizacja interfejsu i wspólnego treningu
 
 - ograniczono zbędne przebudowy DOM w kartach stanu wspólnego treningu bez zmiany częstotliwości synchronizacji sieciowej,

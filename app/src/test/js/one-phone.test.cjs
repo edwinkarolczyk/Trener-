@@ -74,3 +74,11 @@ assert.match(receiver,/ACTION_ADD_100/);
 assert.match(receiver,/HydrationStore\.addWater\(context, amount\)/);
 assert.match(xml,/android:id="@\+id\/waterWidget100"/);
 console.log('One-phone transfer and water widget tests passed');
+
+const source=fs.readFileSync('app/src/main/assets/v086-one-phone.js','utf8');
+assert.match(source,/const beforeIds=new Set\(readHistory\(\)\.map/);
+assert.match(source,/history\.find\(row=>row&&row\.id&&!beforeIds\.has/);
+assert.match(source,/history\.unshift\(h\)/);
+assert.match(source,/h\.onePhone=\{version:1,participants:members,deviceCount:1\}/);
+assert.match(source,/h\.records=savedRecords/);
+assert.match(source,/JSON\.stringify\(history\.slice\(0,100\)\)/);

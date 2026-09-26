@@ -331,26 +331,40 @@ function finishLocal(interrupted,duration){
  const members=clone(state.participants);
  const sessionId=state.sessionId;
  const savedRecords=records.map(r=>({...r}));
+ const beforeIds=new Set(readHistory().map(h=>String(h?.id||'')));
+ const durationMs=Math.max(0,Number(duration)||elapsedMs());
  state.active=false;
- const out=state.baseFinish?.call(this,interrupted,false);
- const history=readHistory();const h=history[0];
- if(h&&h.records?.length===savedRecords.length){
-  h.sessionId=sessionId;h.mode=members.length;
-  h.shared=false;h.participantId=members[0].id;h.schemaVersion=2;
-  h.onePhone={version:1,participants:members,deviceCount:1};
-  h.group={participants:members.map(p=>({index:p.index,deviceId:p.id,name:p.name})),
-    deviceId:members[0].id,sharedEquipment:false};
-  h.names=members.map(p=>p.name);
-  h.records=savedRecords;
-  h.duration=h.duration||Math.round((duration||elapsedMs())/1000);
-  localStorage.setItem(HOLD,JSON.stringify(history));
+ let out;
+ try{out=state.baseFinish?.call(this,interrupted,false);}catch(e){
+  try{console.error('one-phone base finish failed',e);}catch(ignore){}
  }
+ const history=readHistory();
+ let h=history.find(row=>row&&row.id&&!beforeIds.has(String(row.id)))||null;
+ if(!h){
+  h={
+   id:'w'+Date.now(),iso:new Date().toISOString(),date:new Date().toLocaleString('pl-PL'),
+   plan:String(state.plan?.title||currentPlan?.title||'Wspólny trening'),planKey:String(planKey||'custom'),
+   mode:members.length,shared:false,sessionId,localAthlete:0,names:members.map(p=>p.name),
+   duration:Math.round(durationMs/1000),interrupted:!!interrupted,records:savedRecords
+  };
+  history.unshift(h);
+ }
+ h.sessionId=sessionId;h.mode=members.length;h.shared=false;h.localAthlete=0;
+ h.participantId=members[0]?.id||ownId();h.schemaVersion=2;
+ h.onePhone={version:1,participants:members,deviceCount:1};
+ h.group={participants:members.map(p=>({index:p.index,deviceId:p.id,name:p.name})),
+   deviceId:members[0]?.id||ownId(),sharedEquipment:false};
+ h.names=members.map(p=>p.name);
+ h.records=savedRecords;
+ h.interrupted=!!interrupted;
+ h.duration=h.duration||Math.round(durationMs/1000);
+ localStorage.setItem(HOLD,JSON.stringify(history.slice(0,100)));
  localStorage.removeItem(PENDING);
- state.lastHistoryId=h?.id||'';
+ state.lastHistoryId=h.id||'';
  $('v086Workout')?.classList.add('hidden');
  renderTransfers();
  try{window.TrenerNearby087?.sessionSaved?.(h);}catch(e){}
- try{renderHistory();renderProgress();}catch(e){}
+ try{renderHistory();renderProgress();window.TrenerData070?.rebuildDerived?.();}catch(e){}
  return out;
 }
 function saveSet(ev){
