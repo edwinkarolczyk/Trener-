@@ -1,3 +1,9 @@
+## 0.9.5.4 — naprawa kanału aktualizacji beta
+
+- Naprawiono publikację aktualizacji: aplikacja ma kanał `beta`, więc nowe wydania są ponownie publikowane jako prerelease i są widoczne dla wbudowanego aktualizatora.
+- Zachowane szybkie akcje z przytrzymania ikony: Posiłek, Woda +250, Skanuj i Szukaj.
+- Bez migracji danych i bez zmian w historii Diety, nawodnienia, treningów ani zdjęć.
+
 ## 0.9.5.3 — szybkie akcje z ikony aplikacji
 
 - Przytrzymanie ikony Trener 2 pokazuje cztery skróty: Posiłek, Woda +250, Skanuj i Szukaj.

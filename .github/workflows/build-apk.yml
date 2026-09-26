@@ -150,9 +150,9 @@ jobs:
           publish_release() {
             if gh release view "$TAG" >/dev/null 2>&1; then
               gh release upload "$TAG" "$APK_NAME" --clobber
-              gh release edit "$TAG" --draft=false --prerelease=false --latest
+              gh release edit "$TAG" --draft=false --prerelease
             else
-              gh release create "$TAG" "$APK_NAME" --target "$GITHUB_SHA" --title "Trener 2 ${VERSION}" --notes "Signed release build Trener 2 ${VERSION}. Future updates use the same release certificate." --latest
+              gh release create "$TAG" "$APK_NAME" --target "$GITHUB_SHA" --title "Trener 2 ${VERSION}" --notes "Beta Trener 2 ${VERSION}. Wydanie dla wbudowanego kanału aktualizacji beta; podpis APK pozostaje bez zmian." --prerelease
             fi
           }
           for attempt in 1 2 3; do
@@ -180,7 +180,7 @@ jobs:
             "versionCode": ${VERSION_CODE},
             "title": "Trener 2 v${VERSION}",
             "notes": [
-              "Najnowsza stabilna wersja Trener 2",
+              "Najnowsza wersja beta Trener 2",
               "Metadane aktualizacji są synchronizowane automatycznie z każdym wydaniem"
             ],
             "pageUrl": "https://github.com/edwinkarolczyk/Trener-/releases/tag/v${VERSION}",
