@@ -65,6 +65,9 @@ public class MainActivity extends Activity {
     private static final int MAX_BACKUP_BYTES = 5 * 1024 * 1024;
     private static final String UPDATE_INFO_URL =
             "https://raw.githubusercontent.com/edwinkarolczyk/Trener-/main/update.json";
+    private static final String AI_MEAL_PREFS = "trener2.ai.meal";
+    private static final int MAX_AI_MEAL_IMAGE_BASE64 = 3_000_000;
+    private static final int MAX_AI_MEAL_RESPONSE_BYTES = 512 * 1024;
 
     private WebView webView;
     private RecipePrintManager recipePrintManager;
@@ -437,6 +440,138 @@ public class MainActivity extends Activity {
                 if (connection != null) connection.disconnect();
             }
         }, "Trener2-food-" + provider).start();
+    }
+
+    private android.content.SharedPreferences aiMealPrefs() {
+        return getSharedPreferences(AI_MEAL_PREFS, MODE_PRIVATE);
+    }
+
+    private boolean isAiMealEndpointAllowed(String endpoint) {
+        if (endpoint == null || endpoint.trim().isEmpty() || endpoint.length() > 2048) return false;
+        try {
+            URL url = new URL(endpoint.trim());
+            return "https".equalsIgnoreCase(url.getProtocol()) && url.getHost() != null && !url.getHost().trim().isEmpty();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private String readAiMealBody(InputStream input) throws Exception {
+        if (input == null) return "";
+        try (InputStream in = input; ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            byte[] buffer = new byte[8192];
+            int total = 0;
+            int read;
+            while ((read = in.read(buffer)) != -1) {
+                total += read;
+                if (total > MAX_AI_MEAL_RESPONSE_BYTES) {
+                    throw new IllegalArgumentException("Odpowiedź silnika AI jest zbyt duża.");
+                }
+                out.write(buffer, 0, read);
+            }
+            return out.toString(StandardCharsets.UTF_8.name());
+        }
+    }
+
+    private void emitAiMealResult(int requestId, String status, String payload) {
+        if (webView == null) return;
+        final String js = "window.TrenerAiMeal0957&&window.TrenerAiMeal0957.nativeResult("
+                + requestId + ","
+                + JSONObject.quote(status == null ? "error" : status) + ","
+                + JSONObject.quote(payload == null ? "" : payload) + ");";
+        runOnUiThread(() -> {
+            if (webView != null) webView.evaluateJavascript(js, null);
+        });
+    }
+
+    private void analyzeMealPhotoNative(
+            String imageBase64,
+            String catalogJson,
+            double totalWeightG,
+            int requestId
+    ) {
+        final String image = imageBase64 == null ? "" : imageBase64.trim();
+        if (image.isEmpty() || image.length() > MAX_AI_MEAL_IMAGE_BASE64) {
+            emitAiMealResult(requestId, "error", "Zdjęcie jest puste albo zbyt duże.");
+            return;
+        }
+        if (!(totalWeightG > 0 && totalWeightG <= 10000)) {
+            emitAiMealResult(requestId, "error", "Podaj poprawną wagę całego jedzenia.");
+            return;
+        }
+
+        final android.content.SharedPreferences prefs = aiMealPrefs();
+        final String endpoint = prefs.getString("endpoint", "");
+        final String token = prefs.getString("token", "");
+        if (!isAiMealEndpointAllowed(endpoint)) {
+            emitAiMealResult(requestId, "error", "Skonfiguruj poprawny endpoint HTTPS silnika AI.");
+            return;
+        }
+
+        final JSONObject catalog;
+        try {
+            catalog = new JSONObject(catalogJson == null ? "{}" : catalogJson);
+            if (catalog.length() == 0 || catalog.length() > 500) {
+                emitAiMealResult(requestId, "error", "Nieprawidłowa baza produktów dla analizy AI.");
+                return;
+            }
+        } catch (Exception e) {
+            emitAiMealResult(requestId, "error", "Nie udało się przygotować bazy produktów.");
+            return;
+        }
+
+        new Thread(() -> {
+            HttpURLConnection connection = null;
+            try {
+                JSONObject body = new JSONObject();
+                body.put("image_base64", image);
+                body.put("image_mime", "image/jpeg");
+                body.put("language", "pl");
+                body.put("total_weight_g", totalWeightG);
+                body.put("catalog", catalog);
+                body.put("instruction",
+                        "Rozpoznaj widoczne składniki potrawy. Używaj wyłącznie kluczy z catalog; "
+                        + "jeśli nie ma pewnego dopasowania zwróć pusty foodKey. Dla ugotowanych produktów "
+                        + "wybieraj wariant po obróbce. Nie licz kalorii ani makro. Zwróć WYŁĄCZNIE JSON: "
+                        + "{mealName,confidence,engine,items:[{foodKey,name,share,confidence}]}. "
+                        + "share ma być dodatnie, a udziały wszystkich items mają sumować się do 1.");
+
+                byte[] requestBytes = body.toString().getBytes(StandardCharsets.UTF_8);
+                connection = (HttpURLConnection) new URL(endpoint).openConnection();
+                connection.setRequestMethod("POST");
+                connection.setConnectTimeout(12000);
+                connection.setReadTimeout(45000);
+                connection.setDoOutput(true);
+                connection.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+                connection.setRequestProperty("Accept", "application/json");
+                connection.setRequestProperty("User-Agent", "Trener2/" + appVersionName() + " AI-Meal");
+                if (token != null && !token.trim().isEmpty()) {
+                    connection.setRequestProperty("Authorization", "Bearer " + token.trim());
+                }
+                try (OutputStream out = connection.getOutputStream()) {
+                    out.write(requestBytes);
+                    out.flush();
+                }
+
+                int code = connection.getResponseCode();
+                String response = readAiMealBody(code >= 200 && code < 300
+                        ? connection.getInputStream()
+                        : connection.getErrorStream());
+                if (code >= 200 && code < 300 && response != null && !response.trim().isEmpty()) {
+                    emitAiMealResult(requestId, "ok", response);
+                } else {
+                    String detail = response == null ? "" : response.trim();
+                    if (detail.length() > 700) detail = detail.substring(0, 700);
+                    emitAiMealResult(requestId, "error",
+                            "Silnik AI: HTTP " + code + (detail.isEmpty() ? "" : " • " + detail));
+                }
+            } catch (Exception e) {
+                emitAiMealResult(requestId, "error",
+                        "Nie udało się połączyć z silnikiem AI. Sprawdź internet i konfigurację.");
+            } finally {
+                if (connection != null) connection.disconnect();
+            }
+        }, "Trener2-ai-meal").start();
     }
 
     private void createNotificationChannel() {
@@ -1266,6 +1401,41 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void searchFoodCatalog(String source, String query, String apiKey, int requestId) {
             searchFoodCatalogNative(source, query, apiKey, requestId);
+        }
+
+        @JavascriptInterface
+        public String getAiMealConfig() {
+            try {
+                android.content.SharedPreferences prefs = aiMealPrefs();
+                JSONObject out = new JSONObject();
+                out.put("endpoint", prefs.getString("endpoint", ""));
+                out.put("hasToken", !prefs.getString("token", "").trim().isEmpty());
+                return out.toString();
+            } catch (Exception e) {
+                return "{\"endpoint\":\"\",\"hasToken\":false}";
+            }
+        }
+
+        @JavascriptInterface
+        public boolean saveAiMealConfig(String rawEndpoint, String rawToken) {
+            String endpoint = rawEndpoint == null ? "" : rawEndpoint.trim();
+            if (!isAiMealEndpointAllowed(endpoint)) return false;
+            String token = rawToken == null ? "" : rawToken.trim();
+            if (token.length() > 4096) return false;
+            android.content.SharedPreferences prefs = aiMealPrefs();
+            android.content.SharedPreferences.Editor edit = prefs.edit().putString("endpoint", endpoint);
+            if (!"__KEEP__".equals(token)) edit.putString("token", token);
+            return edit.commit();
+        }
+
+        @JavascriptInterface
+        public void clearAiMealConfig() {
+            aiMealPrefs().edit().clear().apply();
+        }
+
+        @JavascriptInterface
+        public void analyzeMealPhoto(String imageBase64, String catalogJson, double totalWeightG, int requestId) {
+            analyzeMealPhotoNative(imageBase64, catalogJson, totalWeightG, requestId);
         }
 
         @JavascriptInterface

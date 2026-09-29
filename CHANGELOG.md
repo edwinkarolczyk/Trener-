@@ -1,3 +1,13 @@
+## 0.9.5.7 — AI Foto w Diecie
+
+- dodano analizę posiłku ze zdjęcia w Diecie: zdjęcie + jedna waga całego jedzenia,
+- silnik AI rozpoznaje składniki i ich udziały, a kcal/B/W/T są liczone lokalnie z bazy Trenera 2,
+- przed zapisem można poprawić dopasowanie produktu i gramaturę każdego składnika; zapis wymaga jawnego potwierdzenia,
+- wynik jest zapisywany jako jeden złożony posiłek, bez dublowania składników w bilansie dnia,
+- zdjęcie jest zmniejszane przed wysłaniem i nie jest zapisywane w historii Diety,
+- konfiguracja silnika jest niezależna od dostawcy; klucz nie jest wbudowany do APK i nie jest zwracany do warstwy JS,
+- zachowano dotychczasowe cele, historię, zakupy, przepisy i dane wcześniejszych wersji.
+
 ## 0.9.5.6 — stabilizacja wspólnego treningu na jednym telefonie
 
 - wzmocniono lokalny tryb „WSPÓLNY 2–4 • JEDEN TELEFON”, bez Wi‑Fi,
