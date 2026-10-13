@@ -381,7 +381,7 @@ public final class LiteActivity extends Activity {
     private void showWorkout() {
         workoutUiToken++;
         final int screenToken=workoutUiToken;
-        page="workout";render("Trening · "+trainer.historyName(sessionId,db.name("plans",selectedPlan)));
+        page="workout";
         ArrayList<ExerciseSpec> list=specs();
         if(list.isEmpty()) {
             hint(surface,"Brak ćwiczeń w tym treningu.");
@@ -389,30 +389,58 @@ public final class LiteActivity extends Activity {
         }
         int total=0,completed=0;
         ExerciseSpec firstPending=null;
+        ArrayList<LiteGroupWorkout.Member> people=activeGroupId==null?null:group.members(activeGroupId);
         for(ExerciseSpec ex:list){
-            total+=ex.sets;
-            int count=trainer.done(sessionId,ex.exerciseId);
-            completed+=Math.min(ex.sets,count);
-            if(firstPending==null&&count<ex.sets)firstPending=ex;
+            if(people!=null){
+                total+=ex.sets*people.size();
+                int performed=0;
+                for(LiteGroupWorkout.Member member:people)
+                    performed+=Math.min(ex.sets,trainer.done(member.sessionId,ex.exerciseId));
+                completed+=performed;
+                if(firstPending==null&&performed<ex.sets*people.size())firstPending=ex;
+            }else{
+                total+=ex.sets;
+                int count=trainer.done(sessionId,ex.exerciseId);
+                completed+=Math.min(ex.sets,count);
+                if(firstPending==null&&count<ex.sets)firstPending=ex;
+            }
         }
-        if(firstPending==null) {
-            db.finish(sessionId);trainer.setRest(sessionId,0);sessionId=-1;
-            showHistory();return;
+        if(firstPending==null){
+            if(activeGroupId!=null){group.finish(activeGroupId);activeGroupId=null;}
+            else db.finish(sessionId);
+            trainer.setRest(sessionId,0);sessionId=-1;showHistory();return;
         }
-        if(exerciseId<0||!containsExercise(list,exerciseId)||trainer.done(sessionId,exerciseId)>=specFor(list,exerciseId).sets)
+        if(people!=null){
             exerciseId=firstPending.exerciseId;
+            LiteGroupWorkout.Member next=group.nextPerson(activeGroupId,exerciseId,firstPending.sets);
+            if(next==null){msg("Nie znaleziono kolejnej osoby");showHome();return;}
+            activeGroupTurn=next.turn;
+            profileId=next.profileId;
+            sessionId=next.sessionId;
+        }else if(exerciseId<0||!containsExercise(list,exerciseId)||
+            trainer.done(sessionId,exerciseId)>=specFor(list,exerciseId).sets)
+            exerciseId=firstPending.exerciseId;
+        render("Trening · "+trainer.historyName(sessionId,db.name("plans",selectedPlan)));
 
         LinearLayout progress=card(surface);
         title(progress,"Postęp: "+completed+"/"+total+" serii");
-        hint(progress,"Profil: "+db.name("profiles",profileId)+" • zapis po każdej serii");
-        title(surface,"Ćwiczenia i kolejność");
+        hint(progress,(people==null?"Profil: ":"Teraz ćwiczy: ")+db.name("profiles",profileId)+" • zapis po każdej serii");
+        if(people!=null){
+            hint(progress,"Wspólny trening • "+people.size()+" osób na jednym tablecie");
+            for(LiteGroupWorkout.Member member:people){
+                int finished=0;
+                for(ExerciseSpec ex:list)finished+=Math.min(ex.sets,trainer.done(member.sessionId,ex.exerciseId));
+                hint(progress,member.name+": "+finished+" serii");
+            }
+        }
+        title(surface,people==null?"Ćwiczenia i kolejność":"Wspólna kolejność ćwiczeń");
         HorizontalScrollView sc=new HorizontalScrollView(this);sc.setHorizontalScrollBarEnabled(false);
         surface.addView(sc,lp(-1,70));LinearLayout row=horizontal();sc.addView(row);
         for(ExerciseSpec item:list){
             int done=trainer.done(sessionId,item.exerciseId);
             Button choice=button(item.name+"  "+done+"/"+item.sets,
                 exerciseId==item.exerciseId?GREEN:done>=item.sets?PANEL:BLUE,
-                ()->{exerciseId=item.exerciseId;showWorkout();});
+                ()->{if(activeGroupId==null){exerciseId=item.exerciseId;showWorkout();}});
             choice.setTextSize(17);
             LinearLayout.LayoutParams params=lp(-2,64);params.setMargins(0,0,dp(9),0);row.addView(choice,params);
         }
@@ -458,6 +486,8 @@ public final class LiteActivity extends Activity {
         TextView restLabel=text("",22,true);
         main.addView(restLabel);
         final long activeSession=sessionId,currentEx=exerciseId;
+        final String currentGroup=activeGroupId;
+        final int currentTurn=activeGroupTurn;
         Button save=button("✓ ZAPISZ SERIĘ",GREEN,()->{
             try{
                 if(trainer.rest(activeSession)>System.currentTimeMillis()){
@@ -475,6 +505,7 @@ public final class LiteActivity extends Activity {
                 db.saveSet(activeSession,currentEx,kg,n);
                 trainer.recordQuality(activeSession,currentEx,r,tech,discomfort);
                 trainer.setRest(activeSession,System.currentTimeMillis()+ex.rest*1000L);
+                if(currentGroup!=null)group.saveTurn(currentGroup,currentTurn);
                 msg(LiteCoach.qualityMessage(n,ex.min,ex.max,r,tech,discomfort,DEFAULT_STEP));
                 showWorkout();
             }catch(Exception err){msg("Sprawdź wpisane wartości: "+err.getMessage());}
@@ -543,7 +574,12 @@ public final class LiteActivity extends Activity {
         double result=Math.max(integer?1:0,Math.round((old+delta)*2)/2.0);
         input.setText(integer?String.valueOf((int)result):number(result));input.setSelection(input.length());
     }
-    private void finishWorkout(){workoutUiToken++;db.finish(sessionId);trainer.setRest(sessionId,0);sessionId=-1;showHistory();}
+    private void finishWorkout(){
+        workoutUiToken++;
+        if(activeGroupId!=null){group.finish(activeGroupId);activeGroupId=null;}
+        else db.finish(sessionId);
+        trainer.setRest(sessionId,0);sessionId=-1;showHistory();
+    }
     private void showHistory() {
         page="history";render("Historia · "+db.name("profiles",profileId));
         try(Cursor c=db.sessions(profileId)) {
@@ -551,8 +587,10 @@ public final class LiteActivity extends Activity {
             while(c.moveToNext()){
                 long id=c.getLong(0);String name=c.isNull(1)?"Plan usunięty":c.getString(1);
                 boolean finished=!c.isNull(3);
+                name=trainer.historyName(id,name);
                 LinearLayout sec=card(surface);title(sec,name);
-                hint(sec,date(c.getLong(2))+" · "+(finished?"Zakończony":"W toku"));
+                hint(sec,date(c.getLong(2))+" · "+(finished?"Zakończony":"W toku")+
+                    (group.historicalGroup(id)!=null?" • wspólny na tablecie":""));
                 twoButtons(sec,"SZCZEGÓŁY",BLUE,()->showSessionDetails(id),
                     "USUŃ",RED,()->confirm("Usunąć zapis treningu?",
                        "Wszystkie serie tego treningu zostaną bezpowrotnie usunięte.",
