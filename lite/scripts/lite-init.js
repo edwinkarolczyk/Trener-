@@ -24,7 +24,9 @@
     if(localStorage.getItem(LEGACY_KEY)==='yes'||!window.LiteBridge||!LiteBridge.exportPreviousLite)return;
     var old=decode(LiteBridge.exportPreviousLite());
     if(!old||!Array.isArray(old.sessions)||!Array.isArray(old.workout_sets))return;
-    var profiles={},exercises={},plans={};
+    var profiles={},exercises={},plans={},quality={};
+    var extras=old.liteExtensions||{};
+    (extras.lite_set_quality||[]).forEach(function(s){quality[s.set_id]=s;});
     (old.profiles||[]).forEach(function(p){profiles[p.id]=p.name;});
     (old.exercises||[]).forEach(function(ex){exercises[ex.id]=ex.name;});
     (old.plans||[]).forEach(function(plan){plans[plan.id]=plan.name;});
@@ -40,13 +42,14 @@
       var records=[];
       (old.workout_sets||[]).forEach(function(set){
         if(set.session_id!==session.id)return;
+        var q=quality[set.id]||{};
         records.push({
           id:'lite-ex:'+set.exercise_id,
           name:exercises[set.exercise_id]||'Ćwiczenie',
           ex:0,set:records.length,athlete:0,
           kg:Number(set.weight)||0,reps:Number(set.reps)||0,
-          rir:set.rir===undefined?2:Number(set.rir),
-          technique:set.technique||'good',pain:set.pain||'none',
+          rir:q.rir===undefined?2:Number(q.rir),
+          technique:q.technique||'good',pain:q.pain||'none',
           at:Number(set.created_at)||Number(session.started_at)||Date.now(),
           participantId:'lite-profile:'+session.profile_id
         });
