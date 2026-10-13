@@ -47,6 +47,9 @@ public final class LiteActivity extends Activity {
     private static final int MUTED = 0xffcbd5e1;
     private LiteDb db;
     private LiteTrainingStore trainer;
+    private LiteGroupWorkout group;
+    private String activeGroupId=null;
+    private int activeGroupTurn=-1;
     private final Handler workoutUiHandler=new Handler(Looper.getMainLooper());
     private int workoutUiToken=0;
     private static final double DEFAULT_STEP=2.5;
@@ -108,6 +111,7 @@ public final class LiteActivity extends Activity {
         getWindow().setNavigationBarColor(0xff0b1320);
         db=new LiteDb(this);
         trainer=new LiteTrainingStore(this,db);
+        group=new LiteGroupWorkout(db,trainer);
         updater=new LiteUpdater(this);
         profileId=getPreferences(0).getLong("profile",-1);
         boolean exists=false;
@@ -209,6 +213,7 @@ public final class LiteActivity extends Activity {
                 long id=c.getLong(0);String name=c.getString(1);
                 LinearLayout section=card(surface);title(section,name);
                 twoButtons(section,"▶ Start",GREEN,()->start(id),"✎ Edytuj",BLUE,()->showPlanEditor(id));
+                addButton(section,"▶ WSPÓLNY TRENING NA TABLECIE",PANEL,()->chooseGroupMembers(id));
             }
         }
     }
@@ -273,6 +278,31 @@ public final class LiteActivity extends Activity {
             }
         }
     }
+    private void chooseGroupMembers(long plan) {
+        ArrayList<Long> ids=new ArrayList<>();
+        ArrayList<String> labels=new ArrayList<>();
+        try(Cursor c=db.profiles()){
+            while(c.moveToNext()){ids.add(c.getLong(0));labels.add(c.getString(1));}
+        }
+        if(ids.size()<2){msg("Dodaj co najmniej 2 profile osób.");return;}
+        boolean[] selected=new boolean[ids.size()];
+        java.util.Arrays.fill(selected,true);
+        new AlertDialog.Builder(this)
+            .setTitle("Wspólny trening: wybierz 2–8 osób")
+            .setMultiChoiceItems(labels.toArray(new String[0]),selected,(d,i,checked)->selected[i]=checked)
+            .setNegativeButton("Anuluj",null)
+            .setPositiveButton("ROZPOCZNIJ",(d,w)->{
+                ArrayList<Long> chosen=new ArrayList<>();
+                for(int i=0;i<ids.size();i++)if(selected[i])chosen.add(ids.get(i));
+                if(chosen.size()<2||chosen.size()>8){msg("Wybierz od 2 do 8 osób.");return;}
+                try{
+                    String id=group.create(plan,chosen);
+                    LiteGroupWorkout.Member member=group.members(id).get(0);
+                    resume(member.sessionId);
+                }catch(Exception e){msg("Nie udało się rozpocząć: "+e.getMessage());}
+            }).show();
+    }
+
     private void start(long plan) {
         try(Cursor c=trainer.planExercises(plan)) {
             if(!c.moveToFirst()){msg("Dodaj najpierw ćwiczenie do planu");showPlanEditor(plan);return;}
@@ -284,12 +314,14 @@ public final class LiteActivity extends Activity {
                 ()->resume(other));
             return;
         }
+        activeGroupId=null;
         long started=db.startSession(profileId,plan);
         trainer.snapshot(started,plan,db.name("plans",plan));
         resume(started);
     }
     private void resume(long session) {
         sessionId=session;selectedPlan=db.sessionPlan(session);exerciseId=-1;
+        activeGroupId=group.groupForSession(session);
         trainer.snapshot(session,selectedPlan,db.name("plans",selectedPlan));
         showWorkout();
     }
