@@ -117,7 +117,7 @@ jobs:
           {
             "versionCode": ${LITE_CODE},
             "versionName": "${LITE_VERSION}",
-            "minSdk": 22,
+            "minSdk": 21,
             "apkUrl": "https://github.com/edwinkarolczyk/Trener-/releases/download/lite-v${LITE_VERSION}/Trener2-Lite-v${LITE_VERSION}.apk",
             "sha256": "${LITE_SHA}",
             "notes": "Nowa wersja Lite dla tabletu. Wszystkie profile, plany, ciezary i historia zostaja zachowane."
