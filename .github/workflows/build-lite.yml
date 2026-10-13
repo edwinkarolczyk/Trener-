@@ -8,8 +8,12 @@ on:
       - '.github/workflows/build-lite.yml'
   workflow_dispatch:
 
+concurrency:
+  group: trener2-lite-release
+  cancel-in-progress: true
+
 permissions:
-  contents: read
+  contents: write
 
 env:
   TR2_EXPECTED_SHA256: 30:68:33:34:5C:88:E2:34:4A:5A:0C:BC:51:F6:01:97:69:31:E7:24:CF:95:67:FE:6B:70:D1:59:86:56:69:CB
@@ -67,6 +71,48 @@ jobs:
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | grep "sdkVersion:'22'"
           ACTUAL=$("$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs "$APK" | awk -F': ' '/Signer #1 certificate SHA-256 digest:/{print toupper($2); exit}' | sed 's/../&:/g;s/:$//')
           test "$ACTUAL" = "$TR2_EXPECTED_SHA256" || exit 1
+      - name: Opublikuj wydanie Trener 2 Lite w GitHub Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          VERSION=$(sed -n "s/.*versionName[[:space:]]*'\\([^']*\\)'.*/\\1/p" lite/build.gradle | head -1)
+          CODE=$(awk '/versionCode/{print $2; exit}' lite/build.gradle)
+          test -n "$VERSION" && test -n "$CODE"
+          TAG="lite-v${VERSION}"
+          APK_NAME="Trener2-Lite-v${VERSION}.apk"
+          cp lite/build/outputs/apk/release/lite-release.apk "$APK_NAME"
+          SHA=$(sha256sum "$APK_NAME" | awk '{print $1}')
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$APK_NAME" --clobber
+          else
+            gh release create "$TAG" "$APK_NAME" --target "$GITHUB_SHA" --title "Trener 2 Lite ${VERSION} (Fire OS 5)" --notes "Podpisane APK do aktualizacji bez utraty historii treningów. Android 5.1 i nowsze. Potwierdź instalację w systemie." --prerelease
+          fi
+          echo "LITE_VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "LITE_CODE=$CODE" >> "$GITHUB_ENV"
+          echo "LITE_SHA=$SHA" >> "$GITHUB_ENV"
+      - name: Uaktualnij manifest dla tabletu (bez zmiany danych)
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$GITHUB_REF_NAME"
+          git pull --rebase origin "$GITHUB_REF_NAME"
+          cat > lite/update.json <<EOF
+          {
+            "versionCode": ${LITE_CODE},
+            "versionName": "${LITE_VERSION}",
+            "minSdk": 22,
+            "apkUrl": "https://github.com/edwinkarolczyk/Trener-/releases/download/lite-v${LITE_VERSION}/Trener2-Lite-v${LITE_VERSION}.apk",
+            "sha256": "${LITE_SHA}",
+            "notes": "Nowa wersja Lite dla tabletu. Wszystkie profile, plany, ciezary i historia zostaja zachowane."
+          }
+          EOF
+          if ! git diff --quiet -- lite/update.json || [ -n "$(git ls-files --others --exclude-standard lite/update.json)" ]; then
+            git add lite/update.json
+            git commit -m "Update Lite manifest to ${LITE_VERSION} [skip ci]"
+            git push origin "HEAD:$GITHUB_REF_NAME"
+          fi
       - name: Opublikuj podpisany APK
         uses: actions/upload-artifact@v4
         with:
