@@ -1,34 +1,39 @@
-# Trener 2 Lite — tablet Amazon Fire OS 5 (Android 5.1+)
+# Trener 2 Lite — tablet Amazon Fire OS 5 / Android 5.0+
 
-Oddzielny moduł Android (pakiet `pl.edwin.trener2lite`), bez diety, Google Play, z lokalnym zapisem SQLite i dużymi elementami sterującymi. Pełny Trener 2 pozostaje nietknięty.
+Wersja 0.3.0 naprawia błąd architektoniczny wersji 0.1–0.2: zamiast niezależnej imitacji Trenera 2, Lite buduje swój interfejs i logikę z tych samych plików źródłowych co pełny Trener 2 na gałęzi głównej.
 
-## Wersja 0.2.0: rdzeń treningu i historii
+## Co jest wspólne z pełnym Trenerem 2
 
-- Biblioteka 37 ćwiczeń pochodzi z oryginalnego `exerciseLibrary` i `v050-addon.js` Trenera 2.
-- Przy nowym profilu tworzą się cztery plany fabryczne: PON, ŚR, PT i dodatkowy biceps. Usuniętych planów nie odtwarzamy automatycznie.
-- Można tworzyć ćwiczenia i plany, edytować dla pozycji planu liczbę serii, cel powtórzeń/sekund i przerwę.
-- Trening ma progresję opartą na ostatnim ukończonym treningu: DOŁÓŻ, ZOSTAW lub ODEJMIJ; dominujący ciężar, krok 2,5 kg, redukcja 5% przy dwóch seriach poniżej minimum. Słaba technika lub ból blokują zalecaną progresję.
-- Serie zawierają masę, powtórzenia/sekundy, RIR 0–4+, technikę i ból/dyskomfort.
-- Timer odpoczynku, pomijanie przerwy, pauza/wznowienie, kontynuowanie po zamknięciu programu.
-- Trening kilku osób na jednym tablecie (2–8 profili): jeden plan, rotacja kolejki, indywidualne serie i ciężary, osobne historie. Dane pozostają na tablecie.
-- Historia zgrupowana według ćwiczeń: wszystkie serie, czas, objętość, średni RIR, liczba serii ze słabą techniką i bólem, status przerwanego treningu.
-- Osobne rekordy maksymalnych ciężarów i podsumowania liczby treningów, serii i objętości per profil.
-- Kopie JSON obejmują dane v0.1.1 i rozszerzenia (historia, cele planów, RIR, przerwy, stany grup), przywracane w jednej transakcji.
-- Aktualizacje podpisanego APK: powiadomienie po sprawdzeniu, przycisk instalacji, ręczne potwierdzenie Androida; kolejna instalacja nie wymaga kasowania danych.
+- Oryginalne `app.js`, `feature-loader.js` i skrypty treningowe z `app/src/main/assets`; te same algorytmy treningów, planów i historii.
+- Oryginalny `style.css` (czarny / grafitowy / czerwony) bez wymyślania nowego motywu.
+- Progresja, planista tygodniowy, trening kilku osób na jednym tablecie, biblioteka ćwiczeń, własne ćwiczenia, historia, RIR, przerwy, rekordy — ładowane z oryginalnych plików.
+- `lite-tablet.css` zwiększa kontrolki pod obsługę dotykową, nie przedefiniowuje funkcjonalności.
+- Pominięte są moduły diety, produktów żywieniowych, wody, przepisów i ich widoczne zakładki.
 
-## Niezamknięte różnice względem pełnego Trenera 2
+## Kompatybilność i dane
 
-Te funkcje **nie są jeszcze w 100% zgodne**, dlatego tej wersji nie wolno ogłaszać pełnym portem:
-- brak bezpośredniego importu pełnej kopii `trener2-backup` do SQLite Lite; dotychczasowy import dotyczy kopii Lite,
-- brak kompletnego planisty tygodnia `v070`, uczenia adaptacyjnej liczby serii na bazie 3 udanych treningów oraz ankiety gotowości `v059`,
-- brak współpracy z drugim telefonem przez Wi-Fi/QR (tryb jednej maszyny jest dostępny),
-- ćwiczenia użytkownika mają nazwę/partię i cele w planie, ale bez obrazów/filmów i zaawansowanego importu ZIP/Excel,
-- test na fizycznym Amazon Fire (SR043KL) jest wymagany, aby potwierdzić rozmiary interfejsu, pamięć i instalację.
+- Android `minSdk 21` — cel: Android 5.0+, w tym Fire OS 5.
+- Babel + core-js tłumaczą nową składnię i polyfillują funkcje JavaScript dla starego WebView.
+- Lite ma oddzielny pakiet `pl.edwin.trener2lite`, ale podpisuje APK trwałym certyfikatem poprzednich wersji Lite.
+- Dotychczasowa baza `trener_lite.db` 0.1/0.2 pozostaje na urządzeniu. Przy pierwszym otwarciu nowy ekran kopiuje historię sesji (w tym jakość, RIR i ból) do formatu `trainer3.history`; oryginały SQLite nie są usuwane.
+- Z Ustawień można ponownie otworzyć poprzedni natywny ekran Lite, żeby zweryfikować dane.
+- Eksport/import pełnej kopii treningowej JSON, z pominięciem danych dietetycznych.
+- Przycisk ręcznego sprawdzania aktualizacji i powiadomienia o podpisanym APK.
 
-## Testowanie
+## Zasady testów i ograniczenia
 
-- `gradle :lite:testDebugUnitTest :lite:assembleRelease`
-- GitHub Actions: `Build Trener 2 Lite (Fire OS 5)` — podpis i API 22
-- Test ręczny: utwórz dwóch ćwiczących, 2–3 serie obu na zmianę, pauza/wznowienie, historia osobno, eksport/import, aktualizacja 0.1.1 → 0.2.0 bez utraty danych.
+1. CI powinno potwierdzić wygenerowanie źródeł pełnego silnika, poprawną składnię, testy regresyjne i podpisane APK dla API 21.
+2. Konieczny jest test na fizycznym Amazon Fire: otwarcie zakładek, trening solo, wspólny tryb jednego tabletu, historia, planowanie tygodniowe, import pełnej kopii, restart w czasie serii i zachowanie danych po aktualizacji.
+3. Tryb wspólnego treningu na **dwóch urządzeniach przez LAN/QR** wymaga osobnego natywnego mostka; nie deklarować pełnej zgodności tego trybu w Lite.
+4. Starszy Android WebView może różnić się obsługą CSS i niektórych API. Nie nazywać tej wersji potwierdzonym portem 1:1 przed testem runtime.
 
-Zachowuj wsteczną kompatybilność v0.1.1; nie zmieniaj gałęzi `main` dla pełnej aplikacji.
+## Budowa
+
+```sh
+cd lite
+npm install --no-save --no-package-lock --ignore-scripts @babel/core @babel/preset-env core-js-bundle
+cd ..
+gradle :lite:testDebugUnitTest :lite:assembleRelease
+```
+
+Źródłem wspólnego kodu pozostaje `app/src/main/assets`; narzędzie `lite/scripts/build-parity-assets.cjs` podczas budowy transpiluje kopię bez zmieniania pełnej aplikacji. Wydania publikowane przez `.github/workflows/build-lite.yml`. Nie modyfikować `main` podczas prac nad Lite.
