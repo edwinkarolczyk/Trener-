@@ -32,7 +32,7 @@ android {
         targetSdk 28
         versionCode 4
         versionName '0.3.0'
-        buildConfigField 'String', 'TRAINER_CORE_VERSION', "\"$"+"{trainerCoreVersion}\""
+        buildConfigField 'String', 'TRAINER_CORE_VERSION', '"'+trainerCoreVersion+'"'
     }
 
     // Aplikacja instalowana lokalnie na Fire OS 5, nie jest publikowana w Google Play.
