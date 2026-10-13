@@ -195,6 +195,7 @@ final class LiteDb extends SQLiteOpenHelper {
             }
             root.put(table,rows);
         }
+        LiteTrainingStore.addBackup(db,root);
         return root;
     }
     void importJson(JSONObject root) throws JSONException {
@@ -229,6 +230,7 @@ final class LiteDb extends SQLiteOpenHelper {
                     if(db.insertOrThrow(table,null,cv)<0) throw new JSONException("Nie udało się wgrać danych: "+table);
                 }
             }
+            LiteTrainingStore.restoreBackup(db,root);
             // Co najmniej jeden profil wymagany do poprawnego startu.
             try(Cursor c=db.rawQuery("SELECT 1 FROM profiles LIMIT 1",null)) {
                 if(!c.moveToFirst()) throw new JSONException("Kopia nie zawiera profilu");
