@@ -61,16 +61,29 @@ jobs:
           echo "TR2_STORE_PASSWORD=$TR2_STORE_PASSWORD" >> "$GITHUB_ENV"
           echo "TR2_KEY_ALIAS=$TR2_KEY_ALIAS" >> "$GITHUB_ENV"
           echo "TR2_KEY_PASSWORD=$TR2_KEY_PASSWORD" >> "$GITHUB_ENV"
+      - name: Przygotuj transpilację WebView Android 5
+        run: |
+          cd lite
+          npm install --no-save --no-package-lock --ignore-scripts @babel/core @babel/preset-env core-js-bundle
+      - name: Sprawdź oryginalny silnik i motyw Trenera 2
+        run: |
+          node lite/scripts/build-parity-assets.cjs
+          node --check lite/build/generated/parityAssets/app.js
+          node --check lite/build/generated/parityAssets/feature-loader.js
+          node --check lite/build/generated/parityAssets/v086-one-phone.js
+          test -s lite/build/generated/parityAssets/style.css
+          test -s lite/build/generated/parityAssets/lite-tablet.css
+          ! grep -q 'v076-diet.js' lite/build/generated/parityAssets/feature-loader.js
       - name: Testy regresyjne treningu i progresji
         run: gradle :lite:testDebugUnitTest --no-daemon
-      - name: Zbuduj podpisany Lite (minSdk 22)
+      - name: Zbuduj podpisany Lite (minSdk 21)
         run: gradle :lite:assembleRelease --no-daemon
       - name: Weryfikuj podpis i Android 5.1
         run: |
           APK=lite/build/outputs/apk/release/lite-release.apk
           test -s "$APK"
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --min-sdk-version 22 "$APK"
-          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | grep "sdkVersion:'22'"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --min-sdk-version 21 "$APK"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | grep "sdkVersion:'21'"
           ACTUAL=$("$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs "$APK" | awk -F': ' '/Signer #1 certificate SHA-256 digest:/{print toupper($2); exit}' | sed 's/../&:/g;s/:$//')
           test "$ACTUAL" = "$TR2_EXPECTED_SHA256" || exit 1
       - name: Opublikuj wydanie Trener 2 Lite w GitHub Releases
