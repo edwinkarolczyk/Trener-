@@ -76,7 +76,7 @@ final class LiteTrainingStore {
     }
 
     private static final String[] EXTRA_TABLES={
-        "lite_catalog","lite_plan_targets","lite_set_quality","lite_rest","lite_session_exercise","lite_session_names"
+        "lite_catalog","lite_plan_targets","lite_set_quality","lite_rest","lite_session_exercise","lite_session_names","lite_group_meta","lite_group_members"
     };
     /** Kopia jest kompletna: dane podstawowe i wszystkie rozszerzenia tej samej sesji. */
     static void addBackup(SQLiteDatabase database,JSONObject root) throws org.json.JSONException {
@@ -141,9 +141,31 @@ final class LiteTrainingStore {
             case "lite_rest":allowed="session_id until_ms";break;
             case "lite_session_exercise":allowed="id session_id exercise_id ordinal name sets_target rep_min rep_max rest_sec timed tip";break;
             case "lite_session_names":allowed="session_id plan_name";break;
+            case "lite_group_meta":allowed="group_id plan_id active last_turn started_at";break;
+            case "lite_group_members":allowed="group_id profile_id session_id turn";break;
             default:return false;
         }
         return java.util.Arrays.asList(allowed.split(" ")).contains(field);
+    }
+
+
+    /** Bezpieczne kasowanie sesji i jej rozszerzeń, bez osieroconych RIR lub grup. */
+    void deleteSessionSafely(long session) {
+        String[] arg={String.valueOf(session)};
+        try(Cursor c=sql.rawQuery("SELECT 1 FROM lite_group_members m JOIN lite_group_meta g ON g.group_id=m.group_id WHERE m.session_id=? AND g.active=1",arg)){
+            if(c.moveToFirst())throw new IllegalStateException("Najpierw zakończ cały wspólny trening");
+        }
+        sql.beginTransaction();
+        try {
+            sql.delete("lite_set_quality","set_id IN (SELECT id FROM workout_sets WHERE session_id=?)",arg);
+            sql.delete("lite_rest","session_id=?",arg);
+            sql.delete("lite_session_exercise","session_id=?",arg);
+            sql.delete("lite_session_names","session_id=?",arg);
+            sql.delete("lite_group_members","session_id=?",arg);
+            sql.delete("workout_sets","session_id=?",arg);
+            sql.delete("sessions","id=?",arg);
+            sql.setTransactionSuccessful();
+        }finally {sql.endTransaction();}
     }
 
     Cursor planExercises(long plan) {
