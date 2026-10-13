@@ -15,6 +15,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.Spinner;
+import android.widget.ArrayAdapter;
+import android.os.Handler;
+import android.os.Looper;
 import android.widget.EditText;
 import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
@@ -42,6 +46,10 @@ public final class LiteActivity extends Activity {
     private static final int WHITE = 0xffffffff;
     private static final int MUTED = 0xffcbd5e1;
     private LiteDb db;
+    private LiteTrainingStore trainer;
+    private final Handler workoutUiHandler=new Handler(Looper.getMainLooper());
+    private int workoutUiToken=0;
+    private static final double DEFAULT_STEP=2.5;
     private LiteUpdater updater;
     private LinearLayout surface;
     private long profileId;
@@ -99,6 +107,7 @@ public final class LiteActivity extends Activity {
         getWindow().setStatusBarColor(0xff0b1320);
         getWindow().setNavigationBarColor(0xff0b1320);
         db=new LiteDb(this);
+        trainer=new LiteTrainingStore(this,db);
         updater=new LiteUpdater(this);
         profileId=getPreferences(0).getLong("profile",-1);
         boolean exists=false;
@@ -178,6 +187,7 @@ public final class LiteActivity extends Activity {
         LinearLayout grid=vertical();surface.addView(grid,lp(-1,-2));
         twoButtons(grid,"▶ TRENING",GREEN,()->showPlans(true),"▤ PLANY",BLUE,()->showPlans(false));
         twoButtons(grid,"◷ HISTORIA",BLUE,()->showHistory(),"✚ ĆWICZENIA",BLUE,()->showExercises());
+        addButton(grid,"▥ POSTĘPY I REKORDY",BLUE,()->showProgress());
         LinearLayout menu=card(surface);title(menu,"Dane treningowe");
         hint(menu,"Wszystkie serie zapisywane są lokalnie i osobno dla każdej osoby.");
         twoButtons(menu,"Eksport JSON",PANEL,()->exportBackup(),"Import JSON",PANEL,()->importBackup());
@@ -209,11 +219,15 @@ public final class LiteActivity extends Activity {
         }));
         addButton(surface,"+ DODAJ ĆWICZENIE DO PLANU",GREEN,()->chooseExercise(plan));
         title(surface,"Ćwiczenia w planie");
-        try(Cursor c=db.planExercises(plan)) {
+        try(Cursor c=trainer.planExercises(plan)) {
             if(c.getCount()==0)hint(surface,"Plan jest pusty. Dodaj przynajmniej jedno ćwiczenie.");
             while(c.moveToNext()){
                 long rowId=c.getLong(0);String name=c.getString(2),part=c.getString(3);
-                LinearLayout section=card(surface);title(section,name);hint(section,part);
+                LinearLayout section=card(surface);title(section,name);
+                hint(section,part+" • "+c.getInt(4)+" serii × "+c.getInt(5)+"–"+c.getInt(6)+
+                    (c.getInt(8)!=0?" sekund":" powt.")+" • odpoczynek "+c.getInt(7)+" s");
+                int sets=c.getInt(4), min=c.getInt(5), max=c.getInt(6), rest=c.getInt(7);
+                addButton(section,"⚙ CELE / SERIE / PRZERWY",BLUE,()->editTargets(plan,rowId,sets,min,max,rest));
                 addButton(section,"Usuń z planu",RED,()->{
                     db.removeFromPlan(rowId);showPlanEditor(plan);
                 });
@@ -260,7 +274,7 @@ public final class LiteActivity extends Activity {
         }
     }
     private void start(long plan) {
-        try(Cursor c=db.planExercises(plan)) {
+        try(Cursor c=trainer.planExercises(plan)) {
             if(!c.moveToFirst()){msg("Dodaj najpierw ćwiczenie do planu");showPlanEditor(plan);return;}
         }
         long other=db.openSession(profileId);
@@ -270,65 +284,210 @@ public final class LiteActivity extends Activity {
                 ()->resume(other));
             return;
         }
-        resume(db.startSession(profileId,plan));
+        long started=db.startSession(profileId,plan);
+        trainer.snapshot(started,plan,db.name("plans",plan));
+        resume(started);
     }
     private void resume(long session) {
-        sessionId=session;selectedPlan=db.sessionPlan(session);exerciseId=-1;showWorkout();
+        sessionId=session;selectedPlan=db.sessionPlan(session);exerciseId=-1;
+        trainer.snapshot(session,selectedPlan,db.name("plans",selectedPlan));
+        showWorkout();
     }
-    private void showWorkout() {
-        page="workout";render("Trening · "+db.name("plans",selectedPlan));
-        ArrayList<Long> ids=new ArrayList<>();ArrayList<String> names=new ArrayList<>();
-        try(Cursor c=db.planExercises(selectedPlan)){
-            while(c.moveToNext()){ids.add(c.getLong(1));names.add(c.getString(2));}
-        }
-        if(ids.isEmpty()){
-            hint(surface,"Plan nie ma już ćwiczeń. Zakończ trening lub edytuj plan.");
-            addButton(surface,"ZAKOŃCZ",GREEN,()->finishWorkout());return;
-        }
-        if(!ids.contains(exerciseId))exerciseId=ids.get(0);
-        title(surface,"Wybierz ćwiczenie");
-        HorizontalScrollView sc=new HorizontalScrollView(this);sc.setHorizontalScrollBarEnabled(false);
-        surface.addView(sc,lp(-1,68));LinearLayout row=horizontal();sc.addView(row);
-        for(int i=0;i<ids.size();i++){
-            long eid=ids.get(i);String name=names.get(i);
-            Button b=button(name,eid==exerciseId?GREEN:PANEL,()->{exerciseId=eid;showWorkout();});
-            b.setTextSize(16);
-            LinearLayout.LayoutParams p=lp(-2,62);p.setMargins(0,0,dp(9),0);row.addView(b,p);
-        }
 
-        LinearLayout main=card(surface);title(main,db.name("exercises",exerciseId));
-        double lastWeight=0;int lastReps=10;
-        try(Cursor c=db.lastSet(profileId,exerciseId)){
-            if(c.moveToFirst()){lastWeight=c.getDouble(0);lastReps=c.getInt(1);}
+    private void editTargets(long plan,long rowId,int currentSets,int currentMin,int currentMax,int currentRest) {
+        LinearLayout fields=vertical();fields.setPadding(dp(18),dp(10),dp(18),0);
+        final String[] labels={"Serie","Minimum powtórzeń / sekund","Maksimum powtórzeń / sekund","Przerwa (sek.)"};
+        final int[] values={currentSets,currentMin,currentMax,currentRest};
+        EditText[] inputs=new EditText[4];
+        for(int i=0;i<inputs.length;i++){
+            fields.addView(text(labels[i],18,false));
+            inputs[i]=inputNumber(String.valueOf(values[i]),false);
+            fields.addView(inputs[i],lp(-1,61));
         }
-        hint(main,"Ostatnio: "+number(lastWeight)+" kg × "+lastReps+" powt.");
-        EditText weight=inputNumber(number(lastWeight),true);
-        EditText reps=inputNumber(String.valueOf(lastReps),false);
-        title(main,"Obciążenie (kg)");
-        rowNumber(main,weight,2.5);
-        title(main,"Powtórzenia");
-        rowNumber(main,reps,1);
-        final long currentExercise=exerciseId;
-        addButton(main,"✓ ZAPISZ SERIĘ",GREEN,()->{
+        AlertDialog dialog=new AlertDialog.Builder(this).setTitle("Parametry jak w Trenerze 2")
+            .setView(fields).setNegativeButton("Anuluj",null).setPositiveButton("ZAPISZ",null).create();
+        dialog.setOnShowListener(v->dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(w->{
             try{
-                double kg=Double.parseDouble(weight.getText().toString().trim().replace(',','.'));
-                int count=Integer.parseInt(reps.getText().toString().trim());
-                db.saveSet(sessionId,currentExercise,kg,count);
-                msg("Seria zapisana");showWorkout();
-            }catch(Exception ex){msg("Sprawdź ciężar i powtórzenia: "+ex.getMessage());}
-        });
-
-        LinearLayout done=card(surface);title(done,"Zapisane serie");
-        try(Cursor c=db.sets(sessionId,exerciseId)){
-            int n=0;while(c.moveToNext()){n++;
-                hint(done,n+".    "+number(c.getDouble(0))+" kg × "+c.getInt(1)+" powt.");
-            }
-            if(n==0)hint(done,"Brak zapisanych serii dla tego ćwiczenia.");
-        }
-        addButton(surface,"■ ZAKOŃCZ TRENING",RED,()->confirm("Zakończyć trening?",
-            "Wszystkie zapisane serie pozostaną w historii.",()->finishWorkout()));
-        hint(surface,"Po opuszczeniu ekranu zapisane serie pozostają w pamięci. Wznów trening na ekranie głównym.");
+                int[] params=new int[4];
+                for(int i=0;i<4;i++)params[i]=Integer.parseInt(inputs[i].getText().toString().trim());
+                trainer.updateTargets(rowId,params[0],params[1],params[2],params[3]);
+                dialog.dismiss();showPlanEditor(plan);
+            }catch(Exception ex){msg("Nieprawidłowe dane: "+ex.getMessage());}
+        }));
+        dialog.show();
     }
+
+    private static final class ExerciseSpec {
+        long exerciseId;
+        String name,tip;int sets,min,max,rest;boolean timed;
+    }
+    private ArrayList<ExerciseSpec> specs() {
+        ArrayList<ExerciseSpec> list=new ArrayList<>();
+        try(Cursor c=trainer.sessionExercises(sessionId,selectedPlan)){
+            while(c.moveToNext()){
+                ExerciseSpec ex=new ExerciseSpec();
+                ex.exerciseId=c.getLong(1);ex.name=c.getString(2);ex.tip=c.getString(9);
+                ex.sets=c.getInt(4);ex.min=c.getInt(5);ex.max=c.getInt(6);
+                ex.rest=c.getInt(7);ex.timed=c.getInt(8)!=0;
+                list.add(ex);
+            }
+        }
+        return list;
+    }
+    private Spinner spinner(LinearLayout to,String header,String[] options,int selected) {
+        title(to,header);
+        Spinner spinner=new Spinner(this);
+        ArrayAdapter<String> adapter=new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,options);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinner.setAdapter(adapter);spinner.setSelection(selected);
+        spinner.setBackground(bg(0xfff1f5f9,12));
+        spinner.setMinimumHeight(dp(57));
+        to.addView(spinner,lp(-1,61));
+        return spinner;
+    }
+
+    private void showWorkout() {
+        workoutUiToken++;
+        final int screenToken=workoutUiToken;
+        page="workout";render("Trening · "+trainer.historyName(sessionId,db.name("plans",selectedPlan)));
+        ArrayList<ExerciseSpec> list=specs();
+        if(list.isEmpty()) {
+            hint(surface,"Brak ćwiczeń w tym treningu.");
+            addButton(surface,"Zakończ",RED,()->finishWorkout());return;
+        }
+        int total=0,completed=0;
+        ExerciseSpec firstPending=null;
+        for(ExerciseSpec ex:list){
+            total+=ex.sets;
+            int count=trainer.done(sessionId,ex.exerciseId);
+            completed+=Math.min(ex.sets,count);
+            if(firstPending==null&&count<ex.sets)firstPending=ex;
+        }
+        if(firstPending==null) {
+            db.finish(sessionId);trainer.setRest(sessionId,0);sessionId=-1;
+            showHistory();return;
+        }
+        if(exerciseId<0||!containsExercise(list,exerciseId)||trainer.done(sessionId,exerciseId)>=specFor(list,exerciseId).sets)
+            exerciseId=firstPending.exerciseId;
+
+        LinearLayout progress=card(surface);
+        title(progress,"Postęp: "+completed+"/"+total+" serii");
+        hint(progress,"Profil: "+db.name("profiles",profileId)+" • zapis po każdej serii");
+        title(surface,"Ćwiczenia i kolejność");
+        HorizontalScrollView sc=new HorizontalScrollView(this);sc.setHorizontalScrollBarEnabled(false);
+        surface.addView(sc,lp(-1,70));LinearLayout row=horizontal();sc.addView(row);
+        for(ExerciseSpec item:list){
+            int done=trainer.done(sessionId,item.exerciseId);
+            Button choice=button(item.name+"  "+done+"/"+item.sets,
+                exerciseId==item.exerciseId?GREEN:done>=item.sets?PANEL:BLUE,
+                ()->{exerciseId=item.exerciseId;showWorkout();});
+            choice.setTextSize(17);
+            LinearLayout.LayoutParams params=lp(-2,64);params.setMargins(0,0,dp(9),0);row.addView(choice,params);
+        }
+        ExerciseSpec ex=specFor(list,exerciseId);
+        int already=trainer.done(sessionId,exerciseId);
+        LinearLayout main=card(surface);
+        title(main,ex.name);
+        hint(main,"Seria "+(already+1)+"/"+ex.sets+" • Cel: "+ex.min+"–"+ex.max+
+            (ex.timed?" sekund":" powt.")+" • przerwa "+ex.rest+" s");
+        if(ex.tip!=null&&!ex.tip.isEmpty())hint(main,"Technika: "+ex.tip);
+
+        java.util.List<LiteCoach.SetResult> previous=trainer.previous(profileId,exerciseId);
+        LiteCoach.Advice advice=LiteCoach.recommend(previous,ex.sets,ex.min,ex.max,DEFAULT_STEP,ex.timed);
+        if(!"NONE".equals(advice.decision)) {
+            int adviceColor="ADD".equals(advice.decision)?GREEN:"REDUCE".equals(advice.decision)?RED:BLUE;
+            LinearLayout helper=card(main);helper.setBackground(bg(adviceColor,11));
+            helper.addView(text("Trener: "+advice.message,18,true));
+            hint(helper,"Poprzednio "+number(advice.base)+" kg → sugerowane "+number(advice.target)+" kg");
+        }
+
+        double load=advice.target;
+        int reps=ex.min;
+        try(Cursor recent=trainer.sets(sessionId,exerciseId)) {
+            while(recent.moveToNext()){load=recent.getDouble(0);reps=recent.getInt(1);}
+        }
+        if(load<=0) {
+            try(Cursor last=db.lastSet(profileId,exerciseId)){
+                if(last.moveToFirst())load=last.getDouble(0);
+            }
+        }
+        title(main,"Obciążenie (kg)");
+        EditText weight=inputNumber(number(load),true);
+        rowNumber(main,weight,DEFAULT_STEP);
+        title(main,ex.timed?"Czas trwania (sek.)":"Powtórzenia");
+        EditText repetitions=inputNumber(String.valueOf(reps),false);
+        rowNumber(main,repetitions,1);
+
+        Spinner rir=spinner(main,"RIR – powtórzenia w zapasie",
+            new String[]{"0 — brak zapasu","1","2","3","4 lub więcej"},2);
+        Spinner technique=spinner(main,"Technika",new String[]{"Dobra","Średnia","Zła"},0);
+        Spinner pain=spinner(main,"Ból / dyskomfort",new String[]{"Brak","Lekki","Mocny"},0);
+
+        TextView restLabel=text("",22,true);
+        main.addView(restLabel);
+        final long activeSession=sessionId,currentEx=exerciseId;
+        Button save=button("✓ ZAPISZ SERIĘ",GREEN,()->{
+            try{
+                if(trainer.rest(activeSession)>System.currentTimeMillis()){
+                    msg("Przerwa trwa — możesz ją pominąć.");return;
+                }
+                int count=trainer.done(activeSession,currentEx);
+                if(count>=ex.sets) {
+                    msg("Wszystkie zaplanowane serie wykonane");return;
+                }
+                double kg=Double.parseDouble(weight.getText().toString().trim().replace(',','.'));
+                int n=Integer.parseInt(repetitions.getText().toString().trim());
+                int r=rir.getSelectedItemPosition();
+                String tech=new String[]{"good","medium","bad"}[technique.getSelectedItemPosition()];
+                String discomfort=new String[]{"none","mild","strong"}[pain.getSelectedItemPosition()];
+                db.saveSet(activeSession,currentEx,kg,n);
+                trainer.recordQuality(activeSession,currentEx,r,tech,discomfort);
+                trainer.setRest(activeSession,System.currentTimeMillis()+ex.rest*1000L);
+                msg(LiteCoach.qualityMessage(n,ex.min,ex.max,r,tech,discomfort,DEFAULT_STEP));
+                showWorkout();
+            }catch(Exception err){msg("Sprawdź wpisane wartości: "+err.getMessage());}
+        });
+        main.addView(save,lp(-1,74));
+        Button skip=button("POMIŃ PRZERWĘ",BLUE,()->{
+            trainer.setRest(activeSession,0);showWorkout();
+        });
+        main.addView(skip,lp(-1,65));
+        Runnable tick=new Runnable() {
+            @Override public void run(){
+                if(!page.equals("workout")||screenToken!=workoutUiToken||activeSession!=sessionId)return;
+                long seconds=Math.max(0,(trainer.rest(activeSession)-System.currentTimeMillis()+999)/1000);
+                restLabel.setText(seconds>0?"Odpoczynek: "+seconds+" s":"Gotowy do następnej serii");
+                save.setEnabled(seconds==0);
+                save.setAlpha(seconds==0?1f:.5f);
+                skip.setVisibility(seconds>0?View.VISIBLE:View.GONE);
+                if(seconds>0)workoutUiHandler.postDelayed(this,1000);
+            }
+        };
+        tick.run();
+        LinearLayout done=card(surface);title(done,"Zapisane serie · "+ex.name);
+        int number=0;
+        try(Cursor c=trainer.sets(sessionId,exerciseId)){
+            while(c.moveToNext()){
+                number++;
+                hint(done,number+".  "+number(c.getDouble(0))+" kg × "+c.getInt(1)+
+                    (ex.timed?" sek.":" powt.")+" • RIR "+c.getInt(3)+
+                    " • "+("good".equals(c.getString(4))?"dobra":c.getString(4))+" technika");
+            }
+        }
+        if(number==0)hint(done,"Jeszcze bez zapisanych serii");
+        addButton(surface,"■ ZAKOŃCZ WCZEŚNIEJ I ZAPISZ",RED,
+            ()->confirm("Zakończyć przed czasem?",
+                "Wykonane serie zostaną w historii jako przerwany trening.",()->finishWorkout()));
+    }
+    private ExerciseSpec specFor(ArrayList<ExerciseSpec> list,long id){
+        for(ExerciseSpec x:list)if(x.exerciseId==id)return x;
+        return list.get(0);
+    }
+    private boolean containsExercise(ArrayList<ExerciseSpec> list,long id){
+        for(ExerciseSpec x:list)if(x.exerciseId==id)return true;
+        return false;
+    }
+
     private EditText inputNumber(String current,boolean decimals) {
         EditText e=new EditText(this);
         e.setSingleLine(true);e.setSelectAllOnFocus(true);
@@ -352,7 +511,7 @@ public final class LiteActivity extends Activity {
         double result=Math.max(integer?1:0,Math.round((old+delta)*2)/2.0);
         input.setText(integer?String.valueOf((int)result):number(result));input.setSelection(input.length());
     }
-    private void finishWorkout(){db.finish(sessionId);sessionId=-1;showHistory();}
+    private void finishWorkout(){workoutUiToken++;db.finish(sessionId);trainer.setRest(sessionId,0);sessionId=-1;showHistory();}
     private void showHistory() {
         page="history";render("Historia · "+db.name("profiles",profileId));
         try(Cursor c=db.sessions(profileId)) {
@@ -369,14 +528,35 @@ public final class LiteActivity extends Activity {
             }
         }
     }
+
+    private void showProgress() {
+        page="progress";render("Postępy · "+db.name("profiles",profileId));
+        try(Cursor c=trainer.stats(profileId)){
+            if(c.moveToFirst()){
+                LinearLayout totals=card(surface);
+                title(totals,"Treningów: "+c.getInt(0)+" • serii: "+c.getInt(1));
+                hint(totals,"Łączna objętość: "+number(c.getDouble(2))+" kg × powt.");
+            }
+        }
+        title(surface,"Największe obciążenia");
+        int count=0;
+        try(Cursor c=trainer.records(profileId)){
+            while(c.moveToNext()) {
+                LinearLayout row=card(surface);
+                title(row,c.getString(0));
+                hint(row,number(c.getDouble(1))+" kg");count++;
+            }
+        }
+        if(count==0)hint(surface,"Po pierwszym treningu pojawią się rekordy.");
+    }
     private void showSessionDetails(long id) {
         page="session-detail";render("Historia zapisanego treningu");
         int count=0;
-        try(Cursor c=db.allSets(id)) {
+        try(Cursor c=trainer.historyDetails(id)) {
             while(c.moveToNext()){
                 LinearLayout line=card(surface);
                 title(line,c.isNull(0)?"Ćwiczenie usunięte":c.getString(0));
-                hint(line,number(c.getDouble(1))+" kg × "+c.getInt(2)+" powt.");
+                hint(line,number(c.getDouble(1))+" kg × "+c.getInt(2)+" powt. • RIR "+c.getInt(3)+" • technika "+c.getString(4)+" • ból "+c.getString(5));
                 count++;
             }
         }
