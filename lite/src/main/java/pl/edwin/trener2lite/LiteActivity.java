@@ -42,6 +42,7 @@ public final class LiteActivity extends Activity {
     private static final int WHITE = 0xffffffff;
     private static final int MUTED = 0xffcbd5e1;
     private LiteDb db;
+    private LiteUpdater updater;
     private LinearLayout surface;
     private long profileId;
     private long selectedPlan = -1, sessionId = -1, exerciseId = -1;
@@ -98,11 +99,13 @@ public final class LiteActivity extends Activity {
         getWindow().setStatusBarColor(0xff0b1320);
         getWindow().setNavigationBarColor(0xff0b1320);
         db=new LiteDb(this);
+        updater=new LiteUpdater(this);
         profileId=getPreferences(0).getLong("profile",-1);
         boolean exists=false;
         try(Cursor c=db.profiles()) {while(c.moveToNext())if(c.getLong(0)==profileId)exists=true;}
         if(!exists)profileId=db.firstProfile();
         showHome();
+        updater.check(false);
     }
 
     private void render(String pageTitle) {
@@ -179,6 +182,11 @@ public final class LiteActivity extends Activity {
         hint(menu,"Wszystkie serie zapisywane są lokalnie i osobno dla każdej osoby.");
         twoButtons(menu,"Eksport JSON",PANEL,()->exportBackup(),"Import JSON",PANEL,()->importBackup());
         hint(menu,"Kopia zawiera wszystkie profile, plany i historię. Import zastępuje bieżące dane.");
+        LinearLayout updates=card(surface);
+        title(updates,"Aktualizacje");
+        hint(updates,"Trener 2 Lite "+BuildConfig.VERSION_NAME+" · Sprawdza nowe wersje przy uruchomieniu, jeśli jest internet.");
+        addButton(updates,"↻ SPRAWDŹ AKTUALIZACJE",BLUE,()->updater.check(true));
+        hint(updates,"Pobranie nastąpi po Twojej zgodzie. Instalację potwierdzasz w systemie. Dane zostaną zachowane.");
     }
     private void showPlans(boolean startMode) {
         page="plans";render(startMode?"Wybierz plan do treningu":"Moje plany treningowe");
