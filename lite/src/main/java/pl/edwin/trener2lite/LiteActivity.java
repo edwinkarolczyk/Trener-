@@ -433,6 +433,13 @@ public final class LiteActivity extends Activity {
                 hint(progress,member.name+": "+finished+" serii");
             }
         }
+        addButton(progress,trainer.isPaused(sessionId)?"▶ WZNÓW TRENING":"Ⅱ PAUZA TRENINGU",BLUE,()->{
+            boolean pause=!trainer.isPaused(sessionId);
+            if(activeGroupId!=null)
+                for(LiteGroupWorkout.Member member:group.members(activeGroupId))trainer.pause(member.sessionId,pause);
+            else trainer.pause(sessionId,pause);
+            showWorkout();
+        });
         title(surface,people==null?"Ćwiczenia i kolejność":"Wspólna kolejność ćwiczeń");
         HorizontalScrollView sc=new HorizontalScrollView(this);sc.setHorizontalScrollBarEnabled(false);
         surface.addView(sc,lp(-1,70));LinearLayout row=horizontal();sc.addView(row);
@@ -490,6 +497,7 @@ public final class LiteActivity extends Activity {
         final int currentTurn=activeGroupTurn;
         Button save=button("✓ ZAPISZ SERIĘ",GREEN,()->{
             try{
+                if(trainer.isPaused(activeSession)){msg("Najpierw wznów trening.");return;}
                 if(trainer.rest(activeSession)>System.currentTimeMillis()){
                     msg("Przerwa trwa — możesz ją pominąć.");return;
                 }
@@ -518,12 +526,13 @@ public final class LiteActivity extends Activity {
         Runnable tick=new Runnable() {
             @Override public void run(){
                 if(!page.equals("workout")||screenToken!=workoutUiToken||activeSession!=sessionId)return;
+                boolean paused=trainer.isPaused(activeSession);
                 long seconds=Math.max(0,(trainer.rest(activeSession)-System.currentTimeMillis()+999)/1000);
-                restLabel.setText(seconds>0?"Odpoczynek: "+seconds+" s":"Gotowy do następnej serii");
-                save.setEnabled(seconds==0);
-                save.setAlpha(seconds==0?1f:.5f);
-                skip.setVisibility(seconds>0?View.VISIBLE:View.GONE);
-                if(seconds>0)workoutUiHandler.postDelayed(this,1000);
+                restLabel.setText(paused?"Trening wstrzymany":seconds>0?"Odpoczynek: "+seconds+" s":"Gotowy do następnej serii");
+                save.setEnabled(!paused&&seconds==0);
+                save.setAlpha(!paused&&seconds==0?1f:.5f);
+                skip.setVisibility(!paused&&seconds>0?View.VISIBLE:View.GONE);
+                if(seconds>0||paused)workoutUiHandler.postDelayed(this,1000);
             }
         };
         tick.run();
@@ -576,8 +585,12 @@ public final class LiteActivity extends Activity {
     }
     private void finishWorkout(){
         workoutUiToken++;
-        if(activeGroupId!=null){group.finish(activeGroupId);activeGroupId=null;}
-        else db.finish(sessionId);
+        if(activeGroupId!=null){
+            for(LiteGroupWorkout.Member member:group.members(activeGroupId))trainer.markInterrupted(member.sessionId);
+            group.finish(activeGroupId);activeGroupId=null;
+        }else{
+            trainer.markInterrupted(sessionId);db.finish(sessionId);
+        }
         trainer.setRest(sessionId,0);sessionId=-1;showHistory();
     }
     private void showHistory() {
@@ -589,8 +602,10 @@ public final class LiteActivity extends Activity {
                 boolean finished=!c.isNull(3);
                 name=trainer.historyName(id,name);
                 LinearLayout sec=card(surface);title(sec,name);
-                hint(sec,date(c.getLong(2))+" · "+(finished?"Zakończony":"W toku")+
-                    (group.historicalGroup(id)!=null?" • wspólny na tablecie":""));
+                long dur=trainer.durationMillis(id,c.getLong(2),finished?c.getLong(3):0);
+                long minutes=dur/60000;
+                hint(sec,date(c.getLong(2))+" · "+(finished?(trainer.interrupted(id)?"Przerwany":"Zakończony"):"W toku")+
+                    " • "+minutes+" min"+(group.historicalGroup(id)!=null?" • wspólny na tablecie":""));
                 twoButtons(sec,"SZCZEGÓŁY",BLUE,()->showSessionDetails(id),
                     "USUŃ",RED,()->confirm("Usunąć zapis treningu?",
                        "Wszystkie serie tego treningu zostaną bezpowrotnie usunięte.",
