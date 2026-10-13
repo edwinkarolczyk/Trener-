@@ -1,5 +1,20 @@
 (function(){
   'use strict';
+  // Polyfille DOM wymagane przez starszy WebView tabletu Amazon.
+  if(!Element.prototype.matches)Element.prototype.matches=Element.prototype.webkitMatchesSelector||
+    function(selector){var all=this.parentNode?this.parentNode.querySelectorAll(selector):[];
+      for(var i=0;i<all.length;i++)if(all[i]===this)return true;return false;};
+  if(!Element.prototype.closest)Element.prototype.closest=function(selector){
+    var el=this;while(el&&el.nodeType===1){if(el.matches(selector))return el;el=el.parentElement;}return null;};
+  if(!Element.prototype.remove)Element.prototype.remove=function(){
+    if(this.parentNode)this.parentNode.removeChild(this);};
+  if(!Element.prototype.append)Element.prototype.append=function(){
+    for(var i=0;i<arguments.length;i++){
+      var v=arguments[i];this.appendChild(v instanceof Node?v:document.createTextNode(String(v)));}};
+  if(!NodeList.prototype.forEach)NodeList.prototype.forEach=Array.prototype.forEach;
+  if(['diet','recipes'].indexOf(localStorage.getItem('trainer3.lastTab.v0884'))!==-1)
+    localStorage.setItem('trainer3.lastTab.v0884','start');
+
   // Przed startem oryginalnego silnika importuj niedestrukcyjnie stare sesje SQLite Lite.
   var LEGACY_KEY='trainer3.liteLegacyImported.v03';
   function decode(raw){
@@ -30,7 +45,7 @@
           name:exercises[set.exercise_id]||'Ćwiczenie',
           ex:0,set:records.length,athlete:0,
           kg:Number(set.weight)||0,reps:Number(set.reps)||0,
-          rir:Number(set.rir)||2,
+          rir:set.rir===undefined?2:Number(set.rir),
           technique:set.technique||'good',pain:set.pain||'none',
           at:Number(set.created_at)||Number(session.started_at)||Date.now(),
           participantId:'lite-profile:'+session.profile_id
