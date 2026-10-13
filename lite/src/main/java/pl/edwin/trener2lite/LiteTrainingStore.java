@@ -99,13 +99,17 @@ final class LiteTrainingStore {
             }
             extensions.put(table,rows);
         }
+        root.put("liteBackupSchema",2);
         root.put("liteExtensions",extensions);
     }
     /** Wykonuje się wewnątrz głównej transakcji importu; błąd cofa również serię i historię. */
     static void restoreBackup(SQLiteDatabase database,JSONObject root) throws org.json.JSONException{
         JSONObject extension=root.optJSONObject("liteExtensions");
+        int schema=root.optInt("liteBackupSchema",1);
+        if(schema>2)throw new org.json.JSONException("Kopia pochodzi z nowszego Trenera 2 Lite");
         if(extension!=null)for(String table:EXTRA_TABLES){
             JSONArray rows=extension.optJSONArray(table);
+            if(rows==null&&schema<2)continue;
             if(rows==null||rows.length()>100000)throw new org.json.JSONException("Brak wymaganej tabeli: "+table);
             for(int i=0;i<rows.length();i++)if(!(rows.opt(i) instanceof JSONObject))
                 throw new org.json.JSONException("Uszkodzony wiersz w "+table);
@@ -113,7 +117,8 @@ final class LiteTrainingStore {
         for(int t=EXTRA_TABLES.length-1;t>=0;t--)database.delete(EXTRA_TABLES[t],null,null);
         if(extension==null)return; // starsza kopia 0.1.1: katalog zostanie odtworzony
         for(String table:EXTRA_TABLES){
-            JSONArray rows=extension.getJSONArray(table);
+            JSONArray rows=extension.optJSONArray(table);
+            if(rows==null)continue;
             for(int i=0;i<rows.length();i++){
                 JSONObject item=rows.getJSONObject(i);
                 ContentValues values=new ContentValues();
