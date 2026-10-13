@@ -74,6 +74,78 @@ final class LiteTrainingStore {
             } finally {sql.endTransaction();}
         }catch(Exception e){throw new IllegalStateException("Nie udało się odczytać biblioteki ćwiczeń Trenera 2",e);}
     }
+
+    private static final String[] EXTRA_TABLES={
+        "lite_catalog","lite_plan_targets","lite_set_quality","lite_rest","lite_session_exercise","lite_session_names"
+    };
+    /** Kopia jest kompletna: dane podstawowe i wszystkie rozszerzenia tej samej sesji. */
+    static void addBackup(SQLiteDatabase database,JSONObject root) throws org.json.JSONException {
+        JSONObject extensions=new JSONObject();
+        for(String table:EXTRA_TABLES){
+            JSONArray rows=new JSONArray();
+            try(Cursor c=database.rawQuery("SELECT * FROM "+table,null)){
+                while(c.moveToNext()){
+                    JSONObject row=new JSONObject();
+                    for(int i=0;i<c.getColumnCount();i++){
+                        String key=c.getColumnName(i);
+                        if(c.isNull(i))row.put(key,JSONObject.NULL);
+                        else if(c.getType(i)==Cursor.FIELD_TYPE_INTEGER)row.put(key,c.getLong(i));
+                        else if(c.getType(i)==Cursor.FIELD_TYPE_FLOAT)row.put(key,c.getDouble(i));
+                        else row.put(key,c.getString(i));
+                    }
+                    rows.put(row);
+                }
+            }
+            extensions.put(table,rows);
+        }
+        root.put("liteExtensions",extensions);
+    }
+    /** Wykonuje się wewnątrz głównej transakcji importu; błąd cofa również serię i historię. */
+    static void restoreBackup(SQLiteDatabase database,JSONObject root) throws org.json.JSONException{
+        JSONObject extension=root.optJSONObject("liteExtensions");
+        if(extension!=null)for(String table:EXTRA_TABLES){
+            JSONArray rows=extension.optJSONArray(table);
+            if(rows==null||rows.length()>100000)throw new org.json.JSONException("Brak wymaganej tabeli: "+table);
+            for(int i=0;i<rows.length();i++)if(!(rows.opt(i) instanceof JSONObject))
+                throw new org.json.JSONException("Uszkodzony wiersz w "+table);
+        }
+        for(int t=EXTRA_TABLES.length-1;t>=0;t--)database.delete(EXTRA_TABLES[t],null,null);
+        if(extension==null)return; // starsza kopia 0.1.1: katalog zostanie odtworzony
+        for(String table:EXTRA_TABLES){
+            JSONArray rows=extension.getJSONArray(table);
+            for(int i=0;i<rows.length();i++){
+                JSONObject item=rows.getJSONObject(i);
+                ContentValues values=new ContentValues();
+                java.util.Iterator<String> keys=item.keys();
+                while(keys.hasNext()){
+                    String key=keys.next();
+                    if(!validField(table,key))throw new org.json.JSONException("Niedozwolone pole: "+key);
+                    Object val=item.get(key);
+                    if(val==JSONObject.NULL)values.putNull(key);
+                    else if(val instanceof Integer)values.put(key,(Integer)val);
+                    else if(val instanceof Long)values.put(key,(Long)val);
+                    else if(val instanceof Double)values.put(key,(Double)val);
+                    else if(val instanceof Number)values.put(key,((Number)val).doubleValue());
+                    else values.put(key,String.valueOf(val));
+                }
+                database.insertOrThrow(table,null,values);
+            }
+        }
+    }
+    private static boolean validField(String table,String field){
+        String allowed="";
+        switch(table){
+            case "lite_catalog":allowed="exercise_id original_id sets_target rep_min rep_max rest_sec timed tip";break;
+            case "lite_plan_targets":allowed="plan_exercise_id sets_target rep_min rep_max rest_sec";break;
+            case "lite_set_quality":allowed="set_id rir technique pain";break;
+            case "lite_rest":allowed="session_id until_ms";break;
+            case "lite_session_exercise":allowed="id session_id exercise_id ordinal name sets_target rep_min rep_max rest_sec timed tip";break;
+            case "lite_session_names":allowed="session_id plan_name";break;
+            default:return false;
+        }
+        return java.util.Arrays.asList(allowed.split(" ")).contains(field);
+    }
+
     Cursor planExercises(long plan) {
         return sql.rawQuery("SELECT pe.id,e.id,e.name,e.bodypart,COALESCE(pt.sets_target,c.sets_target,3),COALESCE(pt.rep_min,c.rep_min,8),COALESCE(pt.rep_max,c.rep_max,12),COALESCE(pt.rest_sec,c.rest_sec,90),COALESCE(c.timed,0),COALESCE(c.tip,'') FROM plan_exercises pe JOIN exercises e ON pe.exercise_id=e.id LEFT JOIN lite_catalog c ON c.exercise_id=e.id LEFT JOIN lite_plan_targets pt ON pt.plan_exercise_id=pe.id WHERE pe.plan_id=? ORDER BY pe.position,pe.id",new String[]{String.valueOf(plan)});
     }
