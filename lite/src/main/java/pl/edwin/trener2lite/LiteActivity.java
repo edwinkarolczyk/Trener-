@@ -225,20 +225,21 @@ public final class LiteActivity extends Activity {
         new AlertDialog.Builder(this).setTitle("Wybierz ćwiczenie")
             .setItems(names.toArray(new String[0]),(d,i)->{
                 db.addToPlan(plan,ids.get(i));showPlanEditor(plan);
-            }).setPositiveButton("+ NOWE", (d,w)->newExercise(()->showPlanEditor(plan)))
+            }).setPositiveButton("+ NOWE", (d,w)->newExercise(id->{ db.addToPlan(plan,id); showPlanEditor(plan); }))
             .setNegativeButton("Anuluj",null).show();
     }
-    private void newExercise(Runnable after) {
+    private interface NewExerciseAction { void accept(long id); }
+    private void newExercise(NewExerciseAction after) {
         prompt("Nowe ćwiczenie","Nazwa ćwiczenia","",name->{
             String[] parts={"Klatka","Plecy","Barki","Biceps","Triceps","Nogi","Brzuch","Całe ciało","Inne"};
             new AlertDialog.Builder(this).setTitle("Wybierz partię")
-                .setItems(parts,(d,i)->safe(()->{db.addExercise(name,parts[i]);after.run();}))
+                .setItems(parts,(d,i)->safe(()->{long id=db.addExercise(name,parts[i]);after.accept(id);}))
                 .setNegativeButton("Anuluj",null).show();
         });
     }
     private void showExercises() {
         page="exercises";render("Biblioteka ćwiczeń");
-        addButton(surface,"+ DODAJ WŁASNE ĆWICZENIE",GREEN,()->newExercise(()->showExercises()));
+        addButton(surface,"+ DODAJ WŁASNE ĆWICZENIE",GREEN,()->newExercise(id->showExercises()));
         try(Cursor c=db.exercises()){
             while(c.moveToNext()){
                 long id=c.getLong(0);String name=c.getString(1);
