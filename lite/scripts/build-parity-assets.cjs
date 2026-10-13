@@ -25,7 +25,7 @@ function transpile(code,file){
   const result=babel.transformSync(code,{
     babelrc:false,configFile:false,filename:file,
     sourceType:'script',comments:false,compact:false,
-    presets:[['@babel/preset-env',{
+    presets:[[require.resolve('@babel/preset-env'),{
       targets:{chrome:'37'},useBuiltIns:false,modules:false,
       exclude:['@babel/plugin-transform-typeof-symbol']
     }]]
