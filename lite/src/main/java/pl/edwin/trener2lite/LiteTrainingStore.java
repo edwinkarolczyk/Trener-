@@ -24,6 +24,7 @@ final class LiteTrainingStore {
         sql.execSQL("CREATE TABLE IF NOT EXISTS lite_rest(session_id INTEGER PRIMARY KEY, until_ms INTEGER NOT NULL DEFAULT 0)");
         sql.execSQL("CREATE TABLE IF NOT EXISTS lite_session_exercise(id INTEGER PRIMARY KEY, session_id INTEGER NOT NULL, exercise_id INTEGER NOT NULL, ordinal INTEGER NOT NULL, name TEXT NOT NULL, sets_target INTEGER NOT NULL, rep_min INTEGER NOT NULL, rep_max INTEGER NOT NULL, rest_sec INTEGER NOT NULL, timed INTEGER NOT NULL, tip TEXT NOT NULL)");
         sql.execSQL("CREATE TABLE IF NOT EXISTS lite_session_names(session_id INTEGER PRIMARY KEY, plan_name TEXT NOT NULL)");
+        sql.execSQL("CREATE TABLE IF NOT EXISTS lite_session_status(session_id INTEGER PRIMARY KEY, paused INTEGER NOT NULL DEFAULT 0, pause_start INTEGER NOT NULL DEFAULT 0, paused_total INTEGER NOT NULL DEFAULT 0, saved_rest INTEGER NOT NULL DEFAULT 0, interrupted INTEGER NOT NULL DEFAULT 0)");
         sql.execSQL("CREATE INDEX IF NOT EXISTS lite_sess_ex_order ON lite_session_exercise(session_id,ordinal)");
         seedCatalog();
     }
@@ -76,7 +77,7 @@ final class LiteTrainingStore {
     }
 
     private static final String[] EXTRA_TABLES={
-        "lite_catalog","lite_plan_targets","lite_set_quality","lite_rest","lite_session_exercise","lite_session_names","lite_group_meta","lite_group_members"
+        "lite_catalog","lite_plan_targets","lite_set_quality","lite_rest","lite_session_exercise","lite_session_names","lite_group_meta","lite_group_members","lite_session_status"
     };
     /** Kopia jest kompletna: dane podstawowe i wszystkie rozszerzenia tej samej sesji. */
     static void addBackup(SQLiteDatabase database,JSONObject root) throws org.json.JSONException {
@@ -143,6 +144,7 @@ final class LiteTrainingStore {
             case "lite_session_names":allowed="session_id plan_name";break;
             case "lite_group_meta":allowed="group_id plan_id active last_turn started_at";break;
             case "lite_group_members":allowed="group_id profile_id session_id turn";break;
+            case "lite_session_status":allowed="session_id paused pause_start paused_total saved_rest interrupted";break;
             default:return false;
         }
         return java.util.Arrays.asList(allowed.split(" ")).contains(field);
@@ -161,11 +163,62 @@ final class LiteTrainingStore {
             sql.delete("lite_rest","session_id=?",arg);
             sql.delete("lite_session_exercise","session_id=?",arg);
             sql.delete("lite_session_names","session_id=?",arg);
+            sql.delete("lite_session_status","session_id=?",arg);
             sql.delete("lite_group_members","session_id=?",arg);
             sql.delete("workout_sets","session_id=?",arg);
             sql.delete("sessions","id=?",arg);
             sql.setTransactionSuccessful();
         }finally {sql.endTransaction();}
+    }
+
+
+    boolean isPaused(long session){
+        try(Cursor c=sql.rawQuery("SELECT paused FROM lite_session_status WHERE session_id=?",new String[]{String.valueOf(session)})){
+            return c.moveToFirst()&&c.getInt(0)!=0;
+        }
+    }
+    void pause(long session,boolean pause){
+        String[] a={String.valueOf(session)};
+        long now=System.currentTimeMillis();
+        boolean was=isPaused(session);
+        if(was==pause)return;
+        long total=0,start=0,saved=0;
+        int interrupted=0;
+        try(Cursor c=sql.rawQuery("SELECT paused_total,pause_start,saved_rest,interrupted FROM lite_session_status WHERE session_id=?",a)){
+            if(c.moveToFirst()){total=c.getLong(0);start=c.getLong(1);saved=c.getLong(2);interrupted=c.getInt(3);}
+        }
+        if(pause){
+            saved=Math.max(0,rest(session)-now);
+            setRest(session,0);
+            start=now;
+        } else{
+            total+=Math.max(0,now-start);
+            if(saved>0)setRest(session,now+saved);
+            saved=0;start=0;
+        }
+        sql.insertWithOnConflict("lite_session_status",null,values(
+            "session_id",session,"paused",pause?1:0,"pause_start",start,"paused_total",total,
+            "saved_rest",saved,"interrupted",interrupted),SQLiteDatabase.CONFLICT_REPLACE);
+    }
+    void markInterrupted(long session) {
+        String[] a={String.valueOf(session)};
+        sql.execSQL("INSERT OR IGNORE INTO lite_session_status(session_id) VALUES(?)",new Object[]{session});
+        sql.execSQL("UPDATE lite_session_status SET interrupted=1 WHERE session_id=?",new Object[]{session});
+    }
+    boolean interrupted(long session){
+        try(Cursor c=sql.rawQuery("SELECT interrupted FROM lite_session_status WHERE session_id=?",new String[]{String.valueOf(session)})){
+            return c.moveToFirst()&&c.getInt(0)!=0;
+        }
+    }
+    long durationMillis(long session,long started,long finished){
+        long total=0;
+        try(Cursor c=sql.rawQuery("SELECT paused,paused_total,pause_start FROM lite_session_status WHERE session_id=?",new String[]{String.valueOf(session)})){
+            if(c.moveToFirst()){
+                total=c.getLong(1);
+                if(c.getInt(0)!=0)total+=Math.max(0,(finished>0?finished:System.currentTimeMillis())-c.getLong(2));
+            }
+        }
+        return Math.max(0,(finished>0?finished:System.currentTimeMillis())-started-total);
     }
 
     Cursor planExercises(long plan) {
