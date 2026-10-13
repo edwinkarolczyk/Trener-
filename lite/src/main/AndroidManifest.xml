@@ -1,8 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
     <application android:label="Trener 2 Lite" android:allowBackup="false"
         android:theme="@android:style/Theme.Material.Light.NoActionBar"
         android:usesCleartextTraffic="false" android:supportsRtl="true">
+        <provider android:name=".LiteApkProvider"
+            android:authorities="pl.edwin.trener2lite.updates"
+            android:exported="true"
+            android:grantUriPermissions="true"/>
         <activity android:name=".LiteActivity" android:exported="true"
             android:configChanges="orientation|screenSize|keyboardHidden">
             <intent-filter>
