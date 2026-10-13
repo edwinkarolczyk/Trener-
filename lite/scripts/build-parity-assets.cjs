@@ -6,7 +6,7 @@
 const fs=require('fs');
 const path=require('path');
 const babel=require('@babel/core');
-const src=path.resolve(__dirname,'../../../app/src/main/assets');
+const src=path.resolve(__dirname,'../../app/src/main/assets');
 const dest=path.resolve(__dirname,'../build/generated/parityAssets');
 const blocked=new Set([
   'v076-diet.js','v077-diet-quick.js','v077-widget-sync.js',
