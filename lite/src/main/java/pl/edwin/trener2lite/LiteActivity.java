@@ -594,7 +594,7 @@ public final class LiteActivity extends Activity {
                 twoButtons(sec,"SZCZEGÓŁY",BLUE,()->showSessionDetails(id),
                     "USUŃ",RED,()->confirm("Usunąć zapis treningu?",
                        "Wszystkie serie tego treningu zostaną bezpowrotnie usunięte.",
-                       ()->{db.deleteSession(id);showHistory();}));
+                       ()->safe(()->{trainer.deleteSessionSafely(id);showHistory();})));
             }
         }
     }
@@ -670,6 +670,9 @@ public final class LiteActivity extends Activity {
                 while((n=stream.read(buf))!=-1){total+=n;if(total>5*1024*1024)throw new IllegalArgumentException("Za duży plik (max 5 MB)");
                     out.write(buf,0,n);}
                 db.importJson(new JSONObject(new String(out.toByteArray(),StandardCharsets.UTF_8)));
+                trainer=new LiteTrainingStore(this,db);
+                group=new LiteGroupWorkout(db,trainer);
+                activeGroupId=null;
                 profileId=db.firstProfile();getPreferences(0).edit().putLong("profile",profileId).apply();
                 showHome();msg("Odtworzono profile i historię.");
             }catch(Exception e){msg("Import nieudany. Sprawdź plik: "+e.getMessage());}
