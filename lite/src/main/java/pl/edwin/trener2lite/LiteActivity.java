@@ -606,6 +606,10 @@ public final class LiteActivity extends Activity {
                 long minutes=dur/60000;
                 hint(sec,date(c.getLong(2))+" · "+(finished?(trainer.interrupted(id)?"Przerwany":"Zakończony"):"W toku")+
                     " • "+minutes+" min"+(group.historicalGroup(id)!=null?" • wspólny na tablecie":""));
+                try(Cursor summary=trainer.sessionSummary(id)){
+                    if(summary.moveToFirst())
+                        hint(sec,summary.getInt(0)+" serii • objętość "+number(summary.getDouble(1))+" kg·powt.");
+                }
                 twoButtons(sec,"SZCZEGÓŁY",BLUE,()->showSessionDetails(id),
                     "USUŃ",RED,()->confirm("Usunąć zapis treningu?",
                        "Wszystkie serie tego treningu zostaną bezpowrotnie usunięte.",
@@ -635,17 +639,36 @@ public final class LiteActivity extends Activity {
         if(count==0)hint(surface,"Po pierwszym treningu pojawią się rekordy.");
     }
     private void showSessionDetails(long id) {
-        page="session-detail";render("Historia zapisanego treningu");
-        int count=0;
+        page="session-detail";render("Szczegóły treningu • serie i jakość");
+        class HistoryGroup {
+            String name;StringBuilder list=new StringBuilder();int count, bad, pain;
+            double volume,peak,rirSum;
+        }
+        java.util.LinkedHashMap<String,HistoryGroup> groups=new java.util.LinkedHashMap<>();
         try(Cursor c=trainer.historyDetails(id)) {
             while(c.moveToNext()){
-                LinearLayout line=card(surface);
-                title(line,c.isNull(0)?"Ćwiczenie usunięte":c.getString(0));
-                hint(line,number(c.getDouble(1))+" kg × "+c.getInt(2)+" powt. • RIR "+c.getInt(3)+" • technika "+c.getString(4)+" • ból "+c.getString(5));
-                count++;
+                String name=c.isNull(0)?"Ćwiczenie usunięte":c.getString(0);
+                HistoryGroup g=groups.get(name);
+                if(g==null){g=new HistoryGroup();g.name=name;groups.put(name,g);}
+                double kg=c.getDouble(1);int reps=c.getInt(2),rir=c.getInt(3);
+                String technique=c.getString(4),pain=c.getString(5);
+                if(g.count>0)g.list.append("  /  ");
+                g.list.append(number(kg)).append("kg × ").append(reps);
+                g.count++;g.volume+=kg*reps;g.peak=Math.max(g.peak,kg);
+                g.rirSum+=rir;
+                if("bad".equals(technique))g.bad++;
+                if(pain!=null&&!"none".equals(pain))g.pain++;
             }
         }
-        if(count==0)hint(surface,"Ten trening nie ma zapisanych serii.");
+        if(groups.isEmpty())hint(surface,"Ten trening nie ma zapisanych serii.");
+        for(HistoryGroup g:groups.values()){
+            LinearLayout card=card(surface);
+            title(card,g.name);
+            hint(card,g.count+" serii: "+g.list);
+            hint(card,"Objętość: "+number(g.volume)+" kg·powt. • największy ciężar: "+number(g.peak)+" kg");
+            hint(card,"Średni RIR: "+number(g.rirSum/g.count)+
+                " • słaba technika: "+g.bad+" • serie z bólem: "+g.pain);
+        }
         addButton(surface,"← HISTORIA",BLUE,()->showHistory());
     }
     private void exportBackup() {
