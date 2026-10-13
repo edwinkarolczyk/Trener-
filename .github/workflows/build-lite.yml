@@ -11,6 +11,9 @@ on:
 permissions:
   contents: read
 
+env:
+  TR2_EXPECTED_SHA256: 30:68:33:34:5C:88:E2:34:4A:5A:0C:BC:51:F6:01:97:69:31:E7:24:CF:95:67:FE:6B:70:D1:59:86:56:69:CB
+
 jobs:
   lite:
     runs-on: ubuntu-latest
@@ -35,11 +38,38 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
-      - name: Zbuduj Lite Debug APK (minSdk 22)
-        run: gradle :lite:assembleDebug --no-daemon
-      - name: Opublikuj instalator APK
+      - name: Przygotuj trwały podpis APK
+        env:
+          TR2_KEYSTORE_B64: ${{ secrets.TR2_KEYSTORE_B64 }}
+          TR2_STORE_PASSWORD: ${{ secrets.TR2_STORE_PASSWORD }}
+          TR2_KEY_ALIAS: ${{ secrets.TR2_KEY_ALIAS }}
+          TR2_KEY_PASSWORD: ${{ secrets.TR2_KEY_PASSWORD }}
+        run: |
+          set -eu
+          test -n "$TR2_KEYSTORE_B64" && test -n "$TR2_STORE_PASSWORD" && test -n "$TR2_KEY_ALIAS" && test -n "$TR2_KEY_PASSWORD" || { echo "Brak klucza stałego podpisu" >&2; exit 1; }
+          mkdir -p "$RUNNER_TEMP/lite-signing"
+          KEYSTORE="$RUNNER_TEMP/lite-signing/release.jks"
+          printf '%s' "$TR2_KEYSTORE_B64" | base64 --decode > "$KEYSTORE"
+          chmod 600 "$KEYSTORE"
+          ACTUAL=$(keytool -list -v -keystore "$KEYSTORE" -storepass "$TR2_STORE_PASSWORD" -alias "$TR2_KEY_ALIAS" | awk '/SHA256:/{print $2; exit}')
+          test "$ACTUAL" = "$TR2_EXPECTED_SHA256" || { echo "Certyfikat niezgodny: $ACTUAL" >&2; exit 1; }
+          echo "TR2_KEYSTORE_PATH=$KEYSTORE" >> "$GITHUB_ENV"
+          echo "TR2_STORE_PASSWORD=$TR2_STORE_PASSWORD" >> "$GITHUB_ENV"
+          echo "TR2_KEY_ALIAS=$TR2_KEY_ALIAS" >> "$GITHUB_ENV"
+          echo "TR2_KEY_PASSWORD=$TR2_KEY_PASSWORD" >> "$GITHUB_ENV"
+      - name: Zbuduj podpisany Lite (minSdk 22)
+        run: gradle :lite:assembleRelease --no-daemon
+      - name: Weryfikuj podpis i Android 5.1
+        run: |
+          APK=lite/build/outputs/apk/release/lite-release.apk
+          test -s "$APK"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --min-sdk-version 22 "$APK"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | grep "sdkVersion:'22'"
+          ACTUAL=$("$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs "$APK" | awk -F': ' '/Signer #1 certificate SHA-256 digest:/{print toupper($2); exit}' | sed 's/../&:/g;s/:$//')
+          test "$ACTUAL" = "$TR2_EXPECTED_SHA256" || exit 1
+      - name: Opublikuj podpisany APK
         uses: actions/upload-artifact@v4
         with:
-          name: Trener2-Lite-FireOS5-debug
-          path: lite/build/outputs/apk/debug/lite-debug.apk
+          name: Trener2-Lite-FireOS5-signed
+          path: lite/build/outputs/apk/release/lite-release.apk
           retention-days: 30
