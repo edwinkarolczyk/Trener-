@@ -61,6 +61,8 @@ jobs:
           echo "TR2_STORE_PASSWORD=$TR2_STORE_PASSWORD" >> "$GITHUB_ENV"
           echo "TR2_KEY_ALIAS=$TR2_KEY_ALIAS" >> "$GITHUB_ENV"
           echo "TR2_KEY_PASSWORD=$TR2_KEY_PASSWORD" >> "$GITHUB_ENV"
+      - name: Testy regresyjne treningu i progresji
+        run: gradle :lite:testDebugUnitTest --no-daemon
       - name: Zbuduj podpisany Lite (minSdk 22)
         run: gradle :lite:assembleRelease --no-daemon
       - name: Weryfikuj podpis i Android 5.1
