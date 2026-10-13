@@ -8,16 +8,31 @@ def signingKeyAlias = System.getenv('TR2_KEY_ALIAS')
 def signingKeyPassword = System.getenv('TR2_KEY_PASSWORD')
 def hasReleaseSigning = signingStorePath && signingStorePassword && signingKeyAlias && signingKeyPassword
 
+def trainerCoreText = file('../app/build.gradle').text
+def trainerCoreMatch = trainerCoreText =~ /versionName\s+'([^']+)'/
+def trainerCoreVersion = trainerCoreMatch.find() ? trainerCoreMatch.group(1) : '0.9.5.7'
+
+tasks.register('prepareLiteAssets', Exec) {
+    workingDir rootProject.projectDir
+    commandLine 'node', 'lite/scripts/build-parity-assets.cjs'
+}
+
 android {
+    sourceSets {
+        main {
+            assets.srcDirs = ["$buildDir/generated/parityAssets"]
+        }
+    }
     namespace 'pl.edwin.trener2lite'
     compileSdk 35
 
     defaultConfig {
         applicationId 'pl.edwin.trener2lite'
-        minSdk 22
+        minSdk 21
         targetSdk 28
-        versionCode 3
-        versionName '0.2.0'
+        versionCode 4
+        versionName '0.3.0'
+        buildConfigField 'String', 'TRAINER_CORE_VERSION', "\"$"+"{trainerCoreVersion}\""
     }
 
     // Aplikacja instalowana lokalnie na Fire OS 5, nie jest publikowana w Google Play.
@@ -58,3 +73,5 @@ android {
 dependencies {
     testImplementation 'junit:junit:4.13.2'
 }
+
+tasks.named('preBuild') { dependsOn tasks.named('prepareLiteAssets') }
