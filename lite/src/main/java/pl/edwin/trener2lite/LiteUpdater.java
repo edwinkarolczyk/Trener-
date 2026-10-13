@@ -117,7 +117,7 @@ final class LiteUpdater {
             try {
                 File dir = new File(activity.getCacheDir(), "updates");
                 if (!dir.isDirectory() && !dir.mkdirs()) throw new IllegalStateException("Brak pamięci na aktualizację");
-                temp = new File(dir, "latest.apk.tmp");
+                temp = new File(dir, "downloading.apk");
                 File target = new File(dir, "latest.apk");
                 HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
                 conn.setConnectTimeout(20000);
