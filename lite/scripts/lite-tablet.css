@@ -51,3 +51,21 @@ input[type=number]{font-variant-numeric:tabular-nums}
  .stat b{font-size:31px}
  .app{max-width:1160px}
 }
+
+/* Fire OS 5: WebView sprzed obsługi CSS Grid i zmiennych CSS. */
+body{background:#090909;color:#f4f4f4}
+.card{background:#141414;border-radius:18px;border-color:#303030}
+.eyebrow,.appHeader h1 b,.athlete,.dayCard>b{color:#ef2b2d}
+.tab.active,.primary{background:#ef2b2d;color:#fff}
+.tabs{display:-webkit-flex;display:flex;-webkit-flex-wrap:wrap;flex-wrap:wrap}
+.tab{-webkit-flex:1 1 18%;flex:1 1 18%}
+.modeRow,.twoCols,.inputs,.controls,.statsGrid,.grid2{
+  display:-webkit-flex;display:flex;-webkit-flex-wrap:wrap;flex-wrap:wrap
+}
+.modeRow>*{flex:1 1 45%}
+.twoCols>*,.inputs>*,.controls>*,.statsGrid>*,.grid2>*{flex:1 1 44%;min-width:0}
+.exerciseBuilder{display:block}
+.exercisePick{margin-top:9px}
+.weekdayRow{display:-webkit-flex;display:flex;flex-wrap:wrap}
+.weekdayRow>*{flex:1 1 17%}
+.historyItem summary{list-style:none}
