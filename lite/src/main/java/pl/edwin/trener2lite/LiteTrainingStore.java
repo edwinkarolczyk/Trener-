@@ -25,9 +25,54 @@ final class LiteTrainingStore {
         sql.execSQL("CREATE TABLE IF NOT EXISTS lite_session_exercise(id INTEGER PRIMARY KEY, session_id INTEGER NOT NULL, exercise_id INTEGER NOT NULL, ordinal INTEGER NOT NULL, name TEXT NOT NULL, sets_target INTEGER NOT NULL, rep_min INTEGER NOT NULL, rep_max INTEGER NOT NULL, rest_sec INTEGER NOT NULL, timed INTEGER NOT NULL, tip TEXT NOT NULL)");
         sql.execSQL("CREATE TABLE IF NOT EXISTS lite_session_names(session_id INTEGER PRIMARY KEY, plan_name TEXT NOT NULL)");
         sql.execSQL("CREATE TABLE IF NOT EXISTS lite_session_status(session_id INTEGER PRIMARY KEY, paused INTEGER NOT NULL DEFAULT 0, pause_start INTEGER NOT NULL DEFAULT 0, paused_total INTEGER NOT NULL DEFAULT 0, saved_rest INTEGER NOT NULL DEFAULT 0, interrupted INTEGER NOT NULL DEFAULT 0)");
+        sql.execSQL("CREATE TABLE IF NOT EXISTS lite_presets_done(profile_id INTEGER PRIMARY KEY)");
         sql.execSQL("CREATE INDEX IF NOT EXISTS lite_sess_ex_order ON lite_session_exercise(session_id,ordinal)");
         seedCatalog();
+        seedPresets();
     }
+
+    /** Te same cztery gotowe plany co w głównym Trenerze 2; bez ponownego tworzenia usuniętych planów. */
+    void seedPresets() {
+        String[][] presets={
+            {"Poniedziałek — klatka + triceps","bench","incline","closebench","pushups"},
+            {"Środa — plecy + biceps","row","underrow","curl","reversecurl"},
+            {"Piątek — barki + nogi + brzuch","ohp","squat","lunges","plank"},
+            {"Biceps — sesja dodatkowa","curl","seatedcurl","reversecurl","curl21","iso90"}
+        };
+        ArrayList<Long> profiles=new ArrayList<>();
+        try(Cursor c=sql.rawQuery("SELECT id FROM profiles",null)){
+            while(c.moveToNext())profiles.add(c.getLong(0));
+        }
+        for(Long profile:profiles) {
+            try(Cursor check=sql.rawQuery("SELECT 1 FROM lite_presets_done WHERE profile_id=?",
+                new String[]{String.valueOf(profile)})){if(check.moveToFirst())continue;}
+            sql.beginTransaction();
+            try{
+                for(String[] preset:presets){
+                    long plan=-1;
+                    try(Cursor c=sql.rawQuery("SELECT id FROM plans WHERE profile_id=? AND name=? LIMIT 1",
+                        new String[]{String.valueOf(profile),preset[0]})){
+                        if(c.moveToFirst())plan=c.getLong(0);
+                    }
+                    if(plan<0)plan=sql.insertOrThrow("plans",null,values("profile_id",profile,"name",preset[0]));
+                    for(int i=1;i<preset.length;i++) {
+                        try(Cursor ex=sql.rawQuery("SELECT exercise_id FROM lite_catalog WHERE original_id=?",new String[]{preset[i]})){
+                            if(!ex.moveToFirst())continue;
+                            long exid=ex.getLong(0);
+                            try(Cursor exists=sql.rawQuery("SELECT 1 FROM plan_exercises WHERE plan_id=? AND exercise_id=?",
+                                new String[]{String.valueOf(plan),String.valueOf(exid)})){
+                                if(exists.moveToFirst())continue;
+                            }
+                            sql.insertOrThrow("plan_exercises",null,values("plan_id",plan,"exercise_id",exid,"position",i));
+                        }
+                    }
+                }
+                sql.insertOrThrow("lite_presets_done",null,values("profile_id",profile));
+                sql.setTransactionSuccessful();
+            }finally{sql.endTransaction();}
+        }
+    }
+
     private static ContentValues values(Object... args){
         ContentValues c=new ContentValues();
         for(int i=0;i<args.length;i+=2) {
@@ -77,7 +122,7 @@ final class LiteTrainingStore {
     }
 
     private static final String[] EXTRA_TABLES={
-        "lite_catalog","lite_plan_targets","lite_set_quality","lite_rest","lite_session_exercise","lite_session_names","lite_group_meta","lite_group_members","lite_session_status"
+        "lite_catalog","lite_plan_targets","lite_set_quality","lite_rest","lite_session_exercise","lite_session_names","lite_group_meta","lite_group_members","lite_session_status","lite_presets_done"
     };
     /** Kopia jest kompletna: dane podstawowe i wszystkie rozszerzenia tej samej sesji. */
     static void addBackup(SQLiteDatabase database,JSONObject root) throws org.json.JSONException {
@@ -99,17 +144,17 @@ final class LiteTrainingStore {
             }
             extensions.put(table,rows);
         }
-        root.put("liteBackupSchema",2);
+        root.put("liteBackupSchema",3);
         root.put("liteExtensions",extensions);
     }
     /** Wykonuje się wewnątrz głównej transakcji importu; błąd cofa również serię i historię. */
     static void restoreBackup(SQLiteDatabase database,JSONObject root) throws org.json.JSONException{
         JSONObject extension=root.optJSONObject("liteExtensions");
         int schema=root.optInt("liteBackupSchema",1);
-        if(schema>2)throw new org.json.JSONException("Kopia pochodzi z nowszego Trenera 2 Lite");
+        if(schema>3)throw new org.json.JSONException("Kopia pochodzi z nowszego Trenera 2 Lite");
         if(extension!=null)for(String table:EXTRA_TABLES){
             JSONArray rows=extension.optJSONArray(table);
-            if(rows==null&&schema<2)continue;
+            if(rows==null&&(schema<2||(schema<3&&"lite_presets_done".equals(table))))continue;
             if(rows==null||rows.length()>100000)throw new org.json.JSONException("Brak wymaganej tabeli: "+table);
             for(int i=0;i<rows.length();i++)if(!(rows.opt(i) instanceof JSONObject))
                 throw new org.json.JSONException("Uszkodzony wiersz w "+table);
@@ -150,6 +195,7 @@ final class LiteTrainingStore {
             case "lite_group_meta":allowed="group_id plan_id active last_turn started_at";break;
             case "lite_group_members":allowed="group_id profile_id session_id turn";break;
             case "lite_session_status":allowed="session_id paused pause_start paused_total saved_rest interrupted";break;
+            case "lite_presets_done":allowed="profile_id";break;
             default:return false;
         }
         return java.util.Arrays.asList(allowed.split(" ")).contains(field);
