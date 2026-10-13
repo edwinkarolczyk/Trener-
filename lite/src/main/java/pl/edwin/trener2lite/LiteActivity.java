@@ -146,7 +146,9 @@ public final class LiteActivity extends Activity {
             }
         }
         Button add=button("+ Osoba",GREEN,()->prompt("Dodaj osobę","Nazwa profilu","",name->{
-            db.addProfile(name);showHome();
+            profileId=db.addProfile(name);
+            trainer.seedPresets();
+            getPreferences(0).edit().putLong("profile",profileId).apply();showHome();
         }));
         add.setTextSize(16);profiles.addView(add,lp(-2,52));
 
