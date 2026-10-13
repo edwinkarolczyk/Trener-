@@ -294,6 +294,12 @@ final class LiteTrainingStore {
     void setRest(long session,long until) {
         sql.insertWithOnConflict("lite_rest",null,values("session_id",session,"until_ms",until),SQLiteDatabase.CONFLICT_REPLACE);
     }
+
+    Cursor sessionSummary(long session){
+        return sql.rawQuery("SELECT COUNT(*),COALESCE(SUM(weight*reps),0),COALESCE(MAX(weight),0) FROM workout_sets WHERE session_id=?",
+            new String[]{String.valueOf(session)});
+    }
+
     Cursor stats(long profile) {
         return sql.rawQuery("SELECT COUNT(DISTINCT s.id),COUNT(ws.id),COALESCE(SUM(ws.weight*ws.reps),0) FROM sessions s LEFT JOIN workout_sets ws ON ws.session_id=s.id WHERE s.profile_id=?",new String[]{String.valueOf(profile)});
     }
