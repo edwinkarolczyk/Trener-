@@ -18,6 +18,10 @@ import android.webkit.WebViewClient;
 import android.util.Log;
 import android.widget.Toast;
 import android.view.WindowManager;
+import android.media.AudioManager;
+import android.media.ToneGenerator;
+import android.os.Handler;
+import android.os.Looper;
 import org.json.JSONObject;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -117,6 +121,24 @@ public final class LiteFullActivity extends Activity {
             });
         }
         @JavascriptInterface public int getAppVersionCode() { return BuildConfig.VERSION_CODE; }
+        @JavascriptInterface public void restFinishedSignal(boolean sound,boolean haptic) {
+            if(!sound&&!haptic)return;
+            runOnUiThread(()->{
+                if(sound){
+                    try{
+                        ToneGenerator tone=new ToneGenerator(AudioManager.STREAM_NOTIFICATION,65);
+                        tone.startTone(ToneGenerator.TONE_PROP_BEEP,180);
+                        new Handler(Looper.getMainLooper()).postDelayed(tone::release,320);
+                    }catch(Exception e){Log.w("TrenerLite","Sygnał dźwiękowy niedostępny",e);}
+                }
+                if(haptic){
+                    try{
+                        Vibrator vib=(Vibrator)getSystemService(Context.VIBRATOR_SERVICE);
+                        if(vib!=null&&vib.hasVibrator())vib.vibrate(150);
+                    }catch(Exception e){Log.w("TrenerLite","Wibracja niedostępna",e);}
+                }
+            });
+        }
         @JavascriptInterface public void vibrate(int millis) {
             if(millis<1||millis>5000)return;
             Vibrator vib=(Vibrator)getSystemService(Context.VIBRATOR_SERVICE);
