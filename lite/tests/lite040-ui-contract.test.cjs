@@ -62,3 +62,14 @@ test('historie i biblioteka posiadają ekrany i deduplikują widok',()=>{
  assert.match(ui,/if\(!el\.open\|\|!el\.classList\.contains/);
  assert.match(ui,/lite040WeekSave/);assert.match(ui,/lite040AllExercise/);
 });
+
+test('krótkie filmy lokalne mieszczą się w pełnej kopii bez niszczenia historii',()=>{
+ assert.match(ui,/trainer3\.lite\.videos\.v040/);
+ assert.match(ui,/512\*1024/);
+ assert.match(ui,/reader\.readAsDataURL\(file\)/);
+ const plan=backup.prepare({format:'trener2-backup',storage:{
+  'trainer3.lite.videos.v040':JSON.stringify({bench:'data:video/mp4;base64,AAAA'}),
+  'trainer3.history':'[]'
+ }},{},'all','');
+ assert.ok(plan.writes['trainer3.lite.videos.v040']);
+});
