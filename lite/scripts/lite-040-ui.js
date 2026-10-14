@@ -5,7 +5,7 @@ var doc=document,core=window.TrenerLite040Core;
 if(!core)return;
 var PROFILE_KEY='trainer3.lite.profiles.v037',WEEK_KEY='trainer3.lite.week.v040',
  PENDING='trainer3.onePhone.pending.v086',AVATARS='trainer3.lite.avatar.v040',
- KEEP='trainer3.lite.screen.keep.v040';
+ KEEP='trainer3.lite.screen.keep.v040',VIDEO='trainer3.lite.videos.v040';
 var shown='start',signature='',startDate='',historyMode='mine',historyPerson='',manualPlan=false;
 function $(id){return doc.getElementById(id);}
 function esc(s){return String(s===undefined||s===null?'':s).replace(/[&<>"']/g,function(c){
@@ -249,6 +249,8 @@ function renderExercises(){
 function openExercise(ex){
  var shade=make('div','lite040Overlay');shade.id='lite040ExerciseDetail';
  var img=ex.imageStart||'',end=ex.imageEnd||'';
+ var id=String(ex.id||ex.n||ex.name||''),video=read(VIDEO,{})[id]||ex.videoUrl||'';
+ if(!/^https:\/\//i.test(video))video='';
  shade.innerHTML='<div class="lite040Dialog" role="dialog" aria-modal="true"><button type="button" id="lite040Close" class="secondary">ZAMKNIJ ×</button>'+
  '<h2>'+esc(ex.n||ex.name||'Ćwiczenie')+'</h2><p>'+esc(ex.group||ex.equipment||'')+'</p>'+
  (img?'<img src="'+esc(img)+'" alt="Pozycja startowa">':'')+
@@ -257,9 +259,23 @@ function openExercise(ex){
  '<p><b>Pozycja początkowa:</b> '+esc(ex.setup||'—')+'</p>'+
  (end?'<img src="'+esc(end)+'" alt="Pozycja końcowa">':'')+
  '<p><b>Błędy:</b> '+esc(ex.mistake||'—')+'</p>'+
- '<p><b>Przerwa:</b> '+esc(ex.rest||'-')+' s</p></div>';
+ '<p><b>Przerwa:</b> '+esc(ex.rest||'-')+' s</p>'+
+ (video?'<video controls preload="none" src="'+esc(video)+'" style="display:block;width:100%;max-height:320px"></video>':'')+
+ '<button id="lite040SetVideo" class="secondary" type="button">'+(video?'ZMIEŃ LINK DO FILMU':'DODAJ LINK DO KRÓTKIEGO FILMU')+'</button>'+
+ '<p class="hint">Filmy z linku wymagają połączenia z Internetem. Zdjęcia pozostają lokalne.</p></div>';
  doc.body.appendChild(shade);
  $('lite040Close').onclick=function(){shade.parentNode.removeChild(shade);};
+ $('lite040SetVideo').onclick=function(){
+  var url=prompt('Wklej link HTTPS do pliku MP4/WebM (puste = usuń link):',video);
+  if(url===null)return;
+  url=String(url).trim();
+  if(url&&(!/^https:\/\//i.test(url)||url.length>1000)){
+   alert('Wklej poprawny link HTTPS do filmu.');return;
+  }
+  try{var stored=read(VIDEO,{});if(url)stored[id]=url;else delete stored[id];write(VIDEO,stored);
+   shade.parentNode.removeChild(shade);openExercise(ex);
+  }catch(e){alert('Nie udało się zapisać linku: '+e.message);}
+ };
 }
 function installHistory(){
  var section=$('history'),target=$('historyContent');if(!section||!target||$('lite040History'))return;
