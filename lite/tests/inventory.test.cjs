@@ -19,7 +19,8 @@ test('skok +2,5 kg na hantlę niemożliwy z samymi talerzami 2,5 kg',()=>{
   assert.equal(r.total,7);assert.equal(r.exact,false);
 });
 test('możliwość wykorzystania tylko jednej hantli: 4 talerze na stronę',()=>{
-  const r=inv.recommend(items(),'dumbbell-one','grip-two',100);
+  const gear=items();gear.bars[0].maxKg=30;
+  const r=inv.recommend(gear,'dumbbell-one','grip-two',100);
   assert.equal(r.total,22);assert.equal(r.side[0].count,4);
 });
 test('zestaw oburącz nie może policzyć tych samych czterech talerzy na obie hantle',()=>{
