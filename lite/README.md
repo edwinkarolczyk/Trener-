@@ -48,3 +48,21 @@ gradle :lite:testDebugUnitTest :lite:assembleRelease
 - Informacja o weryfikacji wykonalności ciężaru z własnymi talerzami/gryfami to odrębny etap — w tej wersji nie ma jeszcze algorytmu montażu talerzy.
 - Nowe dane rekordu mają klucz `trainer3.lite.pr.v1` i są zbierane w dotychczasowej kopii treningowej JSON. Aktualizacja nie usuwa wcześniejszych profili ani serii.
 - Testy: `node --test lite/tests/pr-core.test.cjs`; dodatkowo walidacja składni przetranspilowanego kodu w CI.
+
+## Etap 01: ochrona danych — Lite 0.3.2
+
+**Wdrożone do gałęzi Lite, kontrola na fizycznym Fire OS 5 pozostaje wymagana:**
+
+- Odczyt starej bazy `trener_lite.db` przez `LiteLegacyExport` w trybie **READONLY**; brak dopisywania tabel i brak zależności od obecności wszystkich tabel rozszerzeń.
+- Automatyczna, idempotentna migracja starej historii SQLite do historii wspólnego silnika. Nowy znacznik sukcesu dopiero po bezpiecznym zapisie; przy błędzie można ponowić, a stara baza pozostaje nietknięta.
+- Eksport JSON obejmuje wartości `trainer3.*`/`trainer2.*` z historią, zdjęciami, planami i rekordami, oraz oryginalne tabele starego Lite w `legacyLite` (o ile plik bazy istnieje). Kopia zawiera osobne pola danych, ale jest jednym plikiem.
+- Import przez Android **nigdy nie uruchamia teraz domyślnego nadpisującego `TrenerBackup.nativeImport`**: otwiera podgląd `TrenerLiteData.previewImport`, pokazuje liczbę nowych/zdublowanych/konfliktujących rekordów i wymaga potwierdzenia.
+- Wybór: **Cała kopia** lub **Tylko jedna osoba** (gdy kopia ma identyfikatory uczestników). Import wybranej osoby oddziela wyłącznie jej serie i nie przenosi cudzych.
+- Historia i rekordy są scalane po stałych identyfikatorach; przy tym samym ID i innej treści bieżący wpis wygrywa, konflikt jest liczony. Brak cichego nadpisania.
+- Istniejące ustawienia i plany pozostają niezmienione; import dodaje brakujące klucze i wybrane listy. Jeśli obydwie kopie mają różne plany pod jednym kluczem, import **nie połączy automatycznie konfliktujących definicji**, ale pokaże liczbę pominiętych kluczy.
+- Zapis kilku kluczy ma rollback w przypadku błędu pamięci; jeśli system odmówi również przywrócenia danych, wyświetlany jest jawny komunikat krytyczny. Nie jest to atomowa transakcja SQLite: przed importem nadal zaleca się eksport.
+- Usunięto `slice(0,100)` z najważniejszych ścieżek zapisu historii Lite; nie ograniczamy historii do ostatnich 100 sesji przy normalnym zapisie.
+- Import zablokowany, gdy aktywny jest ekran treningu; dieta i woda celowo wyłączone.
+- Testy: `node --test lite/tests/data-safety.test.cjs lite/tests/pr-core.test.cjs`, składnia WebView po transpilacji i testy Android Gradle z CI.
+
+**Ograniczenia:** pojedynczy JSON ma limit 12 MB; rozmiar lokalnego WebView może ograniczać ilość zdjęć. Brak fizycznego testu na Amazon Fire, dlatego nie ogłaszać pełnej zgodności z jego WebView. Podczas eksportu wykonaj kopię poza urządzeniem; do wydania stabilnego potrzebne są testy importu na faktycznym tablecie.
