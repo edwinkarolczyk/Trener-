@@ -166,10 +166,20 @@ public final class LiteFullActivity extends Activity {
             runOnUiThread(()->{
                 exportJson=json;
                 try{
+                    JSONObject meta=new JSONObject(json);
+                    String format=meta.optString("format");
+                    boolean profileZip="trener2-lite-profile-archive".equals(format);
+                    if(!profileZip&&!"trener2-one-phone-session".equals(format)&&
+                       !"trener2-backup".equals(format))
+                        throw new IllegalArgumentException("Nieobsługiwany format eksportu.");
+                    String safeName=name==null?"":name.replaceAll("[^a-zA-Z0-9._-]","-");
+                    if(safeName.length()>100)safeName=safeName.substring(0,100);
+                    if(!safeName.endsWith(profileZip?".zip":".json"))
+                        safeName="Trener2-"+(profileZip?"profil.zip":"wynik.json");
                     Intent i=new Intent(Intent.ACTION_CREATE_DOCUMENT);
                     i.addCategory(Intent.CATEGORY_OPENABLE);
-                    i.setType("application/json");
-                    i.putExtra(Intent.EXTRA_TITLE,"Trener2Lite-pelna-kopia.json");
+                    i.setType(profileZip?"application/zip":"application/json");
+                    i.putExtra(Intent.EXTRA_TITLE,safeName);
                     startActivityForResult(i,EXPORT_BACKUP);
                 }catch(Exception ex){showError("Eksport: "+ex.getMessage());}
             });
@@ -202,6 +212,16 @@ public final class LiteFullActivity extends Activity {
                     }catch(Exception ex){showError("Import: "+ex.getMessage());}
                 }).show());
         }
+    }
+
+    private static void putZipEntry(java.util.zip.ZipOutputStream zip,String name,String content)
+        throws Exception {
+        if(content.getBytes(StandardCharsets.UTF_8).length>2*1024*1024)
+            throw new IllegalStateException("Jedna sesja przekracza 2 MB.");
+        java.util.zip.ZipEntry entry=new java.util.zip.ZipEntry(name);
+        zip.putNextEntry(entry);
+        zip.write(content.getBytes(StandardCharsets.UTF_8));
+        zip.closeEntry();
     }
 
     private void showError(String error) {
@@ -248,15 +268,44 @@ public final class LiteFullActivity extends Activity {
             try(OutputStream out=getContentResolver().openOutputStream(data.getData())){
                 if(out==null||exportJson==null)throw new IllegalStateException("Nie można otworzyć pliku");
                 JSONObject complete=new JSONObject(exportJson);
-                if(!"trener2-backup".equals(complete.optString("format")))
-                    throw new IllegalArgumentException("Nieprawidłowy format eksportu");
-                JSONObject old=LiteLegacyExport.read(this);
-                if("Trener2Lite".equals(old.optString("app")))complete.put("legacyLite",old);
+                String kind=complete.optString("format");
+                if("trener2-backup".equals(kind)){
+                    JSONObject old=LiteLegacyExport.read(this);
+                    if("Trener2Lite".equals(old.optString("app")))complete.put("legacyLite",old);
+                }else if("trener2-lite-profile-archive".equals(kind)){
+                    JSONObject profile=complete.optJSONObject("profile");
+                    org.json.JSONArray sessions=complete.optJSONArray("sessions");
+                    if(profile==null||sessions==null||sessions.length()>1500)
+                        throw new IllegalArgumentException("Nieprawidłowa paczka profilu.");
+                    java.util.zip.ZipOutputStream zip=new java.util.zip.ZipOutputStream(out);
+                    try{
+                        String metadata=new JSONObject().put("format","trener2-lite-profile-archive")
+                            .put("version",1).put("profile",profile).put("exportedAt",
+                                complete.optString("exportedAt"))
+                            .put("sessionsCount",sessions.length()).toString(2);
+                        putZipEntry(zip,"informacje-o-profilu.json",metadata);
+                        org.json.JSONArray records=complete.optJSONArray("personalRecords");
+                        if(records!=null)putZipEntry(zip,"rekordy-1RM.json",records.toString(2));
+                        for(int i=0;i<sessions.length();i++){
+                            JSONObject session=sessions.getJSONObject(i);
+                            if(!"trener2-one-phone-session".equals(session.optString("format")))
+                                throw new IllegalArgumentException("Nieobsługiwana sesja w archiwum.");
+                            String file=String.format(java.util.Locale.ROOT,
+                                "sesje/trening-%04d.json",i+1);
+                            putZipEntry(zip,file,session.toString(2));
+                        }
+                        zip.finish();
+                    }finally{zip.flush();}
+                    showError("ZIP zapisany. Na telefonie rozpakuj sesje i importuj JSON-y.");
+                    return;
+                }else if(!"trener2-one-phone-session".equals(kind)){
+                    throw new IllegalArgumentException("Nieprawidłowy format eksportu.");
+                }
                 byte[] bytes=complete.toString(2).getBytes(StandardCharsets.UTF_8);
                 if(bytes.length>MAX_JSON_BYTES)
-                    throw new IllegalStateException("Kopia przekracza 12 MB. Nie zapisano niepełnego eksportu.");
+                    throw new IllegalStateException("Eksport przekracza 12 MB. Podziel dane na mniejsze części.");
                 out.write(bytes);out.flush();
-                showError("Kompletna kopia JSON zapisana (także stara baza Lite, jeśli istnieje)");
+                showError("Zapisano "+("trener2-backup".equals(kind)?"pełną kopię JSON.":"trening wybranej osoby JSON."));
             }catch(Exception e){showError("Błąd eksportu: "+e.getMessage());}
             finally{exportJson=null;}
         }else if(request==IMPORT_BACKUP){
