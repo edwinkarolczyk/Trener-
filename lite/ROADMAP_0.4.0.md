@@ -118,16 +118,18 @@ Cel: usunąć nadmiar UI bez utraty danych i możliwości treningu 1–6 osób.
 3. Test ręczny na Fire 7: aktualizacja bez deinstalacji, trening 1–6, eksport/import, zdjęcia, rotacja, wygaszanie, urządzenie offline.
 4. Opublikować link APK i listę zmian dopiero po udanym CI; status jawnie rozróżniać CI od testu fizycznego tabletu.
 
-## Status realizacji
-- [x] Wymagania i wszystkie 42 decyzje użytkownika
-- [x] Podstawowe rozpoznanie modułów i gałęzi Lite
-- [ ] Etap 0 — testy ochrony danych
-- [ ] Etap 1 — Start i profile
-- [ ] Etap 2 — trening grupowy
-- [ ] Etap 3 — Plan i Moje ćwiczenia
-- [ ] Etap 4 — Historia/Postępy
-- [ ] Etap 5 — Ustawienia
-- [ ] Etap 6 — CI, podpisany APK, test na Fire
-- [ ] Lite 0.4.0 gotowy do instalacji
+## Status realizacji — 2026-10-14
 
-**Następne konkretne zadanie:** Etap 0, potem Etap 1. Nie podbijać wersji na sam plan.
+- [x] Wszystkie 42 decyzje zatwierdzone; decyzje niezmienne w tej wersji
+- [x] Etap 0 — dopisane testy bezpieczeństwa profili, historii, planów i kopii 0.4.0; pełny CI jeszcze do uruchomienia
+- [x] Etap 1 — kod Start, awatary, wybór 1–6, wznowienie, powitanie i dodatkowe opcje
+- [x] Etap 2 — istniejący silnik 1–6 z niezależnym odpoczynkiem, sygnałami i ustawieniem wygaszania; kod zachowany
+- [x] Etap 3 — osobne tygodnie, biblioteka, filtr sprzętu, import Excel/ZIP + zdjęcia; krótkie filmy lokalne MP4/WebM do 512 KB i linki HTTPS
+- [x] Etap 4 — historia Moje/Wspólne, wybór osoby, wyszukiwanie, pojedynczy rozwinięty wpis, znaczniki PR, zbiorcze Postępy
+- [x] Etap 5 — pięć kategorii Ustawień, wspólna kopia, ukryte zbędne sekcje, diagnostyka i aktualizacje
+- [ ] Etap 6 — **CI jeszcze niezweryfikowane**: Gradle, Node, podpis APK, SHA-256, opublikowane wydanie i test instalacji na Fire 7
+- [ ] 0.4.0 gotowy do instalacji — dopiero po pomyślnym CI
+
+Pliki zmian: `lite/scripts/lite-040-core.js`, `lite/scripts/lite-040-ui.js`, `lite/scripts/lite-init.js`, `lite/scripts/lite-fire-ui.js`, `lite/scripts/lite-exercise-import.js`, `lite/scripts/build-parity-assets.cjs`, testy 0.4.0. Koniecznie sprawdzić aktualizację bez odinstalowywania działającego 0.3.9.
+
+**Uwaga:** CI nie zastępuje testu na fizycznym Fire OS 5.7.1.0. Publikacja jest dopuszczalna po zielonym CI, a test fizyczny pozostaje do potwierdzenia przez użytkownika.
