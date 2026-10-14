@@ -106,7 +106,7 @@ jobs:
       - name: Testy bezpieczeństwa kopii, migracji i rekordów
         run: node --test lite/tests/pr-core.test.cjs lite/tests/data-safety.test.cjs lite/tests/group-six.test.cjs lite/tests/inventory.test.cjs lite/tests/fire-ui.test.cjs lite/tests/exercise-import.test.cjs lite/tests/profile-lock.test.cjs lite/tests/start-unified.test.cjs lite/tests/installer-fire5.test.cjs
       - name: Testy nowego interfejsu, planów i historii 0.4.0
-        run: node --test lite/scripts/lite-040-core.test.cjs
+        run: node --test lite/scripts/lite-040-core.test.cjs lite/tests/lite040-ui-contract.test.cjs
       - name: Testy regresyjne treningu i progresji
         run: gradle :lite:testDebugUnitTest --no-daemon
       - name: Zbuduj podpisany Lite (minSdk 21)
