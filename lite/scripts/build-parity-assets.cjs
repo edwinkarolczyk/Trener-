@@ -51,9 +51,16 @@ for(const ent of entries){
     html=html.replace('<link rel="stylesheet" href="v090-recipes.css">','');
     html=html.replace('</head>','<link rel="stylesheet" href="lite-tablet.css"></head>');
     html=html.replace('<script src="app.js"></script>',
-      '<script src="core-js.min.js"></script><script src="lite-init.js"></script><script src="app.js"></script>');
-    html=html.replace('</body>', '<script src="lite-pr-core.js"></script><script src="lite-pr.js"></script></body>');
+      '<script src="core-js.min.js"></script><script src="lite-data-core.js"></script><script src="lite-init.js"></script><script src="app.js"></script>');
+    html=html.replace('</body>', '<script src="lite-pr-core.js"></script><script src="lite-pr.js"></script><script src="lite-data-manager.js"></script></body>');
     value=Buffer.from(html);
+  }
+  // Lite nie obcina najstarszych treningów po zapisie kolejnej serii.
+  if(['app.js','v086-one-phone.js','v059-readiness.js'].includes(ent.name)){
+    let js=value.toString('utf8');
+    js=js.replace(/JSON\.stringify\(history\.slice\(0,100\)\)/g,'JSON.stringify(history)');
+    js=js.replace(/JSON\.stringify\(h\.slice\(0,100\)\)/g,'JSON.stringify(h)');
+    value=Buffer.from(js);
   }
   if(ent.name.endsWith('.js')){value=Buffer.from(transpile(value.toString('utf8'),ent.name));compiled++;}
   fs.writeFileSync(path.join(dest,ent.name),value);copied++;
@@ -62,14 +69,14 @@ for(const ent of entries){
 // Kopia plików źródłowych Trenera 2 nadal pozostaje jedyną wersją logiki.
 const polyfill=require.resolve('core-js-bundle/minified.js');
 fs.copyFileSync(polyfill,path.join(dest,'core-js.min.js'));
-for(const name of ['lite-init.js','lite-pr-core.js','lite-pr.js']){
+for(const name of ['lite-data-core.js','lite-init.js','lite-pr-core.js','lite-pr.js','lite-data-manager.js']){
   fs.writeFileSync(path.join(dest,name),transpile(fs.readFileSync(path.join(__dirname,name),'utf8'),name));
 }
 fs.copyFileSync(path.join(__dirname,'lite-tablet.css'),path.join(dest,'lite-tablet.css'));
 const required=['app.js','progression-addon.js','feature-loader.js','v058-smart-set.js',
   'v059-readiness.js','v0642-adaptive-volume.js','v070-beta-planner.js',
   'v070-beta-data.js','v086-one-phone.js','v094-exercise-store.js','v094-exercise-ui.js',
-  'style.css','index.html','lite-init.js','lite-pr-core.js','lite-pr.js'];
+  'style.css','index.html','lite-init.js','lite-pr-core.js','lite-pr.js','lite-data-core.js','lite-data-manager.js'];
 for(const name of required) if(!fs.existsSync(path.join(dest,name)))throw Error('Brakuje pliku silnika: '+name);
 const out=fs.readFileSync(path.join(dest,'feature-loader.js'),'utf8');
 if(blocked.has('v076-diet.js')&&out.includes('v076-diet.js'))throw Error('Moduł dietetyczny wyciekł do Lite');
