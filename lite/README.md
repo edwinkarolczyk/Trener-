@@ -95,3 +95,15 @@ gradle :lite:testDebugUnitTest :lite:assembleRelease
 - Katalog Lite zapisany pod `trainer3.lite.inventory.v034`, powiązania z ćwiczeniem pod `trainer3.lite.inventory.exercise.v034`; oba klucze należą do kompletnej kopii JSON. Import z etapu 01 nie nadpisuje istniejącego katalogu przy konflikcie.
 
 **Świadome ograniczenia:** brak magazynu „co aktualnie jest nakręcone na gryfach” i automatycznego śledzenia ich bieżącego położenia. Program oblicza instrukcję jak złożyć ciężar od zera, nie operację przełożenia w czasie rzeczywistym. Weryfikacja kompatybilności średnic/nośności jest wiarygodna wyłącznie po podaniu tych danych. Przed odbiorem produkcyjnym wymagany test działania na rzeczywistym Amazon Fire OS 5.
+
+## Etap 04 — czytelny interfejs na Amazon Fire (Lite 0.3.5)
+
+- Ekran treningu pozostaje **oparty na oryginalnym silniku i motywie Trenera 2**, ale w Lite nadpisujemy problematyczne tryby kompaktowe `v062/v072` dla starego WebView. Cały ekran ma naturalny pionowy przewijany układ, bez blokowania przewijania przez wcześniejszy fullscreen.
+- Na pierwszym planie: **duże imię ćwiczącego, nazwa ćwiczenia, seria, cel, pola ciężaru/powtórzeń i przycisk ZAPISZ SERIĘ**. PAUZA i STOP są duże, a informacje o technice i oryginalna animacja ćwiczenia mieszczą się w rozwijanej sekcji.
+- Dla grupy 2–6 osób: zwarte karty uczestników z bieżącym ćwiczeniem, ukończonymi seriami, stanem GOTOWY/ODPOCZYNEK/POMINIĘTA KOLEJKA/UKOŃCZONE oraz **odrębnym odliczaniem mm:ss**. Lista jest 2-kolumnowa w pionie i 3-kolumnowa w poziomie, z fallbackiem Flexbox zamiast nowszego CSS Grid.
+- Lista odświeża tylko pola stanu i odliczania, nie usuwa całych kart co sekundę; silnik serii nie jest zdublowany. Kod `lite/scripts/lite-fire-ui*.js` korzysta z bezpiecznego, tylko do odczytu `tabletState` oryginalnego modułu wspólnego treningu.
+- Tablet nie wygasza ekranu podczas aktywnego treningu dzięki natywnej fladze Android `FLAG_KEEP_SCREEN_ON`. Po zakończeniu, przejściu w tło i zamknięciu aplikacji flaga jest zdejmowana; po wznowieniu treningu aplikacja przywraca ją automatycznie.
+- Zakończenie indywidualnej przerwy: kolor i opcjonalny sygnał natywny. **Dźwięk włączony domyślnie**, krótka wibracja wyłączona domyślnie, ale oba przełączniki są dostępne w Ustawieniach. Nie generujemy dźwięku przy samym wejściu do aplikacji; sygnał jest po przejściu końca wcześniej rozpoczętej przerwy.
+- Informacje są po polsku, zachowany ciemno-czerwony motyw. Nowe preferencje są w `trainer3.lite.fire.*` i podlegają kopii bezpieczeństwa bez ruszania wcześniejszych danych.
+- Testy: `node --test lite/tests/fire-ui.test.cjs`, test składni spakowanych plików, regresje bezpieczeństwa i Android/Gradle.
+- **Ograniczenie:** automatyczne testy CSS i JavaScript nie dowodzą poprawnej wysokości klawiatury, rozdzielczości ani powiadomień na konkretnym egzemplarzu Amazon Fire OS 5. Po instalacji sprawdź widok pion/poziom, sześć osób, przewijanie, klawiaturę i przywrócenie przerwanej sesji.
