@@ -248,3 +248,9 @@ Użytkownik zdecydował: **oba tryby mają być dostępne do wyboru**, a Lite ma
 - Katalog Lite zapisany pod `trainer3.lite.inventory.v034`, powiązania z ćwiczeniem pod `trainer3.lite.inventory.exercise.v034`; oba klucze należą do kompletnej kopii JSON. Import z etapu 01 nie nadpisuje istniejącego katalogu przy konflikcie.
 
 **Świadome ograniczenia:** brak magazynu „co aktualnie jest nakręcone na gryfach” i automatycznego śledzenia ich bieżącego położenia. Program oblicza instrukcję jak złożyć ciężar od zera, nie operację przełożenia w czasie rzeczywistym. Weryfikacja kompatybilności średnic/nośności jest wiarygodna wyłącznie po podaniu tych danych. Przed odbiorem produkcyjnym wymagany test działania na rzeczywistym Amazon Fire OS 5.
+
+## 17. Etap 04 — interfejs Amazon Fire 0.3.5
+
+**Zaimplementowane:** powiększony widok osoby aktywnej, 2–6 zwartych kart statusów z licznikami przerw aktualizowanymi bez przebudowy DOM; dedykowany Flexbox fallback dla Fire OS 5, przewijalny ekran zamiast kompaktowego blokowania scrolla; duże pola kg/powtórzeń i zapis serii, rozwijana technika wraz z oryginalnym podglądem ćwiczenia; niezależna natywna blokada wygaszenia ekranu tylko podczas aktywnego treningu; dźwięk na koniec przerwy i opcjonalna wibracja, z ustawieniami na tablecie. Silnik treningowy i baza danych pozostają oryginalne.
+
+**Do potwierdzenia na Fire:** rzeczywista czytelność 7-calowego ekranu (pion i poziom), zachowanie przy wysuwanej klawiaturze, brak migania i stabilność podczas dłuższego treningu; prawidłowa praca dźwięku i wibracji na konkretnym sprzęcie. Zielone CI nie stanowi fizycznego testu.
