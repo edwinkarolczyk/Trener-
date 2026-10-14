@@ -2,7 +2,7 @@
 'use strict';
 var core=window.TrenerLiteFireCore;
 if(!core)return;
-var doc=document,rosterNodes={},lastSession='',lastMinute=-1;
+var doc=document,rosterNodes={},lastSession='';
 function $(id){return doc.getElementById(id);}
 function box(tag,cls,text){
  var e=doc.createElement(tag);if(cls)e.className=cls;
@@ -44,7 +44,7 @@ function install(){
  extra.appendChild(summary);
  var info=box('div','liteFireExtra','Szczegóły techniki i wskazówki pozostają dostępne podczas treningu.');
  extra.appendChild(info);
- var holder=$('technique');if(holder)holder.insertAdjacentElement('afterend',extra);
+ var holder=$('coach');if(holder)holder.insertAdjacentElement('afterend',extra);
  extra.addEventListener('toggle',function(){
   doc.body.classList.toggle('liteFireMoreOpen',!!extra.open);
  });
