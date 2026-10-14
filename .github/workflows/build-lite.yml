@@ -78,6 +78,10 @@ jobs:
           node --check lite/build/generated/parityAssets/lite-fire-ui.js
           node --check lite/build/generated/parityAssets/lite-exercise-core.js
           node --check lite/build/generated/parityAssets/lite-exercise-import.js
+          node --check lite/build/generated/parityAssets/lite-profile-core.js
+          node --check lite/build/generated/parityAssets/lite-profile-ui.js
+          grep -q 'lite-profile-ui.js' lite/build/generated/parityAssets/index.html
+          grep -q 'window.TrenerLiteProfiles' lite/build/generated/parityAssets/v086-one-phone.js
           grep -q 'lite-exercise-import.js' lite/build/generated/parityAssets/index.html
           grep -q 'tabletState' lite/build/generated/parityAssets/v086-one-phone.js
           grep -q 'lite-fire-ui.js' lite/build/generated/parityAssets/index.html
@@ -99,7 +103,7 @@ jobs:
           test -s lite/build/generated/parityAssets/lite-tablet.css
           ! grep -q 'v076-diet.js' lite/build/generated/parityAssets/feature-loader.js
       - name: Testy bezpieczeństwa kopii, migracji i rekordów
-        run: node --test lite/tests/pr-core.test.cjs lite/tests/data-safety.test.cjs lite/tests/group-six.test.cjs lite/tests/inventory.test.cjs lite/tests/fire-ui.test.cjs lite/tests/exercise-import.test.cjs
+        run: node --test lite/tests/pr-core.test.cjs lite/tests/data-safety.test.cjs lite/tests/group-six.test.cjs lite/tests/inventory.test.cjs lite/tests/fire-ui.test.cjs lite/tests/exercise-import.test.cjs lite/tests/profile-lock.test.cjs
       - name: Testy regresyjne treningu i progresji
         run: gradle :lite:testDebugUnitTest --no-daemon
       - name: Zbuduj podpisany Lite (minSdk 21)
