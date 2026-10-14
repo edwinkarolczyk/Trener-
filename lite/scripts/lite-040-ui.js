@@ -250,7 +250,7 @@ function openExercise(ex){
  var shade=make('div','lite040Overlay');shade.id='lite040ExerciseDetail';
  var img=ex.imageStart||'',end=ex.imageEnd||'';
  var id=String(ex.id||ex.n||ex.name||''),video=read(VIDEO,{})[id]||ex.videoUrl||'';
- if(!/^https:\/\//i.test(video))video='';
+ if(!/^(https:\/\/|data:video\/(?:mp4|webm);base64,)/i.test(video))video='';
  shade.innerHTML='<div class="lite040Dialog" role="dialog" aria-modal="true"><button type="button" id="lite040Close" class="secondary">ZAMKNIJ ×</button>'+
  '<h2>'+esc(ex.n||ex.name||'Ćwiczenie')+'</h2><p>'+esc(ex.group||ex.equipment||'')+'</p>'+
  (img?'<img src="'+esc(img)+'" alt="Pozycja startowa">':'')+
@@ -262,19 +262,36 @@ function openExercise(ex){
  '<p><b>Przerwa:</b> '+esc(ex.rest||'-')+' s</p>'+
  (video?'<video controls preload="none" src="'+esc(video)+'" style="display:block;width:100%;max-height:320px"></video>':'')+
  '<button id="lite040SetVideo" class="secondary" type="button">'+(video?'ZMIEŃ LINK DO FILMU':'DODAJ LINK DO KRÓTKIEGO FILMU')+'</button>'+
- '<p class="hint">Filmy z linku wymagają połączenia z Internetem. Zdjęcia pozostają lokalne.</p></div>';
+ '<button id="lite040PickVideo" class="secondary" type="button">WYBIERZ KRÓTKI FILM Z TABLETU</button>'+
+ '<input id="lite040VideoFile" type="file" accept="video/mp4,video/webm" class="hidden">'+
+ '<p class="hint">Filmy z linku wymagają Internetu. Mały film MP4/WebM do 512 KB zapiszesz offline w pełnej kopii JSON.</p></div>';
  doc.body.appendChild(shade);
  $('lite040Close').onclick=function(){shade.parentNode.removeChild(shade);};
  $('lite040SetVideo').onclick=function(){
-  var url=prompt('Wklej link HTTPS do pliku MP4/WebM (puste = usuń link):',video);
+  var url=prompt('Wklej link HTTPS do MP4/WebM (puste = usuń link):',/^https:\/\//i.test(video)?video:'');
   if(url===null)return;
   url=String(url).trim();
-  if(url&&(!/^https:\/\//i.test(url)||url.length>1000)){
-   alert('Wklej poprawny link HTTPS do filmu.');return;
-  }
-  try{var stored=read(VIDEO,{});if(url)stored[id]=url;else delete stored[id];write(VIDEO,stored);
+  if(url&&(!/^https:\/\//i.test(url)||url.length>1000)){alert('Wklej poprawny link HTTPS.');return;}
+  try{var a=read(VIDEO,{});if(url)a[id]=url;else delete a[id];write(VIDEO,a);
    shade.parentNode.removeChild(shade);openExercise(ex);
   }catch(e){alert('Nie udało się zapisać linku: '+e.message);}
+ };
+ $('lite040PickVideo').onclick=function(){$('lite040VideoFile').click();};
+ $('lite040VideoFile').onchange=function(){
+  var file=this.files&&this.files[0];this.value='';
+  if(!file)return;
+  if(!/^video\/(mp4|webm)$/.test(file.type)){alert('Obsługiwane są tylko MP4 lub WebM.');return;}
+  if(file.size>512*1024){alert('Film jest za duży. Wybierz krótki, skompresowany film do 512 KB.');return;}
+  var reader=new FileReader();
+  reader.onerror=function(){alert('Nie można odczytać filmu.');};
+  reader.onload=function(){
+   try{
+    if(!/^data:video\/(mp4|webm);base64,/i.test(reader.result))throw Error('Nieprawidłowy format filmu.');
+    var a=read(VIDEO,{});a[id]=reader.result;write(VIDEO,a);
+    shade.parentNode.removeChild(shade);openExercise(ex);
+   }catch(e){alert('Nie zapisano filmu (może brakować miejsca): '+e.message);}
+  };
+  reader.readAsDataURL(file);
  };
 }
 function installHistory(){
