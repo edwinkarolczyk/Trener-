@@ -205,3 +205,17 @@ Nowe pytania o sprzęt: **31. poziom szczegółowości katalogu; 32. masa gryfu;
 - W aktualnej wersji wykryte są już historyczne rekordy **największego użytego ciężaru w serii** w `app.js` i wykresy `v061-progress-charts.js`, ale nie są one równoznaczne z dedykowanym testem 1RM.
 
 **Do rozstrzygnięcia:** częstotliwość przypomnień i czy testy rzeczywiste 1RM mają być włączone domyślnie czy opcjonalnie na życzenie.
+
+## 14. Decyzja i wdrożenie Lite 0.3.1 — wybór dwóch testów rekordu
+
+Użytkownik zdecydował: **oba tryby mają być dostępne do wyboru**, a Lite ma co jakiś czas pytać o sprawdzenie rekordu.
+
+- **Szacowany rekord e1RM** z wcześniejszych zwykłych serii — wzór Epleya, zakres 1–10 powtórzeń; jedno powtórzenie = wykonany ciężar, lecz etykieta e1RM jest jedynie analizą, dopóki użytkownik nie zapisze rzeczywistego PR.
+- **Test rzeczywistego 1RM** — użytkownik uruchamia sam, zapisuje ciężar dopiero po pomyślnej próbie i potwierdza asekurację / technikę / brak bólu. Historia testów oddzielona od zwykłych treningów.
+- Przypomnienie **co 8 tygodni** domyślnie; wybór 4/6/8 tygodni albo bez przypomnień; przycisk odroczenia na 7 dni. Działa osobno dla każdej osoby z zapisanej grupy, bez przerywania aktywnego treningu.
+- W tej iteracji przypomnienie jest wewnątrz aplikacji i pojawia się po jej otwarciu. **Nie ma powiadomienia Android przy zamkniętej aplikacji.**
+- Zasady instalacji Lite bez zmian: weryfikacja nowej wersji przy uruchomieniu (limit co 12 h), informacja z listą zmian i zatwierdzenie pobrania.
+- Kod: `lite/scripts/lite-pr-core.js` + `lite/scripts/lite-pr.js`, dodane do wygenerowanego WebView przez `lite/scripts/build-parity-assets.cjs`. Testy w `lite/tests/pr-core.test.cjs`.
+- Brak walidacji realnie dostępnych talerzy/gryfów w tej funkcji do czasu realizacji katalogu sprzętu. Nie wolno twierdzić, że już filtruje wykonalne próby.
+
+**Status:** funkcja dodana do kodu gałęzi Lite, wymaga pozytywnych testów CI i rzeczywistego sprawdzenia na Fire OS 5 przed uznaniem za stabilną.
