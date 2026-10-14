@@ -71,9 +71,14 @@ jobs:
           node --check lite/build/generated/parityAssets/app.js
           node --check lite/build/generated/parityAssets/feature-loader.js
           node --check lite/build/generated/parityAssets/v086-one-phone.js
+          node --check lite/build/generated/parityAssets/lite-pr-core.js
+          node --check lite/build/generated/parityAssets/lite-pr.js
+          grep -q 'lite-pr.js' lite/build/generated/parityAssets/index.html
           test -s lite/build/generated/parityAssets/style.css
           test -s lite/build/generated/parityAssets/lite-tablet.css
           ! grep -q 'v076-diet.js' lite/build/generated/parityAssets/feature-loader.js
+      - name: Testy regresyjne rekordów i rozdzielenia osób
+        run: node --test lite/tests/pr-core.test.cjs
       - name: Testy regresyjne treningu i progresji
         run: gradle :lite:testDebugUnitTest --no-daemon
       - name: Zbuduj podpisany Lite (minSdk 21)
