@@ -17,6 +17,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.util.Log;
 import android.widget.Toast;
+import android.view.WindowManager;
 import org.json.JSONObject;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -37,6 +38,7 @@ public final class LiteFullActivity extends Activity {
     private LiteUpdater updater;
     private String exportJson;
     private ValueCallback<Uri[]> pendingFiles;
+    private boolean tabletTrainingActive=false;
 
     @Override public void onCreate(Bundle saved) {
         super.onCreate(saved);
@@ -107,6 +109,13 @@ public final class LiteFullActivity extends Activity {
     private final class Bridge {
         @JavascriptInterface public String getAppVersion() { return BuildConfig.TRAINER_CORE_VERSION; }
         @JavascriptInterface public String getLiteVersion() { return BuildConfig.VERSION_NAME; }
+        @JavascriptInterface public void setTabletTrainingActive(boolean active) {
+            runOnUiThread(()->{
+                tabletTrainingActive=active;
+                if(active)getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                else getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            });
+        }
         @JavascriptInterface public int getAppVersionCode() { return BuildConfig.VERSION_CODE; }
         @JavascriptInterface public void vibrate(int millis) {
             if(millis<1||millis>5000)return;
@@ -230,5 +239,17 @@ public final class LiteFullActivity extends Activity {
           "(function(){var x=document.querySelector('.tab[data-tab=\\\"start\\\"]');" +
           "if(x&&!x.classList.contains('active'))x.click();})()",null);
     }
-    @Override protected void onDestroy(){if(browser!=null){browser.destroy();browser=null;}super.onDestroy();}
+    @Override protected void onPause(){
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        super.onPause();
+    }
+    @Override protected void onResume(){
+        super.onResume();
+        if(tabletTrainingActive)getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+    }
+    @Override protected void onDestroy(){
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        if(browser!=null){browser.destroy();browser=null;}
+        super.onDestroy();
+    }
 }
