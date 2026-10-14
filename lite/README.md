@@ -107,3 +107,22 @@ gradle :lite:testDebugUnitTest :lite:assembleRelease
 - Informacje są po polsku, zachowany ciemno-czerwony motyw. Nowe preferencje są w `trainer3.lite.fire.*` i podlegają kopii bezpieczeństwa bez ruszania wcześniejszych danych.
 - Testy: `node --test lite/tests/fire-ui.test.cjs`, test składni spakowanych plików, regresje bezpieczeństwa i Android/Gradle.
 - **Ograniczenie:** automatyczne testy CSS i JavaScript nie dowodzą poprawnej wysokości klawiatury, rozdzielczości ani powiadomień na konkretnym egzemplarzu Amazon Fire OS 5. Po instalacji sprawdź widok pion/poziom, sześć osób, przewijanie, klawiaturę i przywrócenie przerwanej sesji.
+
+## Etap 05 — import własnych ćwiczeń ze zdjęciami (Lite 0.3.6)
+
+**Gdzie:** **Plan → Import Excel / ZIP + zdjęcia → Wybierz plik ćwiczeń**.
+
+Obsługiwane wejścia: `.csv` (UTF-8, separator średnik/przecinek/tabulator), `.xlsx` (pierwszy arkusz), oraz `.zip` z plikiem `.csv` albo `.xlsx` i zdjęciami JPG/PNG/WebP. **Zdjęcia muszą mieć nazwy lub ścieżki w kolumnach arkusza**; samo osadzenie obrazu w komórce Excela nie jest automatycznie mapowane na ćwiczenie. Bezpieczniejszy sposób to paczka ZIP: arkusz i katalog `zdjecia/`, z referencją w kolumnie.
+
+Przykładowe nagłówki arkusza (kolejność dowolna; nazwy rozpoznawane automatycznie i można ręcznie zmapować):
+
+```csv
+Nazwa;Partia;Sprzet;Serie;Powt_min;Powt_max;Przerwa;Pozycja_start;Wykonanie;Bledy;Wskazowka;Zdjecie_start;Zdjecie_koniec
+Wyciskanie hantli;Klatka;Hantle;3;8;12;90;Łopatki ściągnięte;Wyciskaj pod kontrolą;Nie odbijaj;Stabilny chwyt;zdjecia/wyciskanie-start.jpg;zdjecia/wyciskanie-koniec.jpg
+```
+
+Przebieg: użytkownik wybiera plik przez dokumenty Androida; natywny moduł odczytuje arkusz i zdjęcia lokalnie **bez internetu**; zdjęcia są przeskalowane do maksimum 480 px i skompresowane; ekran pokazuje **podgląd wszystkich wierszy**, powiązane miniaturki START/KONIEC, przypisane kolumny, błędy i duplikaty. Można odznaczyć dowolny nowy wiersz; dopiero po potwierdzeniu wykonywany jest **jeden atomowy zapis** do tej samej biblioteki własnych ćwiczeń co w pełnym Trenerze 2 (`trainer3.userExercises.v094`), bez zmiany planów ani historii. Duplikaty (nazwa + partia) i niepoprawne wiersze są pomijane; nigdy nie nadpisują już zapisanych zdjęć.
+
+**Limity bezpieczeństwa:** maksymalnie 250 wierszy na import, 70 zdjęć na paczkę, 20 MB skompresowanego pliku, 34 MB łącznie rozpakowanych danych, 2,8 mln znaków na końcową bazę ćwiczeń ze zdjęciami. Większe biblioteki z fotografiami importuj porcjami; przy przekroczeniu limitu nic nie jest zapisywane. Import niedostępny podczas aktywnego treningu.
+
+Uwaga: Stary format **XLS** nie jest obsługiwany — używaj **XLSX**, nie starego XLS. Dostępność i podgląd obrazu trzeba potwierdzić również na fizycznym Fire OS 5. Format XLSX wymaga osobnej kolumny z nazwą zdjęcia; automatyczne odczytywanie obrazów wklejonych graficznie do arkusza pozostaje osobnym ulepszeniem.
