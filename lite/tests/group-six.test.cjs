@@ -6,6 +6,7 @@ const roster=Array.from({length:6},(_,i)=>({index:i,id:'member-'+i,name:'Osoba '
 const plan=(id,sets=2)=>({title:id,ex:[{id,n:id,sets,min:8,max:12,rest:60}]});
 test('6 osób z trwałymi identyfikatorami jest poprawną grupą',()=>{
   assert.equal(g.validRoster(roster),true);
+  assert.equal(g.validRoster(roster.slice(0,1)),true);
   assert.equal(g.validRoster(roster.concat([{index:6,id:'seventh',name:'Siódma'}])),false);
   assert.equal(g.validRoster(roster.map((p,i)=>({...p,id:i===5?'member-0':p.id}))),false);
 });
