@@ -145,3 +145,12 @@ W Ustawieniach otwórz **Użytkownicy i wspólne treningi**. Dodaj osobę (imię
 Ujednolicony ekran **Start** zawiera jeden tryb **„TRENING 1–6 OSÓB • JEDEN TABLET”** oraz główny przycisk **„START TRENINGU”**. Nie ma już widocznych oddzielnych przełączników „1 osoba” i „2 osoby”; zachowano ich elementy techniczne w DOM, ponieważ pełny silnik Trenera 2 nadal odwołuje się do nich podczas zapisu ustawień. Tryb treningowy Lite jest automatycznie aktywny i nie można go przypadkowo wyłączyć.
 
 Liczbę i konkretne osoby wybiera się tylko w **Ustawienia → Użytkownicy i wspólne treningi**. Ta sama kolejka pracuje dla 1 osoby oraz dla grup 2–6 osób, zachowując indywidualne ID, plany, przerwy, rekordy i historię. Na Start pozostają plan główny, opcja planów indywidualnych, ustawienia ciężarów i wznowienie sesji. Poprzednie dane pozostają bez zmian. Test `lite/tests/start-unified.test.cjs` chroni tę nawigację przed regresją; wymaga kontroli na fizycznym Fire.
+
+
+## Lite 0.3.9 — naprawa instalacji aktualizacji na Fire OS 5 (P0)
+
+Tablet Amazon Fire OS 5 / Android 5.1 może pokazać \`Parse Error: There was a problem parsing the package\` po opcji **Pobierz i zainstaluj**, mimo wcześniejszej poprawnej weryfikacji SHA-256 i podpisu. Przyczyną w poprzednim aktualizatorze był \`Uri.fromFile(apk)\`: pobrany \`latest.apk\` leży w prywatnym \`getCacheDir()/updates\`, którego systemowy instalator z innym UID nie może odczytać.
+
+Od 0.3.9 **na wszystkich wersjach Androida** APK jest udostępniany poprzez istniejący, wąsko ograniczony \`LiteApkProvider\` pod \`content://pl.edwin.trener2lite.updates/latest.apk\`, z \`FLAG_GRANT_READ_URI_PERMISSION\` i \`ClipData\`. Odmowa uruchomienia instalatora wyświetla instrukcję instalacji przez przeglądarkę. Weryfikacja SHA-256 oraz niezmiennego podpisu i identyfikatora aplikacji pozostaje obowiązkowa. CI dodatkowo potwierdza schemat podpisu v1 (Android 5) i test kontraktu przekazania \`content://\`.
+
+**Jednorazowe obejście z poprzednich wersji (0.3.8 i starszych):** ponieważ wadliwy aktualizator jest zapisany w starej aplikacji, wersję 0.3.9 trzeba zainstalować ręcznie przez przeglądarkę Silk i folder **Pobrane**. **Nie odinstalowywać** istniejącej wersji. Android przeprowadzi aktualizację na tym samym pakiecie i podpisie bez kasowania lokalnych danych. Weryfikacja na fizycznym Fire nadal wymagana.
