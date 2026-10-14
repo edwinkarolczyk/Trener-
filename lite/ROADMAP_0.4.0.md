@@ -127,8 +127,8 @@ Cel: usunąć nadmiar UI bez utraty danych i możliwości treningu 1–6 osób.
 - [x] Etap 3 — osobne tygodnie, biblioteka, filtr sprzętu, import Excel/ZIP + zdjęcia; krótkie filmy lokalne MP4/WebM do 512 KB i linki HTTPS
 - [x] Etap 4 — historia Moje/Wspólne, wybór osoby, wyszukiwanie, pojedynczy rozwinięty wpis, znaczniki PR, zbiorcze Postępy
 - [x] Etap 5 — pięć kategorii Ustawień, wspólna kopia, ukryte zbędne sekcje, diagnostyka i aktualizacje
-- [ ] Etap 6 — **CI jeszcze niezweryfikowane**: Gradle, Node, podpis APK, SHA-256, opublikowane wydanie i test instalacji na Fire 7
-- [ ] 0.4.0 gotowy do instalacji — dopiero po pomyślnym CI
+- [x] Etap 6 — **CI PASS**: przebieg #38613947348 (commit 28bc3a39), Node, Gradle, podpis v1 minSdk 21, publikacja GitHub Release lite-v0.4.0, SHA-256 843b844d46eff1e9d93a36b176b6081cdc339cdb2caf9488aecd48319d64a2e3. Instalacja na fizycznym Fire 7 nadal do potwierdzenia.
+- [x] APK 0.4.0 (versionCode 14) udostępnione do testu użytkownika; nie uznawać testów na prawdziwym tablecie za wykonane bez potwierdzenia.
 
 Pliki zmian: `lite/scripts/lite-040-core.js`, `lite/scripts/lite-040-ui.js`, `lite/scripts/lite-init.js`, `lite/scripts/lite-fire-ui.js`, `lite/scripts/lite-exercise-import.js`, `lite/scripts/build-parity-assets.cjs`, testy 0.4.0. Koniecznie sprawdzić aktualizację bez odinstalowywania działającego 0.3.9.
 
