@@ -162,6 +162,7 @@ function saveSet(ev){
  const ex=pos.ex,kg=readKg(),idx=pos.done;
  const rec=makeRecord(ex,pos.exercise,idx,p.index,kg,reps);
  rec.participantId=p.id;rec.uid=state.sessionId+':'+p.id+':'+pos.exercise+':'+idx;
+ rec.equipment=window.TrenerLiteInventory?.snapshot?.(kg)||null;
  if(records.some(r=>r.uid===rec.uid))return;
  records.push(rec);state.readyAt[p.index]=Date.now()+Math.max(0,Number(ex.rest)||0)*1000;
  state.lastTurn=p.index;state.lastWeights[p.id+':'+(ex.id||ex.n)]=kg;
