@@ -144,8 +144,8 @@ public final class LiteFullActivity extends Activity {
         }
         @JavascriptInterface public void importBackup() {
             runOnUiThread(()->new AlertDialog.Builder(LiteFullActivity.this)
-                .setTitle("Import pełnego Trenera 2")
-                .setMessage("Import zmienia historię i plany aplikacji. Najpierw wyeksportuj kopię danych. Kopia z dietą zostanie wczytana wyłącznie w zakresie danych treningowych.")
+                .setTitle("Bezpieczny import Trenera 2 / Lite")
+                .setMessage("Najpierw pokażemy podgląd. Dopiero po Twoim potwierdzeniu aplikacja doda brakujące sesje. Istniejące dane nie będą nadpisane. Zalecane: wykonaj wcześniej eksport kompletnej kopii.")
                 .setNegativeButton("Anuluj",null)
                 .setPositiveButton("WYBIERZ PLIK",(d,w)->{
                     try{
