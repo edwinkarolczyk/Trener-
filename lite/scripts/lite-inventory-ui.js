@@ -5,7 +5,7 @@ var core=window.TrenerLiteInventoryCore;
 if(!core)return;
 var KEY='trainer3.lite.inventory.v034';
 var CHOICE='trainer3.lite.inventory.exercise.v034';
-var doc=document,activeExercise='',activePerson='',lastInfo='';
+var doc=document,activeExercise='',activePerson='',lastInfo='',drafts={};
 function $(id){return doc.getElementById(id);}
 function esc(s){return String(s===null||s===undefined?'':s).replace(/[&<>"']/g,function(c){
  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
@@ -44,6 +44,7 @@ function render(){
  Array.from(box.querySelectorAll('.liteInvDelete')).forEach(function(button){
   button.onclick=function(){
    var row=button.closest('.liteInvRow'),id=row.getAttribute('data-id');
+   if(drafts[id]){delete drafts[id];row.parentNode.removeChild(row);return;}
    if(!confirm('Usunąć tę pozycję ze sprzętu? Historia treningów pozostanie bez zmian.'))return;
    var inv=load();inv.bars=inv.bars.filter(function(x){return x.id!==id;});
    inv.plates=inv.plates.filter(function(x){return x.id!==id;});
@@ -56,7 +57,7 @@ function fromDom(){
  var current=load(),bars=[],plates=[];
  Array.from(doc.querySelectorAll('#liteInvList .liteInvRow')).forEach(function(row){
   var id=row.getAttribute('data-id'),kind=row.getAttribute('data-kind');
-  var source=(kind==='bars'?current.bars:current.plates).filter(function(x){return x.id===id;})[0];
+  var source=(kind==='bars'?current.bars:current.plates).filter(function(x){return x.id===id;})[0]||drafts[id];
   if(!source)throw Error('Nieznana pozycja katalogu.');
   var base={id:id,name:row.querySelector('.liteInvName').value.trim(),
     kg:Number(String(row.querySelector('.liteInvKg').value).replace(',','.')),
@@ -69,12 +70,22 @@ function fromDom(){
  return {version:1,bars:bars,plates:plates};
 }
 function add(type){
- try{
-  var inv=core.validate(fromDom());
-  if(type==='bars')inv.bars.push({id:uid('gryf-'),name:'Mój gryf',type:'dumbbell',kg:2,count:1,diameter:null,maxKg:null});
-  else inv.plates.push({id:uid('talerz-'),name:'Talerz',kg:2.5,count:2,diameter:null});
-  save(inv);render();renderBarSelection();notify('Dodano pozycję. Uzupełnij masę i liczbę sztuk, potem naciśnij Zapisz.');
- }catch(e){notify('Nie można dodać: '+e.message);}
+ var newId=uid(type==='bars'?'gryf-':'talerz-');
+ // Żadnych domyślnie zgadywanych mas. Wpis jest tylko wersją roboczą do ZAPISZ.
+ var entry=type==='bars'?
+  {id:newId,name:'Nowy gryf',type:'dumbbell',kg:'',count:'',diameter:null,maxKg:null}:
+  {id:newId,name:'Talerze',kg:'',count:'',diameter:null};
+ drafts[newId]=entry;
+ var list=$('liteInvList');
+ if(!list)return;
+ if(!list.querySelector('.liteInvRow'))list.innerHTML='';
+ list.insertAdjacentHTML('beforeend',fields(entry,type));
+ var row=list.querySelector('.liteInvRow[data-id="'+newId+'"]');
+ if(row)row.querySelector('.liteInvDelete').onclick=function(){
+  delete drafts[newId];row.parentNode.removeChild(row);
+  notify('Nie zapisano nowego elementu. Dotychczasowy sprzęt bez zmian.');
+ };
+ notify('Nowy element nie jest jeszcze zapisany. Wpisz rzeczywistą masę i liczbę sztuk, następnie ZAPISZ MÓJ SPRZĘT.');
 }
 function installSettings(){
  var settings=$('settings');if(!settings||$('liteInvCard'))return;
@@ -93,7 +104,7 @@ function installSettings(){
  $('liteInvAddBar').onclick=function(){add('bars');};
  $('liteInvAddPlate').onclick=function(){add('plates');};
  $('liteInvSave').onclick=function(){
-  try{var data=save(fromDom());render();renderBarSelection();showResult();
+  try{var data=save(fromDom());drafts={};render();renderBarSelection();showResult();
    notify('Sprzęt zapisany: '+data.bars.length+' rodzajów gryfów i '+data.plates.length+' rodzajów talerzy.');}
   catch(e){notify('Nie zapisano sprzętu: '+e.message);}
  };
