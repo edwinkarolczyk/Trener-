@@ -50,6 +50,10 @@ for(const ent of entries){
   if(ent.name==='index.html'){
     let html=value.toString('utf8');
     html=html.replace('<link rel="stylesheet" href="v090-recipes.css">','');
+    html=html.replace('<h2>Ustaw sesję</h2>','<h2>Trening 1–6 osób</h2>');
+    html=html.replace('Solo: po serii pełna przerwa. W duecie aplikacja przełącza ćwiczącego i pilnuje odpoczynku obu osób.',
+      'Wybierz uczestników w Ustawieniach → Użytkownicy. Jeden tryb działa tak samo dla jednej osoby i całej grupy, z niezależną historią, ciężarami i odpoczynkiem.');
+
     html=html.replace('</head>','<link rel="stylesheet" href="lite-tablet.css"><link rel="stylesheet" href="lite-fire.css"></head>');
     html=html.replace('<script src="app.js"></script>',
       '<script src="core-js.min.js"></script><script src="lite-data-core.js"></script><script src="lite-inventory-core.js"></script><script src="lite-group-core.js"></script><script src="lite-init.js"></script><script src="app.js"></script>');
