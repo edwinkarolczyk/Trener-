@@ -419,7 +419,7 @@ function installSettings(){
 function installStyles(){
  if($('lite040Css'))return;
  var s=make('style');s.id='lite040Css';s.textContent=
- '.lite040HiddenLegacy,#start>.compactTop{display:none!important}'+
+ '.lite040HiddenLegacy,#start>.compactTop,body.liteFireActive #technique{display:none!important}'+
  '#setup .heroCard{padding:10px}#setup>h2,#setup>.eyebrow,#liteProfilesLauncher,#v086Select{display:none!important}'+
  '.lite040Start h2{font-size:26px;margin:0 0 12px}'+
  '.lite040People{display:-webkit-flex;display:flex;-webkit-flex-wrap:wrap;flex-wrap:wrap;gap:9px;margin:12px 0}'+
@@ -455,12 +455,35 @@ function installStyles(){
  '@media(min-width:650px){.lite040Person{width:calc(25% - 9px)}}';
  doc.head.appendChild(s);
 }
+function reconcileModules(){
+ var more=$('lite040Options'),setup=$('v086Setup');
+ if(more&&setup&&setup.parentNode!==more)more.appendChild(setup);
+ var importer=$('liteExerciseImportCard'),ex=$('exercises');
+ if(ex&&importer&&importer.parentNode!==ex)ex.appendChild(importer);
+ var old=$('v094Open');if(old)old.classList.add('lite040HiddenLegacy');
+ var wrapper=$('lite040Settings'),settings=$('settings');
+ if(wrapper&&settings){
+  Array.prototype.forEach.call(settings.children,function(card){
+   if(card===wrapper||!card.classList||!card.classList.contains('card'))return;
+   var heading=(card.textContent||'').toLowerCase(),target='diagnostics';
+   if(card.id==='liteProfilesSettings')target='profiles';
+   else if(card.id==='liteInvCard')target='gear';
+   else if(card.id==='liteDataTools')target='backup';
+   else if(card.id==='liteBridgeTools')target='update';
+   else if(/połączenie z partnerem|przypomnienia o treningu|kopia treningów/.test(heading)){
+    card.classList.add('lite040HiddenLegacy');card.setAttribute('aria-hidden','true');
+   }
+   var category=$('lite040Category-'+target);
+   if(category)category.appendChild(card);
+  });
+ }
+}
 function boot(){
  installStyles();insertStart();installWeek();installExercises();installHistory();installProgress();
- installSettings();
+ installSettings();reconcileModules();
  try{localStorage.setItem('trainer3.lastTab.v0884','start');}catch(e){}
  toStart();drawStart(true);
- setInterval(function(){if(!active())drawStart(false);else updateResume();},3000);
+ setInterval(function(){reconcileModules();if(!active())drawStart(false);else updateResume();},3000);
  doc.addEventListener('click',function(e){
   var target=e.target&&e.target.closest?e.target.closest('.tab'):null;
   if(target&&target.getAttribute('data-tab')==='start'){shown='start';setTimeout(function(){drawStart(true);},50);}
