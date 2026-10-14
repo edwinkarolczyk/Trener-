@@ -112,6 +112,7 @@ function syncRoster(group){
 function manageUi(){
  var active=hasActiveTraining(),group=active?snapshot():null;
  doc.body.classList.toggle('liteFireActive',active);
+ doc.documentElement.classList.toggle('liteFireActive',active);
  doc.body.classList.toggle('liteFireGroup',!!group);
  if(!active)return;
  install();
