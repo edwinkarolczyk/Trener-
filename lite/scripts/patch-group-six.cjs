@@ -194,9 +194,8 @@ function render(){
   return '<div class="v086Person '+(item.index===state.turn?'now':'')+'"><b>'+esc(item.name)+
    '</b><span>'+ (x?esc(x.ex.n)+' • '+x.done+'/'+x.total+' serii':'Wszystkie ćwiczenia')+
    ' • '+status+'</span></div>';
- }).join('')
+ }).join('');
  }
-;
  $('saveSetBtn').disabled=!!paused||due>0;
  $('restTime').textContent=due>0?'ODPOCZYNEK '+Math.ceil(due/1000)+' s':'GOTOWY — '+p.name;
  $('skipRestBtn')?.classList.add('hidden');
