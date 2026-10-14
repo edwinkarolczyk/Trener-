@@ -12,8 +12,8 @@
     for(var i=0;i<arguments.length;i++){
       var v=arguments[i];this.appendChild(v instanceof Node?v:document.createTextNode(String(v)));}};
   if(!NodeList.prototype.forEach)NodeList.prototype.forEach=Array.prototype.forEach;
-  if(['diet','recipes'].indexOf(localStorage.getItem('trainer3.lastTab.v0884'))!==-1)
-    localStorage.setItem('trainer3.lastTab.v0884','start');
+  // Start otwiera się przy każdym uruchomieniu Lite (bez ingerencji w profile/historię).
+  try{localStorage.setItem('trainer3.lastTab.v0884','start');}catch(ignore){}
 
   // Przed startem oryginalnego silnika importuj niedestrukcyjnie stare sesje SQLite Lite.
   var LEGACY_KEY='trainer3.liteLegacyImported.v032';
