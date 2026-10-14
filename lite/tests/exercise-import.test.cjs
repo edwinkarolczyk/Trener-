@@ -67,7 +67,7 @@ test('Excel bez zdjęć importuje się i nie wymaga paczki ZIP',()=>{
 });
 test('błędny zakres, obca partia i wartości ujemne są odrzucane',()=>{
  const data={format:'trener2-lite-exercises',kind:'csv',images:{},
-  rows:[{nazwa:'Przysiad',partia:'Nogi',powt_min:'14',powt_max:'8'},
+  rows:[{nazwa:'Przysiad',partia:'Nogi',powt_min:'14',powt_max:'8',przerwa:''},
     {nazwa:'Uginanie',partia:'Mars',serie:'3'},
     {nazwa:'Podciąganie',partia:'Plecy',przerwa:'-2'}]};
  const p=c.preview(data,c.guess(Object.keys(data.rows[0])),[],[]);
