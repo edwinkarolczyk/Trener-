@@ -138,3 +138,10 @@ W Ustawieniach otwórz **Użytkownicy i wspólne treningi**. Dodaj osobę (imię
 - Eksport do dokumentów Androida działa również dla pojedynczych JSON, nie tylko pełnej kopii `trener2-backup`. Pełna kopia JSON i dotychczasowe dane nadal mają własną ścieżkę i nie są zastępowane.
 - `main` pozostaje nietknięty. Wyłącznie gałąź `feature/trener2-lite-fire5`. Android minSdk 21, pakiet Lite zachowuje zgodny certyfikat podpisu.
 - Rzeczywiste testy na tablecie Fire oraz import na telefonie nadal są wymagane; zielone CI nie zastępuje kontroli na urządzeniach.
+
+
+## Lite 0.3.8 — jedna opcja Start zamiast Solo / Wspólny 2–4 / 1–6
+
+Ujednolicony ekran **Start** zawiera jeden tryb **„TRENING 1–6 OSÓB • JEDEN TABLET”** oraz główny przycisk **„START TRENINGU”**. Nie ma już widocznych oddzielnych przełączników „1 osoba” i „2 osoby”; zachowano ich elementy techniczne w DOM, ponieważ pełny silnik Trenera 2 nadal odwołuje się do nich podczas zapisu ustawień. Tryb treningowy Lite jest automatycznie aktywny i nie można go przypadkowo wyłączyć.
+
+Liczbę i konkretne osoby wybiera się tylko w **Ustawienia → Użytkownicy i wspólne treningi**. Ta sama kolejka pracuje dla 1 osoby oraz dla grup 2–6 osób, zachowując indywidualne ID, plany, przerwy, rekordy i historię. Na Start pozostają plan główny, opcja planów indywidualnych, ustawienia ciężarów i wznowienie sesji. Poprzednie dane pozostają bez zmian. Test `lite/tests/start-unified.test.cjs` chroni tę nawigację przed regresją; wymaga kontroli na fizycznym Fire.
