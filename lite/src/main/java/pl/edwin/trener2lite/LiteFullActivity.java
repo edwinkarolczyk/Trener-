@@ -114,9 +114,11 @@ public final class LiteFullActivity extends Activity {
             if(vib!=null)vib.vibrate(millis);
         }
         @JavascriptInterface public String exportPreviousLite() {
-            try(LiteDb old=new LiteDb(LiteFullActivity.this)){
-                return old.exportJson().toString();
-            }catch(Exception e){Log.e("TrenerLite","Old SQLite export unavailable",e);return "";}
+            try { return LiteLegacyExport.read(LiteFullActivity.this).toString(); }
+            catch(Exception e){
+                Log.e("TrenerLite","Odczyt starej SQLite nieudany — plik pozostaje bez zmian",e);
+                return "";
+            }
         }
         @JavascriptInterface public void openPreviousLite(){
             runOnUiThread(()->startActivity(new Intent(LiteFullActivity.this,LiteActivity.class)));
@@ -173,8 +175,16 @@ public final class LiteFullActivity extends Activity {
         if(request==EXPORT_BACKUP){
             try(OutputStream out=getContentResolver().openOutputStream(data.getData())){
                 if(out==null||exportJson==null)throw new IllegalStateException("Nie można otworzyć pliku");
-                out.write(exportJson.getBytes(StandardCharsets.UTF_8));out.flush();
-                showError("Kopia Trenera 2 Lite zapisana");
+                JSONObject complete=new JSONObject(exportJson);
+                if(!"trener2-backup".equals(complete.optString("format")))
+                    throw new IllegalArgumentException("Nieprawidłowy format eksportu");
+                JSONObject old=LiteLegacyExport.read(this);
+                if("Trener2Lite".equals(old.optString("app")))complete.put("legacyLite",old);
+                byte[] bytes=complete.toString(2).getBytes(StandardCharsets.UTF_8);
+                if(bytes.length>MAX_JSON_BYTES)
+                    throw new IllegalStateException("Kopia przekracza 12 MB. Nie zapisano niepełnego eksportu.");
+                out.write(bytes);out.flush();
+                showError("Kompletna kopia JSON zapisana (także stara baza Lite, jeśli istnieje)");
             }catch(Exception e){showError("Błąd eksportu: "+e.getMessage());}
             finally{exportJson=null;}
         }else if(request==IMPORT_BACKUP){
@@ -187,9 +197,11 @@ public final class LiteFullActivity extends Activity {
                     out.write(buf,0,n);
                 }
                 JSONObject root=new JSONObject(new String(out.toByteArray(),StandardCharsets.UTF_8));
-                if(!"trener2-backup".equals(root.optString("format")))
-                    throw new IllegalArgumentException("To nie jest kopia pełnego Trenera 2");
-                root.put("nativeHydration",JSONObject.NULL);
+                if(!"trener2-backup".equals(root.optString("format")) &&
+                    !"Trener2Lite".equals(root.optString("app")))
+                    throw new IllegalArgumentException("Nieobsługiwana kopia Trenera 2 / Lite");
+                if("trener2-backup".equals(root.optString("format")))
+                    root.put("nativeHydration",JSONObject.NULL);
                 JSONObject storage=root.optJSONObject("storage");
                 if(storage!=null) {
                     java.util.ArrayList<String> excluded=new java.util.ArrayList<>();
@@ -202,9 +214,13 @@ public final class LiteFullActivity extends Activity {
                     }
                     for(String key:excluded) storage.remove(key);
                 }
-                String js="window.TrenerBackup && window.TrenerBackup.nativeImport("+
-                    JSONObject.quote(root.toString())+");";
-                browser.evaluateJavascript(js,null);
+                String js="(function(){"+
+                    "if(!window.TrenerLiteData||!window.TrenerLiteData.previewImport)return false;"+
+                    "window.TrenerLiteData.previewImport("+JSONObject.quote(root.toString())+");return true;})()";
+                browser.evaluateJavascript(js,result->{
+                    if(!"true".equals(result))
+                        showError("Nie można wyświetlić bezpiecznego importu. Nie zmieniono danych.");
+                });
             }catch(Exception e){showError("Błąd importu: "+e.getMessage());}
         }
     }
