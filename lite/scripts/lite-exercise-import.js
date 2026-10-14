@@ -33,25 +33,10 @@ function renderMap(){
   el.onchange=function(){map[el.getAttribute('data-column')]=el.value;renderPreview();};
  });
 }
-function exerciseLibrary(){
- try{return typeof window.exerciseLibrary!=='undefined'?window.exerciseLibrary:
-  typeof globalExerciseLibrary!=='undefined'?globalExerciseLibrary:[];}catch(e){}
- try{if(typeof exerciseLibraryOriginal!=='undefined')return exerciseLibraryOriginal;}catch(e){}
- return [];
-}
-function builtinList(){
- try{
-  // exerciseLibrary jest zadeklarowane na poziomie oryginalnego app.js.
-  if(typeof window.TrenerExerciseLibrary==='object')return window.TrenerExerciseLibrary;
- }catch(e){}
- return [];
-}
 function readBuiltins(){
- try{
-  // Dynamicznie, bez uzależnienia od osobnego formatu pełnego Trenera 2.
-  return window.TrenerCustomExercises094&&typeof window.TrenerCustomExercises094.list==='function'?
-   (typeof window.getTrenerBuiltinExercises==='function'?window.getTrenerBuiltinExercises():[]):[];
- }catch(e){return [];}
+ try{return typeof exerciseLibrary!=='undefined'?exerciseLibrary.filter(function(ex){
+  return ex&&String(ex.id||'').indexOf('user:')!==0;
+ }):[];}catch(e){return [];}
 }
 function renderPreview(){
  if(!pkg)return;
