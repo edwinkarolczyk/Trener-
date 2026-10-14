@@ -9,7 +9,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -119,7 +118,7 @@ final class LiteExercisePackageReader {
         factory.setFeature("http://xml.org/sax/features/external-parameter-entities",false);
         factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd",false);
         factory.setXIncludeAware(false);factory.setExpandEntityReferences(false);
-        try{factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD,"");}catch(Exception ignored){}
+        try{factory.setAttribute("http://javax.xml.XMLConstants/property/accessExternalDTD","");}catch(Exception ignored){}
         return factory.newDocumentBuilder().parse(new ByteArrayInputStream(raw));
     }
     private static List<Element> elems(Element parent,String tag){
