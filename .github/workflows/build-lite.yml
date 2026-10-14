@@ -71,6 +71,9 @@ jobs:
           node --check lite/build/generated/parityAssets/app.js
           node --check lite/build/generated/parityAssets/feature-loader.js
           node --check lite/build/generated/parityAssets/v086-one-phone.js
+          node --check lite/build/generated/parityAssets/lite-group-core.js
+          grep -q 'WSPÓLNY 2–6' lite/build/generated/parityAssets/v086-one-phone.js
+          grep -q 'state.plans' lite/build/generated/parityAssets/v086-one-phone.js
           node --check lite/build/generated/parityAssets/lite-pr-core.js
           node --check lite/build/generated/parityAssets/lite-pr.js
           node --check lite/build/generated/parityAssets/lite-data-core.js
@@ -82,7 +85,7 @@ jobs:
           test -s lite/build/generated/parityAssets/lite-tablet.css
           ! grep -q 'v076-diet.js' lite/build/generated/parityAssets/feature-loader.js
       - name: Testy bezpieczeństwa kopii, migracji i rekordów
-        run: node --test lite/tests/pr-core.test.cjs lite/tests/data-safety.test.cjs
+        run: node --test lite/tests/pr-core.test.cjs lite/tests/data-safety.test.cjs lite/tests/group-six.test.cjs
       - name: Testy regresyjne treningu i progresji
         run: gradle :lite:testDebugUnitTest --no-daemon
       - name: Zbuduj podpisany Lite (minSdk 21)
