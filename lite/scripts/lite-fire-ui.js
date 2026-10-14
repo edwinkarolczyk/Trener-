@@ -81,7 +81,7 @@ function installSignals(){
  card.appendChild(title);card.appendChild(note);
  var configs=[
   {id:'liteFireBeep',key:'trainer3.lite.fire.sound.v035',label:'Dźwięk na koniec przerwy',def:true},
-  {id:'liteFireVibrate',key:'trainer3.lite.fire.vibrate.v035',label:'Krótka wibracja (opcjonalna)',def:false}
+  {id:'liteFireVibrate',key:'trainer3.lite.fire.vibrate.v035',label:'Krótka wibracja (opcjonalna)',def:true}
  ];
  configs.forEach(function(cfg){
   var label=box('label','liteFireSwitch'),input=box('input');
@@ -161,7 +161,7 @@ function manageUi(){
  if(lastNativeActive!==active){
   lastNativeActive=active;
   try{if(window.LiteBridge&&typeof LiteBridge.setTabletTrainingActive==='function')
-   LiteBridge.setTabletTrainingActive(!!active);}catch(e){}
+   LiteBridge.setTabletTrainingActive(!!active&&localStorage.getItem('trainer3.lite.screen.keep.v040')==='yes');}catch(e){}
  }
  doc.body.classList.toggle('liteFireGroup',!!group);
  if(!active)return;
