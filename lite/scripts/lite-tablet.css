@@ -69,3 +69,58 @@ body{background:#090909;color:#f4f4f4}
 .weekdayRow{display:-webkit-flex;display:flex;flex-wrap:wrap}
 .weekdayRow>*{flex:1 1 17%}
 .historyItem summary{list-style:none}
+
+
+/* Jeden tryb Start na Fire: wszystkie sesje 1–6 osób prowadzi silnik z trwałymi profilami.
+   Stare przyciski SOLO/DUO nadal istnieją w DOM dla zgodności z app.js,
+   ale nie są już widocznymi drogami rozpoczynania treningu. */
+#start #setup .modeRow,
+#start #setup #partnerWrap,
+#start #setup > label:first-of-type,
+#start #setup > #nameA,
+#start #setup #v086Count,
+#start #setup #v086Count + label {
+  display:none!important;
+}
+#start #setup #v086Select{
+  display:block!important;
+  width:100%!important;
+  min-height:68px!important;
+  font-size:20px!important;
+  font-weight:900!important;
+  border-radius:13px!important;
+  margin:12px 0!important;
+  background:#962f38!important;
+  color:#fff!important;
+  border:2px solid #ef2b2d!important;
+}
+#start #setup #v086Setup{
+  display:block!important;
+  background:#121212;
+  border:1px solid #393939;
+  border-radius:13px;
+  padding:14px!important;
+  margin:10px 0 15px;
+}
+#start #setup #liteProfilesLauncher{
+  border:1px solid #454545;
+  background:#191315;
+  margin:10px 0 12px;
+}
+#start #setup #v086People details{
+  border:1px solid #343434;
+  background:#111;
+  padding:10px;
+  border-radius:10px;
+  margin:8px 0;
+}
+#start #setup #v086People summary{
+  min-height:40px;
+  font-weight:800;
+  font-size:16px;
+}
+#start #setup #startBtn{
+  min-height:78px!important;
+  font-size:22px!important;
+  margin-top:12px!important;
+}
