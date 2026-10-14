@@ -90,7 +90,7 @@ jobs:
           grep -q 'lite-inventory-core.js' lite/build/generated/parityAssets/index.html
           grep -q 'lite-inventory-ui.js' lite/build/generated/parityAssets/index.html
           ! grep -q 'v060-equipment.js' lite/build/generated/parityAssets/feature-loader.js
-          grep -q 'WSPÓLNY 2–6' lite/build/generated/parityAssets/v086-one-phone.js
+          grep -q 'WSPÓLNY 1–6' lite/build/generated/parityAssets/v086-one-phone.js
           grep -q 'state.plans' lite/build/generated/parityAssets/v086-one-phone.js
           node --check lite/build/generated/parityAssets/lite-pr-core.js
           node --check lite/build/generated/parityAssets/lite-pr.js
