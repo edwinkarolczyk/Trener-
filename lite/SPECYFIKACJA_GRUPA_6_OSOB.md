@@ -254,3 +254,15 @@ Użytkownik zdecydował: **oba tryby mają być dostępne do wyboru**, a Lite ma
 **Zaimplementowane:** powiększony widok osoby aktywnej, 2–6 zwartych kart statusów z licznikami przerw aktualizowanymi bez przebudowy DOM; dedykowany Flexbox fallback dla Fire OS 5, przewijalny ekran zamiast kompaktowego blokowania scrolla; duże pola kg/powtórzeń i zapis serii, rozwijana technika wraz z oryginalnym podglądem ćwiczenia; niezależna natywna blokada wygaszenia ekranu tylko podczas aktywnego treningu; dźwięk na koniec przerwy i opcjonalna wibracja, z ustawieniami na tablecie. Silnik treningowy i baza danych pozostają oryginalne.
 
 **Do potwierdzenia na Fire:** rzeczywista czytelność 7-calowego ekranu (pion i poziom), zachowanie przy wysuwanej klawiaturze, brak migania i stabilność podczas dłuższego treningu; prawidłowa praca dźwięku i wibracji na konkretnym sprzęcie. Zielone CI nie stanowi fizycznego testu.
+
+## 18. Etap 05 — import biblioteki Excel/ZIP ze zdjęciami, Lite 0.3.6
+
+Użytkownik zatwierdził kierunek: import własnych ćwiczeń **razem ze zdjęciami**. W Lite powstał natywny czytnik `LiteExercisePackageReader.java` i podgląd z mapowaniem kolumn `lite-exercise-core.js` / `lite-exercise-import.js`.
+
+- Wejścia: CSV, XLSX (pierwszy arkusz), ZIP z CSV/XLSX + zdjęciami JPG, PNG lub WebP. Ścieżka lub nazwa obrazu w kolumnach `Zdjecie_start` / `Zdjecie_koniec`; filmy i obrazy wyłącznie wklejone w komórkę XLSX bez referencji to **kolejne etapy**, nie część obecnego wydania.
+- Podgląd wierszy, miniatur, błędów i duplikatów, automatyczne oraz ręczne mapowanie kolumn; import wyłącznie zaznaczonych nowych ćwiczeń.
+- Deduplikacja po **nazwa + partia**, brak zamiany istniejących ćwiczeń oraz zdjęć.
+- Bezpieczny, **jednorazowy zapis** do klucza `trainer3.userExercises.v094`, walidacja oryginalnego Trenera 2, zachowanie historii i planów; przy błędzie bez zmian.
+- Zdjęcia kompresowane natywnie do JPEG max. 480 px. Limity: 250 wierszy, 70 zdjęć, max. 20 MB plik / 34 MB rozpakowane, końcowe dane do 2,8 mln znaków. Dużą bibliotekę należy importować partiami.
+- Tylko lokalna praca offline; archiwa ZIP z ochroną przed `../`, przekroczeniem objętości, zagnieżdżeniem i DTD w XML Excela. Niezależne testy mapowania, duplikatów i zapisu.
+- Wersja Beta wymaga potwierdzenia na fizycznym Amazon Fire OS 5 przed zamknięciem odbioru funkcji.
