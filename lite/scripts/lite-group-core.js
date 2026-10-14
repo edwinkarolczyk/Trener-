@@ -6,7 +6,7 @@ if(root)root.TrenerLiteGroupCore=api;
 })(typeof window!=='undefined'?window:null,function(){
 'use strict';
 function validRoster(roster){
- if(!Array.isArray(roster)||roster.length<2||roster.length>6)return false;
+ if(!Array.isArray(roster)||roster.length<1||roster.length>6)return false;
  var seen={},names={};
  return roster.every(function(p){
   if(!p||typeof p.id!=='string'||!p.id||typeof p.name!=='string'||!p.name.trim())return false;
