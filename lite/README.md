@@ -66,3 +66,15 @@ gradle :lite:testDebugUnitTest :lite:assembleRelease
 - Testy: `node --test lite/tests/data-safety.test.cjs lite/tests/pr-core.test.cjs`, składnia WebView po transpilacji i testy Android Gradle z CI.
 
 **Ograniczenia:** pojedynczy JSON ma limit 12 MB; rozmiar lokalnego WebView może ograniczać ilość zdjęć. Brak fizycznego testu na Amazon Fire, dlatego nie ogłaszać pełnej zgodności z jego WebView. Podczas eksportu wykonaj kopię poza urządzeniem; do wydania stabilnego potrzebne są testy importu na faktycznym tablecie.
+
+## Etap 02 — trening maksymalnie 6 osób (Lite 0.3.3)
+
+- Dla Lite kopiowany jest **oryginalny moduł Trenera 2** `v086-one-phone.js`, a `patch-group-six.cjs` modyfikuje wyłącznie kopię w APK; pełny Trener 2 i gałąź `main` są nietknięte.
+- Zapisywana grupa 2–6 uczestników; stałe identyfikatory, osobne serie i historia.
+- Na rozpoczęciu wybór **wspólnego planu** lub **oddzielnych planów** dla uczestników. Indywidualny plan można wybrać pod rozwijaną sekcją uczestnika; można też ustawić indywidualny cel powtórzeń/serii na bieżącą sesję.
+- Osobny indeks ćwiczenia i osobny odpoczynek dla każdej osoby, wybór następnej gotowej osoby, możliwość pominięcia kolejki albo pominięcia ćwiczenia tylko jednej osoby.
+- Ciężary zapisują się z `participantId`; sugestie ciężaru są pobierane z historii wyłącznie tej osoby. To podstawowe reguły pełnego Trenera (dodaj/zostaw/zmniejsz), a nie kompletny nowy algorytm adaptacyjny z RIR i deloadem.
+- Zapis stanu grupowej sesji (plany, ukończone serie, liczniki, pominięcia) i wznowienie po restarcie; wcześniejsze snapshoty wspólnego treningu pozostają obsługiwane.
+- Ekran aktualnie ćwiczącej osoby oraz przewijalna lista statusu pozostałych; ciemno-czerwony motyw zachowany. Układ i czytelność na fizycznym Fire nadal wymagają potwierdzenia.
+- **Nie jest wdrożony** osobny kalendarz tygodniowy każdej osoby ani automatyczne sugestie dodatkowych serii / deload (osobne etapy). Nie ma jeszcze katalogu rzeczywistych talerzy i gryfów.
+- Testy: `node --test lite/tests/group-six.test.cjs` oraz regresje dotychczasowych funkcji.
