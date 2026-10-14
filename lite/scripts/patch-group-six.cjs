@@ -5,11 +5,32 @@ let s=String(source);
 function block(from,to,code){let i=s.indexOf(from),j=s.indexOf(to,i+from.length);if(i<0||j<0)throw Error("Patch nie znalazł: "+from);s=s.slice(0,i)+code+"\n"+s.slice(j);}
 function replace(a,b){if(!s.includes(a))throw Error("Patch nie znalazł: "+a);s=s.replace(a,b);}
 replace("const HOLD='trainer3.history';","const HOLD='trainer3.history';\nconst groupCore=window.TrenerLiteGroupCore;");
+
+block("function rosterFor(count,names,ids){","const state=", `
+function rosterFor(count,names,ids){
+ if(window.TrenerLiteProfiles?.selectedRoster){
+  const persons=window.TrenerLiteProfiles.selectedRoster();
+  if(persons.length===count)return persons;
+ }
+ const previous=stored(),current=ownId();
+ return Array.from({length:count},(_,index)=>({
+  index,id:index===0?current:String(ids?.[index]||previous[index]?.id||uid()),
+  name:safeName(names[index]||previous[index]?.name)||'Osoba '+(index+1)
+ }));
+}
+function saveRoster(p){
+ const selected=window.TrenerLiteProfiles?.selectedRoster?.();
+ const list=Array.isArray(selected)?selected:p;
+ if(!Array.isArray(list)||!groupCore.validRoster(list))throw Error('Nieprawidłowe profile — użyj Menedżera użytkowników.');
+ localStorage.setItem(CFG,JSON.stringify(list.map(({index,id,name})=>({index,id,name}))));
+}
+`);
+
 replace("baseFinish:null,lastHistoryId:'',renderedKey:''","plans:{},cursor:{},deferred:{},skipped:[],planMode:'shared',baseFinish:null,lastHistoryId:'',renderedKey:''");
 replace("p.slice(0,4)","p.slice(0,6)");
 replace("Math.min(4,Number($('v086Count')?.value)||2)","Math.min(6,Number($('v086Count')?.value)||2)");
 replace("Math.min(4,old.length||2)","Math.min(6,old.length||2)");
-replace("WSPÓLNY 2–4 • JEDEN TELEFON","WSPÓLNY 2–6 • JEDEN TABLET");
+replace("WSPÓLNY 2–4 • JEDEN TELEFON","WSPÓLNY 1–6 • JEDEN TABLET");
 replace("'<option value=\"4\">4 osoby</option></select><div id=\"v086People\"></div>'",
 "'<option value=\"4\">4 osoby</option><option value=\"5\">5 osób</option><option value=\"6\">6 osób</option></select>'+ "+
 "'<label>Plany uczestników</label><select id=\"v086PlanMode\"><option value=\"shared\">Wspólny plan</option><option value=\"individual\">Osobne plany</option></select><div id=\"v086People\"></div>'");
@@ -37,7 +58,9 @@ function renderFields(){
 }
 `);
 replace("  saveRoster(rosterFor(names.length,names));\n  toast('Uczestnicy zapisani.');",`
-  const group=rosterFor(names.length,names);saveRoster(group);
+  const group=window.TrenerLiteProfiles?.selectedRoster?.()||rosterFor(names.length,names);
+  if(!groupCore.validRoster(group)){toast('Wybierz użytkowników w Ustawieniach.');return;}
+  saveRoster(group);
   const saved=read('trainer3.liteGroup.personPlans.v033',{});
   for(const p of group.slice(1))saved[p.id]={planKey:$('v086Plan'+p.index)?.value||'',
     min:$('v086Min'+p.index)?.value||'',max:$('v086Max'+p.index)?.value||'',sets:$('v086Sets'+p.index)?.value||''};
@@ -67,9 +90,11 @@ block("function validateSetup(){","function finishLocal",`
 function validateSetup(){
  if(net.connected||net.active){toast('Rozłącz sesję Wi-Fi przed treningiem na tablecie.');return null;}
  const selected=window.TrenerNearby087?.selectedRoster?.();
- const others=Array.isArray(selected)&&selected.length>=2?selected:null;
+ const managed=window.TrenerLiteProfiles?.selectedRoster?.();
+ const others=Array.isArray(managed)&&managed.length>=1?managed:
+  Array.isArray(selected)&&selected.length>=2?selected:null;
  const names=others?others.map(p=>p.name):loadInputNames();
- if(names.length<2||names.length>6||!validatePeople(names)){toast('Wybierz 2–6 osób o różnych imionach.');return null;}
+ if(names.length<1||names.length>6||!validatePeople(names)){toast('Wybierz 1–6 zapisanych osób o różnych imionach.');return null;}
  const participants=others?others.map((p,i)=>({index:i,id:p.id,name:p.name})):rosterFor(names.length,names);
  if(!groupCore.validRoster(participants)){toast('Nieprawidłowe identyfikatory uczestników.');return null;}
  const baseKey=$('planSelect')?.value,base=getPlan(baseKey);
@@ -216,7 +241,7 @@ function checkpoint(){
 block("function resume(){","function boot(){",`
 function resume(){
  const x=read(PENDING,null);
- if(running||!x||!Array.isArray(x.participants)||x.participants.length<2||x.participants.length>6)return;
+ if(running||!x||!Array.isArray(x.participants)||x.participants.length<1||x.participants.length>6)return;
  if(!confirm('Wznowić trening '+x.participants.map(p=>p.name).join(', ')+'?'))return;
  state.selected=true;state.active=true;state.participants=x.participants;state.sessionId=x.sessionId;
  state.plan=x.plan||x.plans?.[0]||{};state.plans=x.plans||Object.fromEntries(x.participants.map(p=>[p.index,clone(x.plan)]));
