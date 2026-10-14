@@ -1,7 +1,9 @@
 /* Trener 2 Lite — ekran treningowy Fire OS 5. Bez nowych kolorów lub obcych komponentów.
    Fallback dla WebView Chrome 37: flexbox, px, bez :has(), CSS Grid i sticky. */
-html.v062Active,html.v062Active body,
-html.v072Running,html.v072Running body {
+html.v062Active.liteFireActive,
+html.v072Running.liteFireActive,
+html.v062Active body.liteFireActive,
+html.v072Running body.liteFireActive {
  overflow-x:hidden!important;
  overflow-y:auto!important;
  -webkit-overflow-scrolling:touch;
