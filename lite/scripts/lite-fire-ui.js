@@ -180,6 +180,12 @@ function boot(){
  manageUi();
  setInterval(manageUi,1000);
  doc.addEventListener('visibilitychange',manageUi);
+ // Po START/ZAPISZ/PAUZA/STOP odśwież stan od razu, bez czekania sekundy.
+ doc.addEventListener('click',function(e){
+  var id=e.target&&e.target.id;
+  if(['startBtn','v086Resume','saveSetBtn','pauseBtn','stopBtn','v086SkipTurn','v086SkipExercise'].indexOf(id)!==-1)
+   setTimeout(manageUi,80);
+ });
 }
 if(doc.readyState==='loading')doc.addEventListener('DOMContentLoaded',boot);
 else boot();
