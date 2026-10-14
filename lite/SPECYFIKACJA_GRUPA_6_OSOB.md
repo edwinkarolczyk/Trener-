@@ -1,6 +1,6 @@
 # Trener 2 Lite — specyfikacja funkcjonalna 1 tablet / 1–6 osób
 
-**Status:** zaakceptowany kierunek na podstawie 23 z 30 odpowiedzi użytkownika, 7 odpowiedzi pozostaje niezatwierdzonych.  
+**Status:** zatwierdzony kierunek na podstawie 23/30 odpowiedzi; dodatkowo katalog posiadanego sprzętu i czytelny ekran Fire, szczegóły 12 pytań do doprecyzowania.  
 **Gałąź robocza:** `feature/trener2-lite-fire5`, bez zmian na `main`.  
 **Wersja referencyjna przed zmianami:** Lite 0.3.0.  
 **Urządzenie docelowe:** Amazon Fire OS 5, Android 5.0+ (API 21); aplikacja offline, jeden tablet.
@@ -152,3 +152,38 @@ Do czasu zatwierdzenia pytań 14/18/19/24 nie zamykać zachowania skoków, wymag
 - Brak zmian w `main`, brak modułów dietetycznych i brak własnego zastępczego motywu.
 
 **Stan dokumentu:** specyfikacja i priorytety, nie deklaracja wdrożenia. Użytkownik nie odpowiedział jeszcze na pytania 14, 18, 19, 24, 26, 27, 28.
+
+## 10. Dodane wymaganie — katalog sprzętu i wykonalna progresja
+
+**Potwierdzone co do kierunku:** użytkownik chce sam rejestrować talerze i gryfy. Przykład: **8 talerzy po 2,5 kg oraz 2 gryfy sztangielek**. Algorytm Trenera musi filtrować proponowane ciężary przez to, co można rzeczywiście zmontować. Parametry przykładu to nie zatwierdzony magazyn.
+
+- Edytowalny katalog elementów: kategoria (talerze, gryf hantli, gryf sztangi, stałe hantle, inne), masa *jednej sztuki*, liczba sztuk, nazwa; opcjonalne średnica i kompatybilność, limit masy, miejsce montażu oraz typ potrzebnego zestawu (jedna hantla, dwie hantle, sztanga).
+- Gryfy posiadają własną masę: **masa hantli = masa jej gryfu + masa wszystkich założonych talerzy**. Nie przyjmować masy gryfu 0 bez potwierdzenia.
+- Rozkład talerzy na gryfie ma być symetryczny; ćwiczenia z dwiema hantlami wymagają pary identycznie obciążonych gryfów. Zapas talerzy liczyć **łącznie**, a nie osobno na każdy gryf.
+- Silnik progresji pełnego Trenera 2 nadal oblicza docelowy ciężar dla *konkretnej osoby*. Warstwa sprzętu wylicza osiągalne obciążenia z magazynu i proponuje najbliższe odpowiednie, z informacją dlaczego docelowy skok nie jest wykonalny. Nie wymuszać zwiększenia ciężaru ponad bezpieczny plan.
+- Jeśli brakuje odpowiednich talerzy, poinformuj „Nie można zmontować tego ciężaru — pozostaw obecny i realizuj progresję powtórzeń”. Pozwól odblokować ręczny wpis, ale wyróżnij ciężar spoza magazynu.
+- Pokazuj opcjonalnie „na lewą i prawą stronę każdego gryfu” i zmianę talerzy po zmianie ćwiczącego. Katalog można edytować bez zmiany zapisanej historii.
+- Wspólna sesja = wspólny sprzęt; jedna osoba wykonuje serię w danej chwili, a pozostali mogą odpoczywać równolegle. Pamięć bieżących obciążeń na gryfach jest do ustalenia.
+- Testy poprawności: ujemne masy i ilości, nieparzysty niesymetryczny montaż, niewystarczające talerze, brak drugiego gryfu, mieszanie średnic, przeciążenie gryfu i przypadek dwóch osób.
+
+**Przykład z 8 × 2,5 kg = 20 kg talerzy łącznie:** na dwóch gryfach jednocześnie maksymalny równy symetryczny rozkład to **4 talerze na gryf**, po 2 z każdej strony — zatem **10 kg talerzy + masa gryfu na pojedynczą hantlę**. Symetryczne dodanie po jednym talerzu na stronę *jednej* hantli daje przyrost **5 kg na hantlę**. Nie sugerować +2,5 kg na hantlę jako wykonalnego przy samych talerzach 2,5 kg.
+
+## 11. Dodane wymaganie — maksymalna przejrzystość ekranu Amazon Fire
+
+**Potwierdzone:** zachować oryginalny ciemno-czerwony motyw Trenera 2, ale układ ma być prosty i bardzo czytelny na Fire OS 5.
+
+- Jeden główny panel aktywnej osoby: imię, ćwiczenie, serie, cel, ostatni/sugerowany ciężar, duże pole kg i przycisk **ZAPISZ SERIĘ**.
+- Zwarta lista maksymalnie 6 osób poniżej/obok (zależnie od szerokości): nazwisko/imię, bieżące ćwiczenie, ukończone serie, niezależny licznik odpoczynku, status.
+- Nie pokazywać sześciu pełnych formularzy na raz. Dodatkowe dane (historia, układ talerzy, wykres) po rozwinięciu/kliknięciu.
+- Duże kontrolki (docelowo co najmniej około 56–64 dp), czytelne kg, sprawna numeryczna klawiatura, działanie po obróceniu ekranu i przy małej szerokości, bez poziomego przesuwania treści.
+- Zielony = gotowy/postęp, żółty = odpoczynek/uwaga, czerwony = błąd/ból; zawsze z tekstem statusu.
+- Ograniczenia starego WebView Fire OS 5: CSS/JS z fallbackami i test fizyczny przed wydaniem.
+- Przyciski PAUZA, ZAPISZ, CZEKAJ/POMIŃ mają pozostać łatwo dostępne.
+
+## 12. Do uzupełnienia w ankiecie
+
+Pierwotne pominięte pytania: **14, 18, 19, 24, 26, 27, 28** — poprzednie propozycje domyślne nie są zatwierdzone.
+
+Nowe pytania o sprzęt: **31. poziom szczegółowości katalogu; 32. masa gryfu; 33. rozkład talerzy; 34. pamięć aktualnego montażu; 35. niewykonalna sugestia progresji.**
+
+**Stan:** specyfikacja w repozytorium, jeszcze bez implementacji tych nowych wymagań i bez wydania APK.
