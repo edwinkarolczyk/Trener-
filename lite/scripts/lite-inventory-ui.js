@@ -203,12 +203,13 @@ function onGroupTurn(person,ex,proposal,previous){
  installWorkout();setExercise(ex);
  var target=previous!==undefined&&previous!==null?Number(previous):Number(proposal);
  var req=getRequest();
- if(!req.kind||!req.inventory.bars.length||!isFinite(target)||target<=0)return proposal;
+ if(!req.inventory.bars.length||!isFinite(target)||target<=0)return proposal;
+ if(!req.kind)return null; // skonfigurowany katalog: bez rodzaju sprzętu nie zgadujemy wartości
  try{
   var r=core.recommend(req.inventory,req.kind,req.barId,target);
-  if(!r.possible)return proposal; // brak zgodnej konfiguracji: ostrzeżenie w panelu, nie fikcyjny ciężar
+  if(!r.possible)return null; // nie wstawiaj automatycznie niewykonalnej propozycji
   return r.total;
- }catch(e){return proposal;}
+ }catch(e){return null;}
 }
 function installCss(){
  var style=doc.createElement('style');style.id='liteInvCss';style.textContent=
