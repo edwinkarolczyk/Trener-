@@ -52,7 +52,7 @@ function setIds(selected){
  var p=refresh();
  var roster=core.select(p,selected);
  localStorage.setItem(SELECTED,JSON.stringify(selected));
- var count=$('v086Count');if(count){count.value=String(Math.max(2,Math.min(6,roster.length)));
+ var count=$('v086Count');if(count){count.value=String(Math.max(1,Math.min(6,roster.length)));
   try{count.dispatchEvent(new Event('change'));}catch(ignore){}
  }
  return roster;
@@ -176,7 +176,7 @@ function draw(){
     var current=ids(refresh());
     var proposed=check.checked?current.concat([id]):current.filter(function(x){return x!==id;});
     var result=setIds(proposed);draw();
-    message('Wybrano '+result.length+' osób. Użyj WSPÓLNY 1–6 → START.');
+    message('Wybrano '+result.length+' osób. Wróć do Start → TRENING 1–6 OSÓB.');
    }catch(e){draw();message('Nie zapisano wyboru: '+e.message);}
   };
   el.querySelector('.liteProfileRename').onclick=function(){rename(id);};
@@ -234,7 +234,7 @@ function install(){
  if(setup&&!$('liteProfilesLauncher')){
   var wrap=doc.createElement('div');wrap.id='liteProfilesLauncher';
   wrap.innerHTML='<strong>Wybierz zapisane osoby</strong>'+
-   '<p class="hint">Liczba i kolejność osób są wybierane w Ustawieniach → Użytkownicy. Możesz wybrać dowolne 1–6 osób. Stałe profile są wspólne dla historii i rekordów.</p>'+
+   '<p class="hint">Wybrane profile: od 1 do 6 osób. Tryb jest jeden; każda osoba ma własną historię i rekordy. Zmień skład grupy w Ustawieniach → Użytkownicy.</p>'+
    '<button id="liteProfilesOpen" class="secondary" type="button">OTWÓRZ PROFILE I WYBIERZ GRUPĘ</button>';
   setup.insertBefore(wrap,setup.firstChild);
   $('liteProfilesOpen').onclick=function(){var tab=doc.querySelector('.tab[data-tab="settings"]');if(tab)tab.click();
@@ -261,7 +261,7 @@ function install(){
  }
  if($('v086Count')){
    var grp=$('v086Count'),picked=ids(refresh());
-   grp.value=String(Math.max(2,Math.min(6,picked.length)));
+   grp.value=String(Math.max(1,Math.min(6,picked.length)));
    try{grp.dispatchEvent(new Event('change'));}catch(ignore){}
    grp.disabled=true;grp.setAttribute('title','Liczbę osób zmień w Ustawieniach → Użytkownicy.');
  }
