@@ -59,3 +59,14 @@ test('Fire: zachowano motyw i podgląd ćwiczenia po rozwinięciu',()=>{
   assert.match(js,/more\.appendChild\(visual\)/);
   assert.match(js,/doc\.documentElement\.classList\.toggle\('liteFireActive',active\)/);
 });
+
+test('Fire: opcjonalne sygnały i flagi ekranu w czasie treningu',()=>{
+ const js=fs.readFileSync(path.join(root,'lite-fire-ui.js'),'utf8');
+ const java=fs.readFileSync(path.resolve(__dirname,'../src/main/java/pl/edwin/trener2lite/LiteFullActivity.java'),'utf8');
+ assert.match(js,/setTabletTrainingActive/);
+ assert.match(js,/restFinishedSignal/);
+ assert.match(js,/trainer3\.lite\.fire\.vibrate\.v035/);
+ assert.match(js,/restSeen\[p\.id\]===key&&!restAnnounced\[key\]/);
+ assert.match(java,/FLAG_KEEP_SCREEN_ON/);
+ assert.match(java,/ToneGenerator/);
+});
