@@ -223,7 +223,7 @@ function apply(storage,plan){
   var prev={},keys=Object.keys(writes),changed=[];
   keys.forEach(function(k){prev[k]=storage.getItem(k);});
   try{
-    keys.forEach(function(k){storage.setItem(k,writes[k]);changed.push(k);});
+    keys.forEach(function(k){changed.push(k);storage.setItem(k,writes[k]);});
     return {ok:true,changed:changed.length};
   }catch(e){
     // Najpierw zwolnij miejsce po niedokończonych zapisach.
