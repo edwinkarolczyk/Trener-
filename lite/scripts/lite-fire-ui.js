@@ -2,7 +2,7 @@
 'use strict';
 var core=window.TrenerLiteFireCore;
 if(!core)return;
-var doc=document,rosterNodes={},lastSession='';
+var doc=document,rosterNodes={},lastSession='',lastNativeActive=null,restSeen={},restAnnounced={};
 function $(id){return doc.getElementById(id);}
 function box(tag,cls,text){
  var e=doc.createElement(tag);if(cls)e.className=cls;
@@ -72,10 +72,54 @@ function makePerson(p){
  return item;
 }
 function writeText(el,t){if(el&&el.textContent!==t)el.textContent=t;}
+function installSignals(){
+ if($('liteFireSignals'))return;
+ var settings=$('settings');if(!settings)return;
+ var card=box('div','card');card.id='liteFireSignals';
+ var title=box('h2','', 'Sygnał końca odpoczynku');
+ var note=box('p','hint','Na tablecie kolor i licznik pozostają zawsze widoczne. Możesz wyłączyć dźwięk albo włączyć krótką wibrację.');
+ card.appendChild(title);card.appendChild(note);
+ var configs=[
+  {id:'liteFireBeep',key:'trainer3.lite.fire.sound.v035',label:'Dźwięk na koniec przerwy',def:true},
+  {id:'liteFireVibrate',key:'trainer3.lite.fire.vibrate.v035',label:'Krótka wibracja (opcjonalna)',def:false}
+ ];
+ configs.forEach(function(cfg){
+  var label=box('label','liteFireSwitch'),input=box('input');
+  input.type='checkbox';input.id=cfg.id;
+  input.checked=(localStorage.getItem(cfg.key)===null?cfg.def:localStorage.getItem(cfg.key)==='yes');
+  input.addEventListener('change',function(){
+   try{localStorage.setItem(cfg.key,input.checked?'yes':'no');}catch(e){}
+  });
+  label.appendChild(input);label.appendChild(box('span','',cfg.label));card.appendChild(label);
+ });
+ settings.insertBefore(card,settings.firstChild);
+}
+function restSignal(){
+ var sound=localStorage.getItem('trainer3.lite.fire.sound.v035')!=='no';
+ var vibration=localStorage.getItem('trainer3.lite.fire.vibrate.v035')==='yes';
+ if(!sound&&!vibration)return;
+ try{
+  if(window.LiteBridge&&typeof LiteBridge.restFinishedSignal==='function')
+   LiteBridge.restFinishedSignal(sound,vibration);
+ }catch(e){}
+}
+function signalCompletedRest(group,now){
+ if(group.paused)return;
+ group.participants.forEach(function(p){
+  if(p.done)return;
+  var due=Number(p.readyAt||0),key=String(p.id)+':'+due;
+  if(due<=0)return;
+  if(due>now){restSeen[p.id]=key;return;}
+  if(restSeen[p.id]===key&&!restAnnounced[key]){
+   restAnnounced[key]=true;
+   restSignal();
+  }
+ });
+}
 function syncRoster(group){
  var people=$('liteFirePeople');if(!people)return;
  if(lastSession!==group.sessionId){
-  rosterNodes={};lastSession=group.sessionId;
+  rosterNodes={};restSeen={};restAnnounced={};lastSession=group.sessionId;
   while(people.firstChild)people.removeChild(people.firstChild);
  }
  var now=Date.now(),live={};
@@ -99,6 +143,7 @@ function syncRoster(group){
  Object.keys(rosterNodes).forEach(function(key){
   if(!live[key]){var elem=rosterNodes[key];elem.parentNode&&elem.parentNode.removeChild(elem);delete rosterNodes[key];}
  });
+ signalCompletedRest(group,now);
  var s=core.summary(group,now);
  writeText($('liteFireCount'),s.total+' osób • '+s.ready+' gotowe • '+s.done+' zakończone');
  writeText($('liteFireState'),group.paused?'PAUZA':s.ready?'GOTOWI: '+s.ready:'TRWA ODPOCZYNEK');
@@ -113,6 +158,11 @@ function manageUi(){
  var active=hasActiveTraining(),group=active?snapshot():null;
  doc.body.classList.toggle('liteFireActive',active);
  doc.documentElement.classList.toggle('liteFireActive',active);
+ if(lastNativeActive!==active){
+  lastNativeActive=active;
+  try{if(window.LiteBridge&&typeof LiteBridge.setTabletTrainingActive==='function')
+   LiteBridge.setTabletTrainingActive(!!active);}catch(e){}
+ }
  doc.body.classList.toggle('liteFireGroup',!!group);
  if(!active)return;
  install();
@@ -126,6 +176,7 @@ function manageUi(){
 }
 function boot(){
  install();
+ installSignals();
  manageUi();
  setInterval(manageUi,1000);
  doc.addEventListener('visibilitychange',manageUi);
