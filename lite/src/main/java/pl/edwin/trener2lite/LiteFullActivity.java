@@ -95,6 +95,7 @@ public final class LiteFullActivity extends Activity {
                     if(params!=null&&params.getAcceptTypes()!=null&&params.getAcceptTypes().length>0){
                         String first=params.getAcceptTypes()[0];
                         if(first!=null&&first.startsWith("image/"))mime="image/*";
+                        else if(first!=null&&first.startsWith("video/"))mime="video/*";
                         else if(first!=null&&first.contains("json"))mime="application/json";
                     }
                     intent.setType(mime);
