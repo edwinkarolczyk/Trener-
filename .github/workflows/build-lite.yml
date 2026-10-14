@@ -76,6 +76,9 @@ jobs:
           node --check lite/build/generated/parityAssets/lite-exercise-import.js
           node --check lite/build/generated/parityAssets/lite-profile-core.js
           node --check lite/build/generated/parityAssets/lite-profile-ui.js
+          node --check lite/build/generated/parityAssets/lite-040-core.js
+          node --check lite/build/generated/parityAssets/lite-040-ui.js
+          grep -q 'lite-040-ui.js' lite/build/generated/parityAssets/index.html
           grep -q 'lite-profile-ui.js' lite/build/generated/parityAssets/index.html
           grep -q 'window.TrenerLiteProfiles' lite/build/generated/parityAssets/v086-one-phone.js
           grep -q 'lite-exercise-import.js' lite/build/generated/parityAssets/index.html
@@ -102,6 +105,8 @@ jobs:
           ! grep -q 'v076-diet.js' lite/build/generated/parityAssets/feature-loader.js
       - name: Testy bezpieczeństwa kopii, migracji i rekordów
         run: node --test lite/tests/pr-core.test.cjs lite/tests/data-safety.test.cjs lite/tests/group-six.test.cjs lite/tests/inventory.test.cjs lite/tests/fire-ui.test.cjs lite/tests/exercise-import.test.cjs lite/tests/profile-lock.test.cjs lite/tests/start-unified.test.cjs lite/tests/installer-fire5.test.cjs
+      - name: Testy nowego interfejsu, planów i historii 0.4.0
+        run: node --test lite/scripts/lite-040-core.test.cjs
       - name: Testy regresyjne treningu i progresji
         run: gradle :lite:testDebugUnitTest --no-daemon
       - name: Zbuduj podpisany Lite (minSdk 21)
@@ -123,6 +128,7 @@ jobs:
           VERSION=$(sed -n "s/.*versionName[[:space:]]*'\\([^']*\\)'.*/\\1/p" lite/build.gradle | head -1)
           CODE=$(awk '/versionCode/{print $2; exit}' lite/build.gradle)
           test -n "$VERSION" && test -n "$CODE"
+          test "$VERSION" = "0.4.0" && test "$CODE" -gt 13 || { echo 'Blokada publikacji: wszystkie etapy muszą zakończyć się przed wersją 0.4.0.' >&2; exit 1; }
           TAG="lite-v${VERSION}"
           APK_NAME="Trener2-Lite-v${VERSION}.apk"
           cp lite/build/outputs/apk/release/lite-release.apk "$APK_NAME"
