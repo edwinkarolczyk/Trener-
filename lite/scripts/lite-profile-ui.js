@@ -52,6 +52,9 @@ function setIds(selected){
  var p=refresh();
  var roster=core.select(p,selected);
  localStorage.setItem(SELECTED,JSON.stringify(selected));
+ var count=$('v086Count');if(count){count.value=String(Math.max(2,Math.min(6,roster.length)));
+  try{count.dispatchEvent(new Event('change'));}catch(ignore){}
+ }
  return roster;
 }
 function selectedRoster(){
@@ -116,6 +119,8 @@ function remove(id){
  if(id===ownId()){message('Profil podstawowy urządzenia nie może zostać usunięty.');return;}
  if(!confirm('Usunąć pusty profil „'+p.name+'”? Nie usunie to żadnej historii.'))return;
  all.people=all.people.filter(function(x){return x.id!==id;});
+ var oldGroup=parse(ROSTER,[]);
+ if(Array.isArray(oldGroup))localStorage.setItem(ROSTER,JSON.stringify(oldGroup.filter(function(x){return x.id!==id;})));
  saveList(all);
  var selection=ids(all);setIds(selection);
  draw();message('Usunięto pusty profil.');
@@ -254,6 +259,12 @@ function install(){
    '#liteProfilesLauncher button{width:100%;min-height:58px;font-size:17px}';
   doc.head.appendChild(style);
  }
+ if($('v086Count')){
+   var grp=$('v086Count'),picked=ids(refresh());
+   grp.value=String(Math.max(2,Math.min(6,picked.length)));
+   try{grp.dispatchEvent(new Event('change'));}catch(ignore){}
+   grp.disabled=true;grp.setAttribute('title','Liczbę osób zmień w Ustawieniach → Użytkownicy.');
+ }
  if($('liteProfileCards'))draw();
 }
 function boot(){
@@ -264,7 +275,9 @@ function boot(){
  }catch(e){message('Błąd uruchomienia profili: '+e.message);}
  // Po zakończeniu pierwszego treningu aktualizuj jedynie blokady nazw.
  setInterval(function(){
-  if(!doc.getElementById('liteProfileCards')){install();return;}
+  if(!doc.getElementById('liteProfileCards')||!doc.getElementById('liteProfilesLauncher')){
+   install();
+  }
   var data=refresh(),signature=data.people.map(function(p){return p.id+':'+p.name+':'+p.locked;}).join('|');
   if(signature!==lastSig){lastSig=signature;draw();}
  },2500);
