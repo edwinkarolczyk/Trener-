@@ -3,7 +3,7 @@
 // Rekordy Lite są oddzielone od serii treningowych i synchronizacji pełnego Trenera 2.
 var KEY='trainer3.lite.pr.v1', core=window.TrenerLitePRCore;
 if(!core)return;
-var doc=document, currentMode='', state=load();
+var doc=document, currentMode='', dueProfile='', state=load();
 function $(id){return doc.getElementById(id);}
 function parse(raw,fallback){try{var o=JSON.parse(raw);return o&&typeof o==='object'?o:fallback;}catch(e){return fallback;}}
 function load(){
@@ -105,15 +105,30 @@ function renderRecords(){
 }
 function renderDue(){
   var n=$('litePrNudge');if(!n)return;
-  var id=selected(),weeks=state.intervalWeeks,now=Date.now();
+  var weeks=state.intervalWeeks,now=Date.now();
   var active=!!(window.TrenerOnePhone086&&window.TrenerOnePhone086.active);
   var train=$('training');
   if(train&&!train.classList.contains('hidden'))active=true;
-  var eligible=rows().length>0||state.records.some(function(r){return r.profileId===id;});
-  var due=weeks>0&&eligible&&core.isDue(state.lastAction[id],weeks,now)&&
-    now>=Number(state.snoozedUntil[id]||0)&&!active;
-  n.classList.toggle('hidden',!due);
-  var name=$('litePrNudgeName');if(name)name.textContent=chosenName();
+  dueProfile='';
+  var all=people(),historyData=history();
+  var order=all.slice().sort(function(a,b){return (a.id===selected()?-1:0)-(b.id===selected()?-1:0);});
+  for(var i=0;i<order.length;i++){
+    var id=order[i].id;
+    var eligible=core.historyRows(historyData,id).length>0||
+      state.records.some(function(r){return r.profileId===id;});
+    if(weeks>0&&eligible&&core.isDue(state.lastAction[id],weeks,now)&&now>=Number(state.snoozedUntil[id]||0)){
+      dueProfile=id;break;
+    }
+  }
+  n.classList.toggle('hidden',!dueProfile||active);
+  var name=$('litePrNudgeName');
+  if(name&&dueProfile){for(var j=0;j<all.length;j++)if(all[j].id===dueProfile){name.textContent=all[j].name;break;}}
+}
+function selectDue(){
+  if(!dueProfile)return;
+  var person=$('litePrPerson');person.value=dueProfile;
+  updateSelect($('litePrExercise'),exercises());
+  progressSummary();renderRecords();
 }
 function markAction(){
   var id=selected();if(!id)return;
@@ -157,7 +172,7 @@ function saveTest(){
   message('Rekord '+fmt(kg)+' kg zapisany dla '+chosenName()+'.');
 }
 function postpone(){
-  var id=selected();state.snoozedUntil[id]=Date.now()+7*24*60*60*1000;
+  var id=dueProfile||selected();state.snoozedUntil[id]=Date.now()+7*24*60*60*1000;
   if(save())renderDue();
 }
 function install(){
@@ -218,8 +233,8 @@ function install(){
   $('litePrTry').addEventListener('click',showTest);
   $('litePrCancel').addEventListener('click',function(){$('litePrActual').classList.add('hidden');currentMode='';});
   $('litePrSave').addEventListener('click',saveTest);
-  $('litePrNudgeEstimate').addEventListener('click',function(){openProgress('estimate');});
-  $('litePrNudgeActual').addEventListener('click',function(){openProgress('actual');});
+  $('litePrNudgeEstimate').addEventListener('click',function(){selectDue();openProgress('estimate');});
+  $('litePrNudgeActual').addEventListener('click',function(){selectDue();openProgress('actual');});
   $('litePrNudgeLater').addEventListener('click',postpone);
   doc.querySelector('.tab[data-tab="progress"]')?.addEventListener('click',function(){setTimeout(updateRoster,40);});
   updateRoster();
