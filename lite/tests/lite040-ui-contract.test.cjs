@@ -1,0 +1,64 @@
+'use strict';
+const {test}=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const core=require('../scripts/lite-040-core.js');
+const ui=fs.readFileSync(path.join(__dirname,'../scripts/lite-040-ui.js'),'utf8');
+const parity=fs.readFileSync(path.join(__dirname,'../scripts/build-parity-assets.cjs'),'utf8');
+const fire=fs.readFileSync(path.join(__dirname,'../scripts/lite-fire-ui.js'),'utf8');
+const backup=require('../scripts/lite-data-core.js');
+function h(id,pid,date,rows){return {id,participantId:pid,iso:date,date,plan:'Test',records:rows};}
+test('w pakiecie są obie części 0.4 i transpilacja dla WebView Chrome 37',()=>{
+ assert.match(parity,/lite-040-core\.js/);assert.match(parity,/lite-040-ui\.js/);
+ assert.match(parity,/chrome:'37'/);
+});
+test('otwarcie zawsze Start, a skrót wznowienia używa istniejącego silnika',()=>{
+ assert.match(ui,/lite040Resume/);assert.match(ui,/v086Resume/);
+ assert.match(ui,/trainer3\.lastTab\.v0884/);
+});
+test('kopie i identyfikatory profili nie są kasowane przez nowy interfejs',()=>{
+ assert.match(ui,/TrenerLiteProfiles\.select\(ids\)/);
+ assert.doesNotMatch(ui,/localStorage\.clear\s*\(/);
+ assert.doesNotMatch(ui,/removeItem\s*\(\s*['"]trainer3\.history/);
+ assert.doesNotMatch(ui,/removeItem\s*\(\s*['"]trainer3\.lite\.profiles/);
+});
+test('nowe awatary i tygodnie są bezpieczne dla pełnej kopii',()=>{
+ const data={format:'trener2-backup',version:6,storage:{
+  'trainer3.lite.week.v040':JSON.stringify({a:['mon','','','','','','']}),
+  'trainer3.lite.avatar.v040':JSON.stringify({a:'data:image/jpeg;base64,aGVsbG8='}),
+  'trainer3.history':JSON.stringify([])
+ }};
+ const result=backup.prepare(data,{},'all','');
+ assert.ok(result.writes['trainer3.lite.week.v040']);
+ assert.ok(result.writes['trainer3.lite.avatar.v040']);
+});
+test('import istniejącego profilu nie nadpisuje historii i ustawień',()=>{
+ const current={'trainer3.lite.week.v040':'{"a":["fri"]}',
+   'trainer3.history':JSON.stringify([h('old','a','2026-10-01',[])])};
+ const incoming={format:'trener2-backup',storage:{
+  'trainer3.lite.week.v040':'{"a":["mon"]}',
+  'trainer3.history':JSON.stringify([h('new','a','2026-10-02',[])])}};
+ const planned=backup.prepare(incoming,current,'all','');
+ assert.equal(planned.writes['trainer3.lite.week.v040'],undefined);
+ assert.equal(JSON.parse(planned.writes['trainer3.history']).length,2);
+});
+test('jeden rekord historii uczestnika, brak przecieków serii grupowych',()=>{
+ const session={id:'g',onePhone:{participants:[{index:0,id:'a'},{index:1,id:'b'}]},
+ records:[{athlete:0,id:'bench',kg:20},{athlete:1,id:'bench',kg:80}]};
+ assert.equal(core.recordsOf(session,'a').length,1);
+ assert.equal(core.recordsOf(session,'b')[0].kg,80);
+ assert.equal(core.filterHistory([session],'a','group','').length,1);
+ assert.equal(core.filterHistory([session],'c','group','').length,0);
+});
+test('sygnały odpoczynku i wygaszanie to konfiguracja, nie twarda blokada',()=>{
+ assert.match(fire,/trainer3\.lite\.screen\.keep\.v040/);
+ assert.match(fire,/liteFireBeep/);assert.match(fire,/liteFireVibrate/);
+ assert.match(ui,/lite040KeepAwake/);
+});
+test('historie i biblioteka posiadają ekrany i deduplikują widok',()=>{
+ assert.match(ui,/lite040HistoryMode/);assert.match(ui,/lite040HistoryPerson/);
+ assert.match(ui,/lite040HistorySearch/);
+ assert.match(ui,/if\(!el\.open\|\|!el\.classList\.contains/);
+ assert.match(ui,/lite040WeekSave/);assert.match(ui,/lite040AllExercise/);
+});
