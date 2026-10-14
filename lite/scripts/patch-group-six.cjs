@@ -134,10 +134,17 @@ function chooseTurn(){
   const ex=pos.ex,weightKey=p.id+':'+(ex.id||ex.n);
   const prev=state.lastWeights[weightKey];
   const suggestion=groupCore.suggestion(readHistory(),p.id,ex,Number($('stepKg')?.value)||2.5);
-  $('weight').value=prev===undefined?(suggestion?String(suggestion.target):''):String(prev);
+  const proposed=suggestion?suggestion.target:undefined;
+  const feasible=window.TrenerLiteInventory?.onGroupTurn?
+   window.TrenerLiteInventory.onGroupTurn(p,ex,proposed,prev):proposed;
+  $('weight').value=prev===undefined?(feasible===null||feasible===undefined?'':String(feasible)):String(prev);
   if($('v086Load'))$('v086Load').textContent=suggestion?
-   p.name+' • poprzednio '+suggestion.last+' kg • sugerowane '+suggestion.target+' kg (możesz zmienić).':
+   p.name+' • poprzednio '+suggestion.last+' kg • zalecane '+suggestion.target+
+   ' kg'+(feasible===null?' • Brak możliwego układu z katalogu.':
+     feasible!==undefined&&feasible!==suggestion.target?' • Z posiadanych talerzy: '+feasible+' kg.':'')+
+   ' Możesz zmienić ciężar.':
    p.name+' • brak ostatniego ciężaru. Wpisz ręcznie.';
+  window.TrenerLiteInventory?.showResult?.();
  }
 }
 `);
