@@ -17,7 +17,15 @@ function ownId(){
   return String(window.TrenerData070.participantId()||'');}catch(e){}
  return String(localStorage.getItem('trainer3.participantId.v070')||'');
 }
-function saved(){return parse(KEY,{schemaVersion:1,people:[]});}
+function saved(){
+ var stored=localStorage.getItem(KEY);
+ if(stored===null)return {schemaVersion:1,people:[]};
+ var val;
+ try{val=JSON.parse(stored);}catch(e){throw Error('Uszkodzony zapis profili. Nie zmieniam danych. Wykonaj kopię.');}
+ if(!val||val.schemaVersion!==1||!Array.isArray(val.people))
+  throw Error('Nieobsługiwany format profili. Nie zapisuję zmian.');
+ return val;
+}
 function primary(){return {id:ownId(),name:$('nameA')&&$('nameA').value||'Osoba 1'};}
 function refresh(){
  var old=saved(),oldRoster=parse(ROSTER,[]),h=history();
@@ -188,11 +196,14 @@ function draw(){
  });
  var primaryPerson=data.people.filter(function(p){return p.id===ownId();})[0];
  var input=$('nameA');
- if(input&&primaryPerson&&primaryPerson.locked){
-  input.value=primaryPerson.name;
-  input.readOnly=true;
-  input.setAttribute('title','Nazwa nie może być zmieniona po zapisaniu historii treningowej.');
+ if(input&&primaryPerson){
+  input.value=primaryPerson.name;input.readOnly=true;
+  input.setAttribute('title',primaryPerson.locked?
+   'Nazwa zablokowana po pierwszym treningu.':
+   'Zmiana nazwy tylko przez Ustawienia → Użytkownicy, przed pierwszym treningiem.');
  }
+ var memberInputs=Array.from(doc.querySelectorAll('#v086People input[id^="v086Name"]'));
+ memberInputs.forEach(function(el){el.readOnly=true;el.title='Zmieniaj uczestników tylko w Ustawieniach → Użytkownicy.';});
  var summary=$('liteProfileSelected');
  if(summary)summary.textContent='Wybrano: '+chosen.map(function(id){
   var p=data.people.filter(function(p){return p.id===id;})[0];return p&&p.name||'';
@@ -246,9 +257,12 @@ function install(){
  if($('liteProfileCards'))draw();
 }
 function boot(){
- try{refresh();install();}catch(e){message('Błąd uruchomienia profili: '+e.message);}
- // Po zakończeniu pierwszego treningu aktualizuj jedynie blokady nazw.
  var lastSig='';
+ try{
+  var base=refresh();install();
+  lastSig=base.people.map(function(p){return p.id+':'+p.name+':'+p.locked;}).join('|');
+ }catch(e){message('Błąd uruchomienia profili: '+e.message);}
+ // Po zakończeniu pierwszego treningu aktualizuj jedynie blokady nazw.
  setInterval(function(){
   if(!doc.getElementById('liteProfileCards')){install();return;}
   var data=refresh(),signature=data.people.map(function(p){return p.id+':'+p.name+':'+p.locked;}).join('|');
