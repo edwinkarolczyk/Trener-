@@ -284,10 +284,11 @@ function installHistory(){
 }
 function renderHistory(){
  var host=$('lite040HistoryList'),person=$('lite040HistoryPerson');if(!host||!person)return;
- var all=people(),prior=historyPerson||person.value||pickedIds()[0]||'';
- person.innerHTML=all.map(function(p){return optionHtml(p.id,p.name);}).join('');
+ var all=people(),prior=historyPerson||person.value||'';
+ person.innerHTML=optionHtml('','Wybierz profil')+all.map(function(p){return optionHtml(p.id,p.name);}).join('');
  if(all.some(function(p){return p.id===prior;}))person.value=prior;
  historyPerson=person.value;
+ if(!historyPerson){host.textContent='Wybierz profil, aby zobaczyć jego treningi.';return;}
  var allHistory=read('trainer3.history',[]),
   filtered=core.filterHistory(allHistory,historyPerson,historyMode,$('lite040HistorySearch').value);
  host.innerHTML='';
@@ -305,7 +306,7 @@ function renderHistory(){
   }).join('');
   var item=make('details','lite040HistoryItem');
   item.innerHTML='<summary><b>'+esc(h.date||'Bez daty')+' • '+esc(h.plan||'Trening')+'</b>'+
-   '<small>'+core.formatTime(h.duration||0)+' • '+records.length+' serii'+
+   '<small>'+core.formatTime((h.duration||0)/60)+' • '+records.length+' serii'+
    (h.interrupted?' • przerwany':'')+'</small></summary>'+
    '<div class="lite040HistoryDetails">'+(lines||'<p>Brak serii.</p>')+'</div>';
   host.appendChild(item);
@@ -402,7 +403,7 @@ function installSettings(){
 function installStyles(){
  if($('lite040Css'))return;
  var s=make('style');s.id='lite040Css';s.textContent=
- '.lite040HiddenLegacy{display:none!important}'+
+ '.lite040HiddenLegacy,#start>.compactTop{display:none!important}'+
  '#setup .heroCard{padding:10px}#setup>h2,#setup>.eyebrow,#liteProfilesLauncher,#v086Select{display:none!important}'+
  '.lite040Start h2{font-size:26px;margin:0 0 12px}'+
  '.lite040People{display:-webkit-flex;display:flex;-webkit-flex-wrap:wrap;flex-wrap:wrap;gap:9px;margin:12px 0}'+
