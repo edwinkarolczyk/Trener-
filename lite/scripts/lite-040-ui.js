@@ -419,7 +419,7 @@ function installSettings(){
 function installStyles(){
  if($('lite040Css'))return;
  var s=make('style');s.id='lite040Css';s.textContent=
- '.lite040HiddenLegacy,#start>.compactTop,body.liteFireActive #technique{display:none!important}'+
+ '.lite040HiddenLegacy,#start>.compactTop,body.liteFireActive #technique,#setup>label,#setup>#planSelect,#setup>.hint{display:none!important}'+
  '#setup .heroCard{padding:10px}#setup>h2,#setup>.eyebrow,#liteProfilesLauncher,#v086Select{display:none!important}'+
  '.lite040Start h2{font-size:26px;margin:0 0 12px}'+
  '.lite040People{display:-webkit-flex;display:flex;-webkit-flex-wrap:wrap;flex-wrap:wrap;gap:9px;margin:12px 0}'+
@@ -458,6 +458,7 @@ function installStyles(){
 function reconcileModules(){
  var more=$('lite040Options'),setup=$('v086Setup');
  if(more&&setup&&setup.parentNode!==more)more.appendChild(setup);
+ ['v059Card','litePrNudge'].forEach(function(id){var e=$(id);if(more&&e&&e.parentNode!==more)more.appendChild(e);});
  var importer=$('liteExerciseImportCard'),ex=$('exercises');
  if(ex&&importer&&importer.parentNode!==ex)ex.appendChild(importer);
  var old=$('v094Open');if(old)old.classList.add('lite040HiddenLegacy');
