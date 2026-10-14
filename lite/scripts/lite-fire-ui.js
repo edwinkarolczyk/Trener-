@@ -115,15 +115,13 @@ function manageUi(){
  doc.body.classList.toggle('liteFireGroup',!!group);
  if(!active)return;
  install();
+ // Podgląd ćwiczenia i wskazówki z oryginalnego Trenera pozostają dostępne po rozwinięciu.
+ var more=$('liteFireMore'),tech=$('technique'),extra=more&&more.querySelector('.liteFireExtra');
+ var visual=$('v055Visual');
+ if(more&&visual&&visual.parentNode!==more)more.appendChild(visual);
+ if(extra&&tech)writeText(extra,tech.textContent||'');
  if(!group)return;
  syncRoster(group);
- // Duplikujący ekran przełączania uczestnika z oryginalnego modułu jest
- // ukryty przez CSS. Jedyny źródłowy stan pochodzi z jego silnika treningowego.
- var more=$('liteFireMore'),tech=$('technique'),extra=more&&more.querySelector('.liteFireExtra');
- if(extra&&tech){
-  var text=tech.textContent||'';
-  writeText(extra,text);
- }
 }
 function boot(){
  install();
