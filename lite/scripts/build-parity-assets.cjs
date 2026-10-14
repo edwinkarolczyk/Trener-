@@ -14,7 +14,7 @@ const blocked=new Set([
   'v084-diet-cards.js','v0885-meal-composer.js','v0886-meal-sets.js',
   'v0886-food-entry.js','v0889-meal-time.js','v0890-diet-visual.js',
   'v090-recipes.js','v093-recipe-diet.js','v096-recipe-print.js',
-  'v0957-ai-meal.js'
+  'v0957-ai-meal.js','v060-equipment.js'
 ]);
 const ignored=new Set(['qr-addon.js','update-addon.js']);
 fs.rmSync(dest,{recursive:true,force:true});
@@ -41,6 +41,7 @@ for(const ent of entries){
   let value=fs.readFileSync(path.join(src,ent.name));
   if(ent.name==='feature-loader.js'){
     let js=value.toString('utf8');
+    js=js.split('\n').filter(line=>line.indexOf("'v060-equipment.js'")<0).join('\n');
     for(const banned of blocked){
       js=js.split('\n').filter(line=>!line.includes("'"+banned+"'")).join('\n');
     }
@@ -51,8 +52,8 @@ for(const ent of entries){
     html=html.replace('<link rel="stylesheet" href="v090-recipes.css">','');
     html=html.replace('</head>','<link rel="stylesheet" href="lite-tablet.css"></head>');
     html=html.replace('<script src="app.js"></script>',
-      '<script src="core-js.min.js"></script><script src="lite-data-core.js"></script><script src="lite-group-core.js"></script><script src="lite-init.js"></script><script src="app.js"></script>');
-    html=html.replace('</body>', '<script src="lite-pr-core.js"></script><script src="lite-pr.js"></script><script src="lite-data-manager.js"></script></body>');
+      '<script src="core-js.min.js"></script><script src="lite-data-core.js"></script><script src="lite-inventory-core.js"></script><script src="lite-group-core.js"></script><script src="lite-init.js"></script><script src="app.js"></script>');
+    html=html.replace('</body>', '<script src="lite-pr-core.js"></script><script src="lite-pr.js"></script><script src="lite-data-manager.js"></script><script src="lite-inventory-ui.js"></script></body>');
     value=Buffer.from(html);
   }
   if(ent.name==='v086-one-phone.js'){
@@ -73,15 +74,16 @@ for(const ent of entries){
 // Kopia plików źródłowych Trenera 2 nadal pozostaje jedyną wersją logiki.
 const polyfill=require.resolve('core-js-bundle/minified.js');
 fs.copyFileSync(polyfill,path.join(dest,'core-js.min.js'));
-for(const name of ['lite-data-core.js','lite-group-core.js','lite-init.js','lite-pr-core.js','lite-pr.js','lite-data-manager.js']){
+for(const name of ['lite-data-core.js','lite-inventory-core.js','lite-group-core.js','lite-init.js','lite-pr-core.js','lite-pr.js','lite-data-manager.js','lite-inventory-ui.js']){
   fs.writeFileSync(path.join(dest,name),transpile(fs.readFileSync(path.join(__dirname,name),'utf8'),name));
 }
 fs.copyFileSync(path.join(__dirname,'lite-tablet.css'),path.join(dest,'lite-tablet.css'));
 const required=['app.js','progression-addon.js','feature-loader.js','v058-smart-set.js',
   'v059-readiness.js','v0642-adaptive-volume.js','v070-beta-planner.js',
   'v070-beta-data.js','v086-one-phone.js','v094-exercise-store.js','v094-exercise-ui.js',
-  'style.css','index.html','lite-init.js','lite-pr-core.js','lite-pr.js','lite-data-core.js','lite-data-manager.js','lite-group-core.js'];
+  'style.css','index.html','lite-init.js','lite-pr-core.js','lite-pr.js','lite-data-core.js','lite-data-manager.js','lite-group-core.js','lite-inventory-core.js','lite-inventory-ui.js'];
 for(const name of required) if(!fs.existsSync(path.join(dest,name)))throw Error('Brakuje pliku silnika: '+name);
 const out=fs.readFileSync(path.join(dest,'feature-loader.js'),'utf8');
 if(blocked.has('v076-diet.js')&&out.includes('v076-diet.js'))throw Error('Moduł dietetyczny wyciekł do Lite');
+if(out.includes('v060-equipment.js'))throw Error('Stary kalkulator gryfów z fikcyjnymi talerzami nie może być w Lite');
 console.log('Silnik i motyw pełnego Trenera 2: '+copied+' plików źródłowych, '+compiled+' transpilowanych JS.');
