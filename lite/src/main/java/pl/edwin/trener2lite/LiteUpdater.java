@@ -2,6 +2,7 @@ package pl.edwin.trener2lite;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.ClipData;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -172,21 +173,28 @@ final class LiteUpdater {
             throw new SecurityException("Niezgodny podpis APK");
     }
 
+    /**
+     * Fire OS 5 / Android 5.1 również potrzebuje content://.
+     * file:// do getCacheDir() NIE jest czytelne dla PackageInstaller (inny UID),
+     * dlatego Android wyświetlał ogólny komunikat "Parse Error" mimo poprawnego APK.
+     */
     private void install(File apk) {
         try {
+            if (!apk.isFile() || apk.length() < 1024)
+                throw new IllegalStateException("Pobrany instalator APK nie istnieje");
+            Uri uri = Uri.parse("content://pl.edwin.trener2lite.updates/latest.apk");
             Intent intent = new Intent(Intent.ACTION_VIEW);
-            Uri uri;
-            if (Build.VERSION.SDK_INT >= 24) {
-                uri = Uri.parse("content://pl.edwin.trener2lite.updates/latest.apk");
-                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            } else {
-                uri = Uri.fromFile(apk);
-            }
             intent.setDataAndType(uri, "application/vnd.android.package-archive");
+            intent.setClipData(ClipData.newRawUri("Trener 2 Lite — instalator APK", uri));
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            if (intent.resolveActivity(activity.getPackageManager()) == null)
+                throw new IllegalStateException("Na tablecie nie znaleziono instalatora pakietów Android");
             activity.startActivity(intent);
         } catch (Exception ex) {
-            show("Nie można otworzyć instalatora: " + ex.getMessage());
+            android.util.Log.e("TrenerLite-Update", "Nie udało się przekazać APK instalatorowi", ex);
+            show("Instalator APK: " + ex.getMessage() +
+                 ". Nie odinstalowuj Trenera. Pobierz APK przez przeglądarkę i otwórz z folderu Pobrane.");
         }
     }
 
