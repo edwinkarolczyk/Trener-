@@ -211,6 +211,21 @@ function onGroupTurn(person,ex,proposal,previous){
   return r.total;
  }catch(e){return null;}
 }
+function snapshot(kg){
+ var ex=currentEx(),req=getRequest(),result=null;
+ var target=Number(kg);
+ if(req.kind&&req.inventory.bars.length&&isFinite(target)&&target>0){
+  try{result=core.recommend(req.inventory,req.kind,req.barId,target);}catch(e){}
+ }
+ return {version:1,exerciseId:exerciseId(ex),kind:req.kind||'',
+  barId:result&&result.possible?result.barId:req.barId||'',
+  barName:result&&result.possible?result.barName:'',
+  targetKg:target,verified:!!(result&&result.possible&&result.exact),
+  actualKg:target,side:result&&result.possible&&result.exact?
+   result.side.map(function(x){return {kg:x.kg,count:x.count};}):[],
+  diameterUnknown:!!(result&&result.diameterUnknown),
+  maxUnknown:!!(result&&result.maxUnknown)};
+}
 function installCss(){
  var style=doc.createElement('style');style.id='liteInvCss';style.textContent=
   '#liteInvCard{border-left:4px solid #ef2b2d}#liteInvCard button,#liteInvWorkout button{min-height:58px;font-size:17px}' +
@@ -240,5 +255,5 @@ function init(){
 }
 if(doc.readyState==='loading')doc.addEventListener('DOMContentLoaded',init);
 else init();
-window.TrenerLiteInventory={load:load,onGroupTurn:onGroupTurn,showResult:showResult,setExercise:setExercise};
+window.TrenerLiteInventory={load:load,onGroupTurn:onGroupTurn,showResult:showResult,setExercise:setExercise,snapshot:snapshot};
 })();
