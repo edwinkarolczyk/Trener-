@@ -37,6 +37,7 @@ public final class LiteFullActivity extends Activity {
     private static final int EXPORT_BACKUP=210;
     private static final int IMPORT_BACKUP=211;
     private static final int CHOOSE_FILE=212;
+    private static final int IMPORT_EXERCISES=213;
     private static final int MAX_JSON_BYTES=12*1024*1024;
     private WebView browser;
     private LiteUpdater updater;
@@ -173,6 +174,20 @@ public final class LiteFullActivity extends Activity {
                 }catch(Exception ex){showError("Eksport: "+ex.getMessage());}
             });
         }
+        @JavascriptInterface public void importExercisePackage(){
+            runOnUiThread(()->{
+                try {
+                    Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                    i.addCategory(Intent.CATEGORY_OPENABLE);
+                    i.setType("*/*");
+                    i.putExtra(Intent.EXTRA_MIME_TYPES,new String[]{
+                        "text/csv","text/plain","application/zip",
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        "application/octet-stream"});
+                    startActivityForResult(i,IMPORT_EXERCISES);
+                }catch(Exception ex){showError("Wybór pliku ćwiczeń: "+ex.getMessage());}
+            });
+        }
         @JavascriptInterface public void importBackup() {
             runOnUiThread(()->new AlertDialog.Builder(LiteFullActivity.this)
                 .setTitle("Bezpieczny import Trenera 2 / Lite")
@@ -203,6 +218,32 @@ public final class LiteFullActivity extends Activity {
             return;
         }
         if(result!=RESULT_OK||data==null||data.getData()==null)return;
+        if(request==IMPORT_EXERCISES){
+            final Uri uri=data.getData();
+            new Thread(()->{
+                try(InputStream in=getContentResolver().openInputStream(uri)){
+                    String title="import.zip";
+                    try(android.database.Cursor c=getContentResolver().query(uri,
+                        new String[]{android.provider.OpenableColumns.DISPLAY_NAME},null,null,null)){
+                        if(c!=null&&c.moveToFirst()&&!c.isNull(0))title=c.getString(0);
+                    }catch(Exception ignored){}
+                    JSONObject parsed=LiteExercisePackageReader.read(in,title);
+                    String script="window.TrenerLiteExerciseImport&&window.TrenerLiteExerciseImport.receive("+
+                        JSONObject.quote(parsed.toString())+");";
+                    runOnUiThread(()->{
+                        if(browser!=null)browser.evaluateJavascript(script,null);
+                    });
+                }catch(Exception e){
+                    Log.e("TrenerLite","Błąd odczytu pakietu ćwiczeń",e);
+                    String err=JSONObject.quote("Nie można odczytać importu: "+String.valueOf(e.getMessage()));
+                    runOnUiThread(()->{
+                        if(browser!=null)browser.evaluateJavascript(
+                            "window.TrenerLiteExerciseImport&&window.TrenerLiteExerciseImport.error("+err+");",null);
+                    });
+                }
+            },"LiteExerciseImport").start();
+            return;
+        }
         if(request==EXPORT_BACKUP){
             try(OutputStream out=getContentResolver().openOutputStream(data.getData())){
                 if(out==null||exportJson==null)throw new IllegalStateException("Nie można otworzyć pliku");
