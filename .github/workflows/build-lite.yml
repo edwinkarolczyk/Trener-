@@ -1,7 +1,11 @@
 name: Build Trener 2 Lite (Fire OS 5)
-# Etapy 0–6: bez automatycznych wydań przy każdym commicie.
-# Uruchomić ręcznie dopiero po testach i podniesieniu wersji.
+# Publikacja tylko wersji 0.4.0 (14+) po pełnym teście na gałęzi Lite.
 on:
+  push:
+    branches: [feature/trener2-lite-fire5]
+    paths:
+      - 'lite/**'
+      - '.github/workflows/build-lite.yml'
   workflow_dispatch:
 
 concurrency:
