@@ -219,3 +219,13 @@ Użytkownik zdecydował: **oba tryby mają być dostępne do wyboru**, a Lite ma
 - Brak walidacji realnie dostępnych talerzy/gryfów w tej funkcji do czasu realizacji katalogu sprzętu. Nie wolno twierdzić, że już filtruje wykonalne próby.
 
 **Status:** funkcja dodana do kodu gałęzi Lite, wymaga pozytywnych testów CI i rzeczywistego sprawdzenia na Fire OS 5 przed uznaniem za stabilną.
+
+## 15. Etap 02 — stan implementacji Lite 0.3.3
+
+- W kopii oryginalnego silnika `v086-one-phone.js` na potrzeby Lite zwiększono limit z 4 do 6 uczestników.
+- `lite-group-core.js` prowadzi niezależne pozycje w różnych planach, różne liczby serii, niezależny odpoczynek i sprawiedliwy wybór gotowej osoby.
+- Dopasowanie ciężaru do zapisanej historii odbywa się po trwałym identyfikatorze uczestnika, nie numerze osoby w bieżącej kolejce.
+- Użytkownik może wybrać wspólny lub indywidualny plan i sesyjne cele serii/powtórzeń, pominąć kolejkę lub ćwiczenie jednej osoby.
+- Checkpoint sesji obejmuje plany, pozycje, zapisane serie, pominięcia, odpoczynek i identyfikatory. Starszy snapshot `v086` ma ścieżkę wstecznej zgodności.
+- **Nie rozwiązuje jeszcze** automatycznej tygodniowej rotacji planów osób, pełnego adaptacyjnego modelu objętości/RIR/deload, ani doboru ciężaru z posiadanych talerzy (następne etapy).
+- Konieczne są testy rzeczywistego WebView i 6-osobowej sesji na Fire OS 5; zielone CI dowodzi kompilacji i testów automatycznych, nie wszystkich interakcji.
