@@ -217,8 +217,8 @@ public final class LiteFullActivity extends Activity {
                 String js="(function(){"+
                     "if(!window.TrenerLiteData||!window.TrenerLiteData.previewImport)return false;"+
                     "window.TrenerLiteData.previewImport("+JSONObject.quote(root.toString())+");return true;})()";
-                browser.evaluateJavascript(js,result->{
-                    if(!"true".equals(result))
+                browser.evaluateJavascript(js,reply->{
+                    if(!"true".equals(reply))
                         showError("Nie można wyświetlić bezpiecznego importu. Nie zmieniono danych.");
                 });
             }catch(Exception e){showError("Błąd importu: "+e.getMessage());}
