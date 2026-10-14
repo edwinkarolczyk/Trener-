@@ -316,3 +316,36 @@ body.liteFireActive #training #v062Clock{font-size:19px!important}
  body.liteFireGroup .liteFirePerson{flex:1 1 100%;-webkit-flex:1 1 100%;min-height:0}
  body.liteFireActive #training .inputs input{height:64px!important;min-height:64px!important}
 }
+
+/* Oryginalny podgląd i animacje treningu są w rozwijanej sekcji, nie znikają z aplikacji. */
+body.liteFireActive #training .liteFireMore[open] #v055Visual,
+body.liteFireActive.v062Active #training .liteFireMore[open] #v055Visual{
+ display:block!important;
+ position:relative!important;
+ top:auto!important;left:auto!important;right:auto!important;bottom:auto!important;
+ float:none!important;
+ width:100%!important;
+ height:auto!important;max-height:none!important;
+ margin:12px 0 0!important;padding:10px!important;
+ border:1px solid #393939!important;
+ border-radius:12px!important;overflow:visible!important;
+}
+body.liteFireActive #training .liteFireMore[open] #v055Visual .v055VisualTop,
+body.liteFireActive.v062Active #training .liteFireMore[open] #v055Visual .v055VisualTop{
+ display:-webkit-flex!important;display:flex!important;
+ min-height:44px!important;align-items:center!important;
+}
+body.liteFireActive #training .liteFireMore[open] #v055Visual #v055VisualBody,
+body.liteFireActive.v062Active #training .liteFireMore[open] #v055Visual #v055VisualBody{
+ display:block!important;
+ height:auto!important;
+ min-height:170px!important;
+ max-height:none!important;
+}
+body.liteFireActive #training .liteFireMore[open] #v055Visual .v055Sprite,
+body.liteFireActive.v062Active #training .liteFireMore[open] #v055Visual .v055Sprite{
+ display:block!important;
+ width:100%!important;
+ height:190px!important;max-height:none!important;
+ background-size:100% 1100%!important;
+}
