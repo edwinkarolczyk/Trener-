@@ -16,69 +16,30 @@
     localStorage.setItem('trainer3.lastTab.v0884','start');
 
   // Przed startem oryginalnego silnika importuj niedestrukcyjnie stare sesje SQLite Lite.
-  var LEGACY_KEY='trainer3.liteLegacyImported.v03';
-  function decode(raw){
-    try{return JSON.parse(raw);}catch(e){return null;}
-  }
+  var LEGACY_KEY='trainer3.liteLegacyImported.v032';
   function migrateOldLite(){
     if(localStorage.getItem(LEGACY_KEY)==='yes'||!window.LiteBridge||!LiteBridge.exportPreviousLite)return;
-    var old=decode(LiteBridge.exportPreviousLite());
-    if(!old||!Array.isArray(old.sessions)||!Array.isArray(old.workout_sets))return;
-    var profiles={},exercises={},plans={},quality={};
-    var extras=old.liteExtensions||{};
-    (extras.lite_set_quality||[]).forEach(function(s){quality[s.set_id]=s;});
-    (old.profiles||[]).forEach(function(p){profiles[p.id]=p.name;});
-    (old.exercises||[]).forEach(function(ex){exercises[ex.id]=ex.name;});
-    (old.plans||[]).forEach(function(plan){plans[plan.id]=plan.name;});
-    var history=decode(localStorage.getItem('trainer3.history'));
-    if(!Array.isArray(history))history=[];
+    var core=window.TrenerLiteDataCore;
+    if(!core)return;
+    var raw=LiteBridge.exportPreviousLite();
+    if(!raw)return; // brak bazy lub błąd odczytu — nie ustawiaj znacznika migracji
+    var old=JSON.parse(raw);
+    if(!old||old.app!=='Trener2Lite'||!Array.isArray(old.sessions)||old.sessions.length===0)return;
+    // Oryginał SQLite pozostaje nietknięty; pełna kopia będzie też zawierać surowe tabele.
     var existing={};
-    history.forEach(function(s){existing[String(s.id)]=true;});
-    var migrated=0;
-    (old.sessions||[]).forEach(function(session){
-      var key='lite-legacy:'+session.id;
-      if(existing[key])return;
-      var person=profiles[session.profile_id]||'Osoba '+session.profile_id;
-      var records=[];
-      (old.workout_sets||[]).forEach(function(set){
-        if(set.session_id!==session.id)return;
-        var q=quality[set.id]||{};
-        records.push({
-          id:'lite-ex:'+set.exercise_id,
-          name:exercises[set.exercise_id]||'Ćwiczenie',
-          ex:0,set:records.length,athlete:0,
-          kg:Number(set.weight)||0,reps:Number(set.reps)||0,
-          rir:q.rir===undefined?2:Number(q.rir),
-          technique:q.technique||'good',pain:q.pain||'none',
-          at:Number(set.created_at)||Number(session.started_at)||Date.now(),
-          participantId:'lite-profile:'+session.profile_id
-        });
-      });
-      if(!records.length)return;
-      var started=Number(session.started_at)||Date.now();
-      var ended=Number(session.finished_at)||started;
-      history.push({
-        id:key,iso:new Date(started).toISOString(),
-        date:new Date(started).toLocaleString('pl-PL'),
-        plan:session.plan_name||plans[session.plan_id]||'Trening Lite',
-        planKey:'lite-legacy',
-        mode:1,shared:false,onePhoneImport:true,
-        localAthlete:0,names:[person],
-        participantId:'lite-profile:'+session.profile_id,
-        duration:Math.max(0,Math.round((ended-started)/1000)),
-        interrupted:!session.finished_at,
-        records:records,schemaVersion:2
-      });
-      migrated++;
-    });
-    if(migrated){
-      history.sort(function(a,b){return Date.parse(b.iso||'')-Date.parse(a.iso||'');});
-      // Nie kasuj pełnych istniejących danych. W razie braku miejsca SQLite nadal przechowuje oryginał.
-      localStorage.setItem('trainer3.history',JSON.stringify(history));
-    }
+    var current=localStorage.getItem('trainer3.history');
+    if(current!==null)existing['trainer3.history']=current;
+    var plan=core.prepare(old,existing,'all','');
+    var result=core.apply(localStorage,plan);
+    if(!result.ok)throw new Error(result.recovered?
+      'Brak miejsca — zachowano oryginalną historię bez zmian.':
+      'Nie udało się cofnąć migracji — wykonaj kopię ręcznie.');
+    // Oznacz sukces dopiero po bezpiecznym zapisie, nawet jeżeli identyczne sesje już istnieją.
     localStorage.setItem(LEGACY_KEY,'yes');
   }
-  try{migrateOldLite();}catch(e){try{console.error('Lite: historia SQLite zachowana; migracja JS odłożona',e);}catch(ignored){}}
+  try{migrateOldLite();}catch(e){
+    try{console.error('Trener 2 Lite: stara baza zachowana; migracja wstrzymana',e);}catch(ignore){}
+  }
   function tools(){
     var screen=document.getElementById('settings');
     if(!screen||document.getElementById('liteBridgeTools'))return;
