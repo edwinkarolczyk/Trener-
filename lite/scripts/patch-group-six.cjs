@@ -231,6 +231,25 @@ function resume(){
 replace("'.v086Person span{font-size:10px;color:#aaa}'+",
 "'.v086Person span{font-size:13px;color:#aaa}'+\n  '.v086Actions{display:flex;flex-wrap:wrap;gap:8px}.v086Actions button{flex:1 1 42%;min-height:64px}'+");
 replace("  if(h.length>=100)throw Error('Historia jest pełna (100 treningów). Zrób kopię i usuń stare wpisy.');","  // Nie ograniczaj liczby sesji w Lite; decyduje pojemność pamięci.");
+
+replace("  get participants(){return state.participants.slice();}};",
+`  get participants(){return state.participants.slice();},
+  get tabletState(){
+   if(!state.active||!running)return null;
+   return {active:true,paused:!!paused,personIndex:state.turn,sessionId:state.sessionId,
+    participants:state.participants.map(p=>{
+      const pos=groupCore.nextPosition(p,state.plans,state.cursor,records);
+      const plan=state.plans[p.index];
+      return {id:p.id,name:p.name,index:p.index,done:!pos,
+       exerciseName:pos?pos.ex.n:'',exerciseIndex:pos?pos.exercise:-1,
+       seriesDone:pos?pos.done:0,seriesTotal:pos?pos.total:0,
+       readyAt:Number(state.readyAt[p.index]||0),
+       deferredUntil:Number(state.deferred[p.index]||0),
+       exercisesTotal:plan&&plan.ex?plan.ex.length:0,
+       completedSets:records.filter(r=>r.athlete===p.index).length,
+       totalSets:plan&&plan.ex?plan.ex.reduce((n,ex)=>n+Math.max(1,Number(ex.sets)||1),0):0};
+    })};
+  }};`);
 return s;
 };
 module.exports={patch};
