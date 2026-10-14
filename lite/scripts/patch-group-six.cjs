@@ -185,6 +185,7 @@ function render(){
  $('stateBadge').textContent='WSPÓLNY • JEDEN TABLET';$('v086Turn').textContent='Teraz: '+p.name;
  $('v086Status').textContent='Ćwiczenie '+(pos.exercise+1)+'/'+state.plans[p.index].ex.length+
   ' • '+(due>0?'Odpoczynek '+Math.ceil(due/1000)+' s.':'Możesz zapisać serię.');
+ if(!$('liteFireRoster')){
  $('v086Progress').innerHTML=state.participants.map(item=>{
   const x=groupCore.nextPosition(item,state.plans,state.cursor,records);
   const w=Number(state.readyAt[item.index]||0)-Date.now();
@@ -193,7 +194,9 @@ function render(){
   return '<div class="v086Person '+(item.index===state.turn?'now':'')+'"><b>'+esc(item.name)+
    '</b><span>'+ (x?esc(x.ex.n)+' • '+x.done+'/'+x.total+' serii':'Wszystkie ćwiczenia')+
    ' • '+status+'</span></div>';
- }).join('');
+ }).join('')
+ }
+;
  $('saveSetBtn').disabled=!!paused||due>0;
  $('restTime').textContent=due>0?'ODPOCZYNEK '+Math.ceil(due/1000)+' s':'GOTOWY — '+p.name;
  $('skipRestBtn')?.classList.add('hidden');
