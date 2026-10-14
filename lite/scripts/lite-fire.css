@@ -1,0 +1,318 @@
+/* Trener 2 Lite — ekran treningowy Fire OS 5. Bez nowych kolorów lub obcych komponentów.
+   Fallback dla WebView Chrome 37: flexbox, px, bez :has(), CSS Grid i sticky. */
+html.v062Active,html.v062Active body,
+html.v072Running,html.v072Running body {
+ overflow-x:hidden!important;
+ overflow-y:auto!important;
+ -webkit-overflow-scrolling:touch;
+}
+body.liteFireActive .app{
+ max-width:1200px!important;
+ margin:0 auto!important;
+ padding:8px 12px 45px!important;
+ min-height:100vh!important;
+}
+body.liteFireActive #start{
+ display:block!important;
+ padding:0!important;
+ margin:0!important;
+}
+body.liteFireActive #setup,body.liteFireActive #start>.compactTop,
+body.liteFireActive .appHeader,body.liteFireActive .tabs{display:none!important}
+body.liteFireActive #training.trainingCard,
+body.liteFireActive.v062Active #training.trainingCard,
+body.liteFireActive.v072Running #training.trainingCard{
+ display:block!important;
+ position:relative!important;
+ z-index:1!important;
+ top:auto!important;
+ bottom:auto!important;
+ left:auto!important;
+ right:auto!important;
+ width:100%!important;
+ height:auto!important;
+ max-height:none!important;
+ min-height:100vh!important;
+ margin:0 auto!important;
+ padding:14px 14px 36px!important;
+ overflow:visible!important;
+ border:1px solid #303030!important;
+ border-radius:18px!important;
+ background:#111!important;
+ box-sizing:border-box!important;
+}
+body.liteFireActive #training .topline,
+body.liteFireActive.v062Active #training .topline{
+ display:-webkit-flex!important;display:flex!important;
+ -webkit-align-items:center;align-items:center;
+ -webkit-justify-content:space-between;justify-content:space-between;
+ min-height:36px!important;
+ padding:0!important;margin:0 0 6px!important;
+}
+body.liteFireActive #training #athlete,
+body.liteFireActive.v062Active #training #athlete{
+ display:block!important;
+ margin:5px 0!important;
+ color:#ef2b2d!important;
+ font-size:clamp(26px,4.2vw,38px)!important; /* Fire fallback poniżej */
+ line-height:1.1!important;
+ font-weight:900!important;
+}
+body.liteFireActive #training #exercise,
+body.liteFireActive.v062Active #training #exercise{
+ display:block!important;
+ position:static!important;
+ margin:4px 0 8px!important;
+ padding:0!important;
+ min-height:0!important;
+ font-size:clamp(24px,3.5vw,32px)!important;
+ line-height:1.18!important;
+ white-space:normal!important;
+ overflow-wrap:break-word!important;
+}
+body.liteFireActive #training #series,
+body.liteFireActive #training #target,
+body.liteFireActive.v062Active #training #series,
+body.liteFireActive.v062Active #training #target{
+ display:block!important;
+ font-size:19px!important;
+ font-weight:800!important;
+ line-height:1.3!important;
+ margin:3px 0!important;
+ color:#f0f0f0!important;
+}
+body.liteFireActive #training #target,
+body.liteFireActive.v062Active #training #target{
+ color:#bdbdbd!important;font-size:17px!important;font-weight:600!important;
+}
+body.liteFireActive #training #technique,
+body.liteFireActive.v062Active #training #technique{display:none!important}
+body.liteFireActive #v062Summary,body.liteFireActive #v055Flow,
+body.liteFireActive #v055Visual{display:none!important}
+body.liteFireActive #training .inputs,
+body.liteFireActive.v062Active #training .inputs{
+ display:-webkit-flex!important;display:flex!important;
+ -webkit-flex-wrap:wrap;flex-wrap:wrap;
+ margin:13px 0 10px!important;
+ gap:10px!important;
+}
+body.liteFireActive #training .inputs>div{
+ flex:1 1 42%;-webkit-flex:1 1 42%;
+ min-width:0!important;
+}
+body.liteFireActive #training .inputs label,
+body.liteFireActive.v062Active #training .inputs label{
+ font-size:17px!important;
+ font-weight:700!important;
+ color:#d2d2d2!important;
+ margin:0 0 7px!important;
+}
+body.liteFireActive #training .inputs input,
+body.liteFireActive.v062Active #training .inputs input{
+ width:100%!important;box-sizing:border-box!important;
+ height:70px!important;min-height:70px!important;
+ padding:10px 12px!important;
+ font-size:29px!important;
+ font-weight:900!important;
+ border-radius:13px!important;
+ text-align:center!important;
+}
+body.liteFireActive #training #saveSetBtn,
+body.liteFireActive.v062Active #training #saveSetBtn{
+ display:block!important;
+ width:100%!important;height:80px!important;min-height:80px!important;
+ margin:10px 0 12px!important;padding:13px!important;
+ background:#1f8d56!important;color:#fff!important;
+ border:1px solid #39d27d!important;
+ border-radius:14px!important;
+ font-size:23px!important;font-weight:900!important;
+ letter-spacing:0!important;
+ box-sizing:border-box!important;
+}
+body.liteFireActive #training #saveSetBtn:disabled{background:#303030!important;border-color:#454545!important;color:#b7b7b7!important}
+body.liteFireActive #training #restBox,
+body.liteFireActive.v062Active #training #restBox{
+ display:block!important;
+ position:static!important;
+ height:auto!important;min-height:0!important;
+ padding:9px 14px!important;
+ margin:8px 0 10px!important;
+ border-radius:13px!important;
+ text-align:center!important;
+ background:#101010!important;
+ border:1px solid #353535!important;
+}
+body.liteFireActive #training #restBox .small,
+body.liteFireActive.v062Active #training #restBox .small{
+ display:block!important;
+ text-align:center!important;
+ font-size:13px!important;
+}
+body.liteFireActive #training #restTime,
+body.liteFireActive.v062Active #training #restTime{
+ display:block!important;
+ text-align:center!important;
+ font-size:29px!important;
+ line-height:1.2!important;
+ margin:2px 0!important;
+ font-weight:900!important;
+}
+body.liteFireActive #training .controls,
+body.liteFireActive.v062Active #training .controls{
+ display:-webkit-flex!important;display:flex!important;
+ -webkit-flex-wrap:wrap;flex-wrap:wrap;
+ margin:12px 0 0!important;
+ gap:9px!important;
+}
+body.liteFireActive #training .controls button,
+body.liteFireActive.v062Active #training .controls button{
+ flex:1 1 42%;-webkit-flex:1 1 42%;
+ width:auto!important;height:62px!important;
+ min-height:62px!important;
+ font-size:19px!important;
+ font-weight:800!important;
+ border-radius:12px!important;
+}
+body.liteFireActive #training #coach,
+body.liteFireActive.v062Active #training #coach{display:none!important}
+body.liteFireActive #training .liteFireMore{
+ display:block!important;
+ margin:12px 0!important;padding:10px 14px!important;
+ border:1px solid #393939;border-radius:12px;
+ color:#bbb;background:#101010;
+}
+body.liteFireActive #training .liteFireMore summary{
+ padding:6px 0;font-size:16px;font-weight:800;color:#ddd;
+ cursor:pointer;min-height:34px;
+}
+body.liteFireActive #training .liteFireExtra{padding:10px 0;font-size:16px;line-height:1.5}
+body.liteFireGroup #v072FixedTimers,
+body.liteFireGroup #v055Flow,body.liteFireGroup #v082Progress,
+body.liteFireGroup #v086Progress,body.liteFireGroup #v086Turn{display:none!important}
+body.liteFireGroup #training #v086Workout{
+ display:-webkit-flex!important;display:flex!important;
+ -webkit-flex-direction:column;flex-direction:column;
+ padding:11px 12px!important;margin:12px 0 8px!important;
+ border:1px solid #303030;border-radius:13px;
+ background:#101010;
+}
+body.liteFireGroup #training #liteFireHeadline{display:-webkit-flex;display:flex;
+ -webkit-justify-content:space-between;justify-content:space-between;
+ -webkit-align-items:center;align-items:center;
+ gap:7px;-webkit-order:1;order:1;
+ min-height:34px;font-size:15px;color:#efc2c2;
+}
+body.liteFireGroup #training #liteFireState{
+ color:#5ef0a0;font-size:13px;text-align:right;font-weight:800;
+}
+body.liteFireGroup #v086Status{
+ -webkit-order:2;order:2;
+ display:block!important;
+ margin:5px 0 9px!important;
+ padding:0!important;
+ font-size:15px!important;color:#ccc!important;
+}
+body.liteFireGroup #liteFireRoster{-webkit-order:3;order:3;margin:4px 0 7px}
+body.liteFireGroup #v086Load{
+ -webkit-order:4;order:4;
+ font-size:15px!important;
+ color:#bfc5c0!important;
+ background:#151515;
+ border:1px solid #333;border-radius:9px;
+ padding:7px 9px!important;
+}
+body.liteFireGroup #v086Workout .v086Actions{
+ -webkit-order:5;order:5;
+ display:-webkit-flex!important;display:flex!important;
+ -webkit-flex-wrap:wrap;flex-wrap:wrap;
+ margin:8px 0 0!important;gap:8px!important;
+}
+body.liteFireGroup #v086Workout .v086Actions button{
+ flex:1 1 42%;-webkit-flex:1 1 42%;
+ min-height:60px!important;
+ font-size:17px!important;padding:9px 12px!important;
+}
+.liteFireRosterTitle{
+ display:-webkit-flex;display:flex;
+ -webkit-justify-content:space-between;justify-content:space-between;
+ -webkit-align-items:center;align-items:center;
+ margin-bottom:8px;font-size:14px;color:#bbb;gap:8px;
+}
+.liteFireRosterTitle span{font-size:13px;color:#a2a2a2}
+.liteFirePeople{
+ display:-webkit-flex;display:flex;
+ -webkit-flex-wrap:wrap;flex-wrap:wrap;
+ margin:0 -4px;
+}
+.liteFirePerson{
+ display:block;
+ box-sizing:border-box;
+ flex:1 1 44%;-webkit-flex:1 1 44%;
+ min-width:0;
+ margin:4px;padding:10px;
+ background:#181818;border:2px solid #343434;
+ border-radius:12px;
+ min-height:112px;
+}
+.liteFirePersonHead,.liteFirePersonFoot{
+ display:-webkit-flex;display:flex;
+ -webkit-align-items:center;align-items:center;
+ -webkit-justify-content:space-between;justify-content:space-between;
+ gap:8px;
+}
+.liteFirePersonName{font-size:18px!important;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.liteFirePill{
+ flex:0 0 auto;-webkit-flex:0 0 auto;
+ font-size:11px!important;font-weight:900;
+ border-radius:999px;
+ padding:5px 7px;
+ background:#272727;color:#e7e7e7;
+}
+.liteFirePersonExercise{font-size:14px;line-height:1.3;margin:9px 0 8px;color:#d7d7d7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.liteFirePersonMeta{font-size:13px;color:#aaa}
+.liteFireRest{font-size:17px;font-weight:900;color:#fff;font-variant-numeric:tabular-nums}
+.liteFirePerson.liteFireCurrent{border-color:#ef2b2d;background:#201315}
+.liteFirePerson.liteFireready .liteFirePill,.liteFirePerson.liteFiredone .liteFirePill{background:#143d27;color:#74e6a4}
+.liteFirePerson.liteFirerest .liteFirePill,.liteFirePerson.liteFirelater .liteFirePill{background:#493913;color:#ffd269}
+.liteFirePerson.liteFirepause .liteFirePill{background:#474036;color:#ffd269}
+.liteFirePerson.liteFiredone .liteFireRest,.liteFirePerson.liteFireready .liteFireRest{color:#74e6a4}
+.liteFirePerson.liteFirerest .liteFireRest{color:#ffd269}
+body.liteFireGroup #v086Workout .v086Participants{display:none!important}
+body.liteFireGroup #training #liteInvWorkout{
+ margin:10px 0!important;padding:10px!important;
+ border-radius:12px!important;
+}
+body.liteFireGroup #training #liteInvWorkout select,
+body.liteFireGroup #training #liteInvWorkout button{
+ height:56px!important;min-height:56px!important;
+ font-size:17px!important;
+}
+body.liteFireActive #training #stateBadge{font-size:13px!important;padding:6px 8px!important}
+body.liteFireActive #training #planTitle{font-size:13px!important;overflow:hidden;text-overflow:ellipsis}
+body.liteFireActive #training #v062Clock{font-size:19px!important}
+@media(min-width:850px){
+ body.liteFireGroup .liteFirePerson{flex:1 1 28%;-webkit-flex:1 1 28%;min-height:102px}
+ body.liteFireActive #training.trainingCard{max-width:1050px!important}
+ body.liteFireActive #training #athlete{font-size:38px!important}
+ body.liteFireActive #training #exercise{font-size:30px!important}
+}
+@media(max-width:700px){
+ body.liteFireActive .app{padding:0 4px 22px!important}
+ body.liteFireActive #training.trainingCard{
+  padding:10px!important;
+  border:0!important;border-radius:0!important;
+ }
+ body.liteFireActive #training #athlete{font-size:31px!important}
+ body.liteFireActive #training #exercise{font-size:25px!important}
+ body.liteFireActive #training #saveSetBtn{font-size:21px!important}
+ body.liteFireGroup .liteFirePerson{min-height:99px!important;padding:8px!important}
+ .liteFirePill{font-size:10px!important;padding:4px 6px}
+ .liteFirePersonName{font-size:16px!important}
+ .liteFirePersonExercise{font-size:13px}
+ .liteFirePersonMeta{font-size:12px}
+ body.liteFireGroup #v086Workout .v086Actions button{font-size:15px!important}
+}
+@media(max-width:460px){
+ body.liteFireGroup .liteFirePerson{flex:1 1 100%;-webkit-flex:1 1 100%;min-height:0}
+ body.liteFireActive #training .inputs input{height:64px!important;min-height:64px!important}
+}
