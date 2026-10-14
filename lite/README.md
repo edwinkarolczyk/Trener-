@@ -37,3 +37,14 @@ gradle :lite:testDebugUnitTest :lite:assembleRelease
 ```
 
 Źródłem wspólnego kodu pozostaje `app/src/main/assets`; narzędzie `lite/scripts/build-parity-assets.cjs` podczas budowy transpiluje kopię bez zmieniania pełnej aplikacji. Wydania publikowane przez `.github/workflows/build-lite.yml`. Nie modyfikować `main` podczas prac nad Lite.
+
+## Rekordy siłowe Lite 0.3.1
+
+- W zakładce **Postępy** jest wybór uczestnika i ćwiczenia oraz dwie akcje: **Szacowany maks (e1RM)** i **Test rzeczywistego 1RM**.
+- e1RM wykorzystuje własną historię uczestnika (wzór Epleya dla 2–10 powtórzeń). To szacunek, nie zarejestrowany rekord. Pojedyncze powtórzenie daje rzeczywistą wartość z treningu, ale jako osobny pomiar PR trzeba je świadomie zapisać.
+- Test rzeczywistego 1RM zapisuje się **dopiero po udanej próbie**, z potwierdzeniem poprawnej techniki, braku bólu i niezbędnej asekuracji, zwłaszcza na ławce. Dane rekordu są odrębne od zwykłych serii i nie zmieniają ich historii ani algorytmu progresji.
+- Domyślnie aplikacja pyta o możliwość sprawdzenia rekordu **co 8 tygodni** dla poszczególnych osób. Można wybrać 4 / 6 / 8 tygodni albo wyłączyć przypomnienia. Opcja **Przypomnij za 7 dni** nie uruchamia testu i nie kasuje wyników.
+- Przypomnienia są pokazywane w aplikacji na ekranie Start, **nie** jako alarm systemowy przy wyłączonej aplikacji. Podczas treningu nie zasłaniają zapisu serii.
+- Informacja o weryfikacji wykonalności ciężaru z własnymi talerzami/gryfami to odrębny etap — w tej wersji nie ma jeszcze algorytmu montażu talerzy.
+- Nowe dane rekordu mają klucz `trainer3.lite.pr.v1` i są zbierane w dotychczasowej kopii treningowej JSON. Aktualizacja nie usuwa wcześniejszych profili ani serii.
+- Testy: `node --test lite/tests/pr-core.test.cjs`; dodatkowo walidacja składni przetranspilowanego kodu w CI.
