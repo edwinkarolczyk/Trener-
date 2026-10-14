@@ -229,3 +229,22 @@ Użytkownik zdecydował: **oba tryby mają być dostępne do wyboru**, a Lite ma
 - Checkpoint sesji obejmuje plany, pozycje, zapisane serie, pominięcia, odpoczynek i identyfikatory. Starszy snapshot `v086` ma ścieżkę wstecznej zgodności.
 - **Nie rozwiązuje jeszcze** automatycznej tygodniowej rotacji planów osób, pełnego adaptacyjnego modelu objętości/RIR/deload, ani doboru ciężaru z posiadanych talerzy (następne etapy).
 - Konieczne są testy rzeczywistego WebView i 6-osobowej sesji na Fire OS 5; zielone CI dowodzi kompilacji i testów automatycznych, nie wszystkich interakcji.
+
+## 16. Etap 03 — stan kodu Lite 0.3.4
+
+## Etap 03 — realny katalog obciążeń (Lite 0.3.4)
+
+**Gdzie:** Ustawienia → **Mój sprzęt → Gryfy i talerze** oraz panel **Mój sprzęt → Dobór obciążenia** przy zapisywaniu serii.
+
+- Użytkownik dodaje dowolną liczbę rodzajów talerzy oraz gryfów z ich masą w kg i **liczbą pojedynczych sztuk**. Dla gryfu można określić rodzaj (gryf hantli / gryf sztangi / hantla stała), masę jednej sztuki, liczbę sztuk, opcjonalną średnicę mocowania i maksymalne obciążenie.
+- **Pusty katalog przy instalacji**: nie wstawiamy domyślnie fikcyjnych 20-kilogramowych sztang ani wymyślonych talerzy.
+- Wspólne zasoby wszystkich osób na tablecie. Jedna sztangielka wymaga symetrycznych talerzy w parach (2 sztuki), dwie sztangielki jednocześnie wymagają **4 identycznych talerzy** na jeden krok z obciążeniem po jednej sztuce z każdej strony każdego gryfu.
+- Automatyczny kalkulator uwzględnia masę gryfu, liczbę gryfów, skończony zapas talerzy, symetrię, opcjonalnie ich średnicę oraz deklarowaną nośność gryfu. Jest wspólny dla całej grupy, ale **wynik podawany jest na jedną hantlę**, a nie jako suma obu.
+- Po wyborze ćwiczenia można zaznaczyć „jedna sztangielka”, „dwie sztangielki”, „sztanga”, „jedna lub dwie hantle stałe”, a także konkretny gryf. Wybór jest zapamiętywany per ćwiczenie.
+- Jeśli progresja sugeruje niewykonalny cel, kalkulator wybiera **najwyższy fizycznie osiągalny ciężar, który nie przekracza zalecanego**, albo nie wstawia automatycznie ciężaru i pokazuje ostrzeżenie. Użytkownik może ręcznie wpisać inną wartość, ale panel ją weryfikuje.
+- Dokładna instrukcja montażu: rodzaj/masa/liczba talerzy **na każdą stronę gryfu** oraz maksymalna wykonalna masa. Przy braku podanej średnicy lub nośności wyświetlane jest ostrzeżenie — kalkulator nie zastępuje oceny bezpieczeństwa realnego sprzętu.
+- Dla przykładu 8 talerzy × 2,5 kg i 2 gryfy po 2 kg: maksymalnie 12 kg na jedną hantlę, po 2 talerze 2,5 kg na każdej stronie, i możliwe skoki 5 kg na hantlę, nie 2,5 kg.
+- W pełnym Trenerze 2 nie zmieniamy modułu `v060-equipment.js`; w pakiecie Lite 0.3.4 został wyłączony, ponieważ jego dwa domyślne zestawy sztang mogły sugerować sprzęt, którego użytkownik nie posiada. Oryginalne dane `trainer3.equipment.v060` pozostają nienaruszone.
+- Katalog Lite zapisany pod `trainer3.lite.inventory.v034`, powiązania z ćwiczeniem pod `trainer3.lite.inventory.exercise.v034`; oba klucze należą do kompletnej kopii JSON. Import z etapu 01 nie nadpisuje istniejącego katalogu przy konflikcie.
+
+**Świadome ograniczenia:** brak magazynu „co aktualnie jest nakręcone na gryfach” i automatycznego śledzenia ich bieżącego położenia. Program oblicza instrukcję jak złożyć ciężar od zera, nie operację przełożenia w czasie rzeczywistym. Weryfikacja kompatybilności średnic/nośności jest wiarygodna wyłącznie po podaniu tych danych. Przed odbiorem produkcyjnym wymagany test działania na rzeczywistym Amazon Fire OS 5.
