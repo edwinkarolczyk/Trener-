@@ -187,3 +187,21 @@ Pierwotne pominięte pytania: **14, 18, 19, 24, 26, 27, 28** — poprzednie prop
 Nowe pytania o sprzęt: **31. poziom szczegółowości katalogu; 32. masa gryfu; 33. rozkład talerzy; 34. pamięć aktualnego montażu; 35. niewykonalna sugestia progresji.**
 
 **Stan:** specyfikacja w repozytorium, jeszcze bez implementacji tych nowych wymagań i bez wydania APK.
+
+## 13. Aktualizacje automatyczne i okresowe testy rekordów (PR / 1RM)
+
+**Aktualizacje — zachować obecne działanie:** `LiteFullActivity.onCreate` wywołuje `LiteUpdater.check(false)`; `LiteUpdater` sprawdza manifest przy otwarciu aplikacji, z odstępem co najmniej 12 godzin, pokazuje ofertę nowej wersji i instaluje dopiero po potwierdzeniu. Zachować weryfikację SHA-256 i podpisu, istniejący pakiet i dane. Sprawdzanie w tle przy zamkniętej aplikacji NIE jest obecnie wdrożone — nie deklarować go.
+
+**Nowa propozycja użytkownika:** test maksymalnego ciężaru np. na ławce co jakiś czas. Dodać opcjonalny program rekordów dla każdej osoby i każdego ćwiczenia.
+
+- Oddzielić `rzeczywisty 1RM` (jedno rzeczywiście ukończone poprawne powtórzenie) od `szacowany e1RM` (obliczony z wielopowtórzeniowych serii). Nigdy nie przedstawiać estymacji jako zmierzonego maksa.
+- Osobne rekordy `participantId + exerciseId + wariant sprzętu`, data, kg, powtórzenia, forma, uwagi, warunki asekuracji. Przy hantlach doprecyzować jednostkę: masa jednej hantli czy łącznie.
+- e1RM można aktualizować po zwykłym treningu; dla serii wielopowtórzeniowych użyć jawnego, ograniczonego zakresu wiarygodności (np. 2–10 powtórzeń). Historia trendu i ostatni rekord w panelu osobistym.
+- Co zadany okres (propozycja: co 6–8 tygodni, nie zatwierdzono) pokazywać dyskretną opcję „Sprawdź rekord?”, z przyciskiem **Pomiń**. Brak przymusu testu, bez wpływu na zwykłą progresję.
+- Test rzeczywistego maksimum na ławce nie startuje automatycznie, wymaga świadomego wyboru i asekuranta. Wstępna rozgrzewka, wzrastające serie przygotowawcze, przerwy i prawo przerwania; przy bólu lub złej technice nie proponować kolejnej cięższej próby. Sugerować szacowany e1RM jako mniej ryzykowną alternatywę.
+- Proponowany ciężar rekordu musi być **fizycznie osiągalny z zarejestrowanych talerzy i gryfów**; nie przekraczać zgodności i ograniczeń sprzętowych.
+- Rekord należy do osoby, nie całej grupy. Można zaznaczyć uczestnika i ćwiczenie oraz sprawdzić wcześniejsze próby.
+- Przy testach regresji upewnić się, że próbne / rozgrzewkowe serie nie deformują reguł doboru zwykłej objętości treningowej i że odrębny PR przechodzi przez kopię zapasową oraz import bez duplikacji.
+- W aktualnej wersji wykryte są już historyczne rekordy **największego użytego ciężaru w serii** w `app.js` i wykresy `v061-progress-charts.js`, ale nie są one równoznaczne z dedykowanym testem 1RM.
+
+**Do rozstrzygnięcia:** częstotliwość przypomnień i czy testy rzeczywiste 1RM mają być włączone domyślnie czy opcjonalnie na życzenie.
