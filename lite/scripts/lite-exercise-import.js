@@ -5,7 +5,7 @@ if(!core)return;
 var doc=document,pkg=null,map={},result=null,loadBusy=false;
 function $(id){return doc.getElementById(id);}
 function esc(x){return String(x===undefined||x===null?'':x).replace(/[&<>"']/g,function(c){
- return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;':'&quot;',"'":'&#39;'}[c];
+ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
 });}
 function status(message){var el=$('liteExerciseStatus');if(el)el.textContent=message;}
 function store(){return window.TrenerCustomExercises094;}
