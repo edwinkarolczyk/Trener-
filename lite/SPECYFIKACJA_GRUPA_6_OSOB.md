@@ -266,3 +266,15 @@ Użytkownik zatwierdził kierunek: import własnych ćwiczeń **razem ze zdjęci
 - Zdjęcia kompresowane natywnie do JPEG max. 480 px. Limity: 250 wierszy, 70 zdjęć, max. 20 MB plik / 34 MB rozpakowane, końcowe dane do 2,8 mln znaków. Dużą bibliotekę należy importować partiami.
 - Tylko lokalna praca offline; archiwa ZIP z ochroną przed `../`, przekroczeniem objętości, zagnieżdżeniem i DTD w XML Excela. Niezależne testy mapowania, duplikatów i zapisu.
 - Wersja Beta wymaga potwierdzenia na fizycznym Amazon Fire OS 5 przed zamknięciem odbioru funkcji.
+
+
+## Etap 0.3.7 — stałe profile i eksport do Trenera 2 na telefonie
+
+W Ustawieniach otwórz **Użytkownicy i wspólne treningi**. Dodaj osobę (imię/nazwa), zaznacz dowolną kombinację 1–6 osób do sesji. Profil ma niezmienny `id` niezależny od imienia i miejsca w kolejce. Po zapisaniu **pierwszej serii**, także w rozpoczętej i niezakończonej sesji, nazwa zostaje zablokowana na stałe. Istniejące dane historyczne są migrowane po `participantId` lub, w starszych sesjach, przez zapisany historyczny indeks uczestnika; stare pliki i rekordy nie są usuwane ani przenoszone.
+
+- Zmienianie imienia jest dostępne tylko **przed** pierwszym wpisem historii z poziomu menedżera. Nie wolno zmienić imienia osoby z historią, aby stworzyć na jej ID nowego ćwiczącego. Osoby z historią nie można usunąć z listy, ale można ją odznaczyć do kolejnej sesji.
+- **Eksportuj dane → jeden trening JSON**: zgodny z mechanizmem `Historia → Importuj wynik do mojego profilu` obecnego pełnego Trenera 2 (format `trener2-one-phone-session`, version 1), bez cudzych serii. Na telefonie potwierdza się przypisanie dawnego identyfikatora uczestnika do lokalnego profilu. Wielokrotny import tego samego wyniku rozpoznaje istniejącą sesję.
+- **Eksportuj dane → cały profil ZIP**: informacje profilu, oddzielny JSON dla każdej jego sesji w folderze `sesje/`, oraz opcjonalne osobne `rekordy-1RM.json`. W pełnym Trenerze 2 trzeba **rozpakować ZIP i importować sesje indywidualnie**, dopóki nie powstanie osobny importer paczek w aplikacji telefonicznej. Plik rekordów 1RM jest archiwizowany, ale nie jest automatycznie wczytywany przez istniejący importer sesji.
+- Eksport do dokumentów Androida działa również dla pojedynczych JSON, nie tylko pełnej kopii `trener2-backup`. Pełna kopia JSON i dotychczasowe dane nadal mają własną ścieżkę i nie są zastępowane.
+- `main` pozostaje nietknięty. Wyłącznie gałąź `feature/trener2-lite-fire5`. Android minSdk 21, pakiet Lite zachowuje zgodny certyfikat podpisu.
+- Rzeczywiste testy na tablecie Fire oraz import na telefonie nadal są wymagane; zielone CI nie zastępuje kontroli na urządzeniach.
