@@ -351,3 +351,23 @@ body.liteFireActive.v062Active #training .liteFireMore[open] #v055Visual .v055Sp
  height:190px!important;max-height:none!important;
  background-size:100% 1100%!important;
 }
+
+/* Sygnały przerw: ustawienia mają pełnowymiarowe etykiety, bez małych przełączników. */
+#liteFireSignals{border-left:4px solid #ef2b2d}
+#liteFireSignals .liteFireSwitch{
+ display:-webkit-flex;display:flex;
+ -webkit-align-items:center;align-items:center;
+ gap:12px;
+ min-height:60px;
+ border:1px solid #353535;
+ border-radius:12px;
+ padding:10px;
+ margin:10px 0;
+ font-size:17px;color:#eee;
+}
+#liteFireSignals .liteFireSwitch input{
+ -webkit-flex:0 0 26px;flex:0 0 26px;
+ width:26px!important;height:26px!important;min-height:26px!important;
+ margin:0 8px 0 0;
+}
+#liteFireSignals .liteFireSwitch span{font-weight:700}
