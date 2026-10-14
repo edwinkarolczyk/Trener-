@@ -95,7 +95,7 @@ function receive(raw){
   pkg=data;map=core.guess(Object.keys(data.rows[0]||{}));
   $('liteExerciseImportPreview').classList.remove('hidden');
   renderMap();renderPreview();
-  var tab=doc.querySelector('.tab[data-tab="plan"]');if(tab)tab.click();
+  var tab=doc.querySelector('.tab[data-tab="exercises"]')||doc.querySelector('.tab[data-tab="plan"]');if(tab)tab.click();
   $('liteExerciseImportPreview').scrollIntoView();
  }catch(e){pkg=null;result=null;status('Import odrzucony: '+String(e.message||e));}
 }
