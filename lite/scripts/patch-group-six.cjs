@@ -37,14 +37,14 @@ replace("'<option value=\"4\">4 osoby</option></select><div id=\"v086People\"></
 replace("const panel=document.createElement('div');panel.id='v086Setup';panel.className='hidden';","const panel=document.createElement('div');panel.id='v086Setup';panel.className='hidden';");
 block("function renderFields(){","function selectLocal",`
 function renderFields(){
- const count=Number($('v086Count')?.value)||2,prev=stored(),root=$('v086People');
+ const count=Number($('v086Count')?.value)||2,prev=window.TrenerLiteProfiles?.selectedRoster?.()||stored(),root=$('v086People');
  if(!root)return;
  const opts=Array.from($('planSelect')?.options||[]).filter(o=>!o.disabled)
   .map(o=>'<option value="'+esc(o.value)+'">'+esc(o.textContent)+'</option>').join('');
  const saved=read('trainer3.liteGroup.personPlans.v033',{});
  root.innerHTML=Array.from({length:count-1},(_,j)=>{
   const i=j+1,p=prev[i]||{},selection=saved[p.id]||{};
-  return '<label>Osoba '+(i+1)+'</label><input maxlength="40" id="v086Name'+i+'" value="'+esc(p.name||'')+'" placeholder="Imię">'+
+  return '<label>Osoba '+(i+1)+'</label><input readonly title="Zmień imię tylko w Ustawieniach → Użytkownicy" maxlength="40" id="v086Name'+i+'" value="'+esc(p.name||'')+'" placeholder="Profil uczestnika">'+
   '<details><summary>Plan i cel tej osoby</summary><label>Plan</label><select id="v086Plan'+i+'">'+opts+'</select>'+
   '<label>Min. powtórzeń (puste = z planu)</label><input type="number" min="1" max="100" id="v086Min'+i+'" value="'+esc(selection.min||'')+'">'+
   '<label>Maks. powtórzeń</label><input type="number" min="1" max="100" id="v086Max'+i+'" value="'+esc(selection.max||'')+'">'+
