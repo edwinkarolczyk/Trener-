@@ -50,10 +50,10 @@ for(const ent of entries){
   if(ent.name==='index.html'){
     let html=value.toString('utf8');
     html=html.replace('<link rel="stylesheet" href="v090-recipes.css">','');
-    html=html.replace('</head>','<link rel="stylesheet" href="lite-tablet.css"></head>');
+    html=html.replace('</head>','<link rel="stylesheet" href="lite-tablet.css"><link rel="stylesheet" href="lite-fire.css"></head>');
     html=html.replace('<script src="app.js"></script>',
       '<script src="core-js.min.js"></script><script src="lite-data-core.js"></script><script src="lite-inventory-core.js"></script><script src="lite-group-core.js"></script><script src="lite-init.js"></script><script src="app.js"></script>');
-    html=html.replace('</body>', '<script src="lite-pr-core.js"></script><script src="lite-pr.js"></script><script src="lite-data-manager.js"></script><script src="lite-inventory-ui.js"></script></body>');
+    html=html.replace('</body>', '<script src="lite-pr-core.js"></script><script src="lite-pr.js"></script><script src="lite-data-manager.js"></script><script src="lite-inventory-ui.js"></script><script src="lite-fire-ui-core.js"></script><script src="lite-fire-ui.js"></script></body>');
     value=Buffer.from(html);
   }
   if(ent.name==='v086-one-phone.js'){
@@ -74,14 +74,15 @@ for(const ent of entries){
 // Kopia plików źródłowych Trenera 2 nadal pozostaje jedyną wersją logiki.
 const polyfill=require.resolve('core-js-bundle/minified.js');
 fs.copyFileSync(polyfill,path.join(dest,'core-js.min.js'));
-for(const name of ['lite-data-core.js','lite-inventory-core.js','lite-group-core.js','lite-init.js','lite-pr-core.js','lite-pr.js','lite-data-manager.js','lite-inventory-ui.js']){
+for(const name of ['lite-data-core.js','lite-inventory-core.js','lite-group-core.js','lite-init.js','lite-pr-core.js','lite-pr.js','lite-data-manager.js','lite-inventory-ui.js','lite-fire-ui-core.js','lite-fire-ui.js']){
   fs.writeFileSync(path.join(dest,name),transpile(fs.readFileSync(path.join(__dirname,name),'utf8'),name));
 }
 fs.copyFileSync(path.join(__dirname,'lite-tablet.css'),path.join(dest,'lite-tablet.css'));
+fs.copyFileSync(path.join(__dirname,'lite-fire.css'),path.join(dest,'lite-fire.css'));
 const required=['app.js','progression-addon.js','feature-loader.js','v058-smart-set.js',
   'v059-readiness.js','v0642-adaptive-volume.js','v070-beta-planner.js',
   'v070-beta-data.js','v086-one-phone.js','v094-exercise-store.js','v094-exercise-ui.js',
-  'style.css','index.html','lite-init.js','lite-pr-core.js','lite-pr.js','lite-data-core.js','lite-data-manager.js','lite-group-core.js','lite-inventory-core.js','lite-inventory-ui.js'];
+  'style.css','index.html','lite-init.js','lite-pr-core.js','lite-pr.js','lite-data-core.js','lite-data-manager.js','lite-group-core.js','lite-inventory-core.js','lite-inventory-ui.js','lite-fire-ui-core.js','lite-fire-ui.js','lite-fire.css'];
 for(const name of required) if(!fs.existsSync(path.join(dest,name)))throw Error('Brakuje pliku silnika: '+name);
 const out=fs.readFileSync(path.join(dest,'feature-loader.js'),'utf8');
 if(blocked.has('v076-diet.js')&&out.includes('v076-diet.js'))throw Error('Moduł dietetyczny wyciekł do Lite');
