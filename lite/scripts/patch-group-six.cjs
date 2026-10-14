@@ -30,14 +30,25 @@ replace("baseFinish:null,lastHistoryId:'',renderedKey:''","plans:{},cursor:{},de
 replace("p.slice(0,4)","p.slice(0,6)");
 replace("Math.min(4,Number($('v086Count')?.value)||2)","Math.min(6,Number($('v086Count')?.value)||2)");
 replace("Math.min(4,old.length||2)","Math.min(6,old.length||2)");
-replace("WSPÓLNY 2–4 • JEDEN TELEFON","WSPÓLNY 1–6 • JEDEN TABLET");
+replace("WSPÓLNY 2–4 • JEDEN TELEFON","TRENING 1–6 OSÓB • JEDEN TABLET");
 replace("'<option value=\"4\">4 osoby</option></select><div id=\"v086People\"></div>'",
 "'<option value=\"4\">4 osoby</option><option value=\"5\">5 osób</option><option value=\"6\">6 osób</option></select>'+ "+
 "'<label>Plany uczestników</label><select id=\"v086PlanMode\"><option value=\"shared\">Wspólny plan</option><option value=\"individual\">Osobne plany</option></select><div id=\"v086People\"></div>'");
 replace("const panel=document.createElement('div');panel.id='v086Setup';panel.className='hidden';","const panel=document.createElement('div');panel.id='v086Setup';panel.className='hidden';");
+
+replace("b.className='secondary bigBtn';","b.className='primary bigBtn';");
+replace("b.onclick=()=>{if(running){toast('Nie zmieniaj trybu podczas treningu.');return;}selectLocal(!state.selected);};",
+"b.onclick=()=>{if(running)return;selectLocal(true);$('v086Setup')?.scrollIntoView?.({block:'nearest'});};");
+replace(" updateResume();\n installTrainingUi();\n installTransferUi();",
+" updateResume();\n installTrainingUi();\n installTransferUi();\n selectLocal(true);\n const countLabel=$('v086Count')?.previousElementSibling;\n if(countLabel?.tagName==='LABEL')countLabel.classList.add('hidden');\n $('v086Count')?.classList.add('hidden');");
+replace("  const names=loadInputNames();\n  if(!validatePeople(names))",
+"  const names=window.TrenerLiteProfiles?.selectedRoster?.()?.map(p=>p.name)||loadInputNames();\n  if(!validatePeople(names))");
+replace("'<option value=\"2\">2 osoby</option><option value=\"3\">3 osoby</option>'",
+"'<option value=\"1\">1 osoba</option><option value=\"2\">2 osoby</option><option value=\"3\">3 osoby</option>'");
+
 block("function renderFields(){","function selectLocal",`
 function renderFields(){
- const count=Number($('v086Count')?.value)||2,prev=window.TrenerLiteProfiles?.selectedRoster?.()||stored(),root=$('v086People');
+ const count=Math.max(1,Math.min(6,(window.TrenerLiteProfiles?.selectedRoster?.()?.length)||Number($('v086Count')?.value)||1)),prev=window.TrenerLiteProfiles?.selectedRoster?.()||stored(),root=$('v086People');
  if(!root)return;
  const opts=Array.from($('planSelect')?.options||[]).filter(o=>!o.disabled)
   .map(o=>'<option value="'+esc(o.value)+'">'+esc(o.textContent)+'</option>').join('');
