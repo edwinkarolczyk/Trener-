@@ -1,8 +1,8 @@
 {
-  "versionCode": 15,
-  "versionName": "0.4.1",
+  "versionCode": 16,
+  "versionName": "0.4.2",
   "minSdk": 21,
-  "apkUrl": "https://github.com/edwinkarolczyk/Trener-/releases/download/lite-v0.4.1/Trener2-Lite-v0.4.1.apk",
-  "sha256": "6ff68de497c7aa63f6111a8213fb522335b6da0e1028c08b9ccff1d424764e56",
+  "apkUrl": "https://github.com/edwinkarolczyk/Trener-/releases/download/lite-v0.4.2/Trener2-Lite-v0.4.2.apk",
+  "sha256": "dd56093e44f547908ebcf2873b03f7c58ceb15375925321200fa322097bf6294",
   "notes": "Nowa wersja Lite dla tabletu. Wszystkie profile, plany, ciezary i historia zostaja zachowane."
 }
