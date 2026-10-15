@@ -73,3 +73,38 @@ test('krótkie filmy lokalne mieszczą się w pełnej kopii bez niszczenia histo
  }},{},'all','');
  assert.ok(plan.writes['trainer3.lite.videos.v040']);
 });
+
+test('0.4.1: na liście tylko zestawy A/B/C; dni v070 są jedynie harmonogramem',()=>{
+ assert.match(ui,/o\.value\.indexOf\('v070day:'\)!==0/);
+ assert.match(ui,/lite040MoveDay/);
+ assert.match(ui,/PRZENIEŚ DZISIEJSZY TRENING NA JUTRO/);
+ assert.match(ui,/core\.moveOnce/);
+ assert.match(ui,/trainer3\.lite\.weekOverrides\.v041/);
+ assert.match(ui,/Brak planu na dziś — wybierz ręcznie/);
+});
+test('0.4.1: przesunięcie nie mutuje tygodniowej konfiguracji ani historii',()=>{
+ assert.match(ui,/write\(EXCEPTIONS,outcome\.exceptions\)/);
+ assert.doesNotMatch(ui,/write\(WEEK_KEY,outcome\.exceptions\)/);
+ const data={format:'trener2-backup',storage:{
+   'trainer3.lite.weekOverrides.v041':JSON.stringify({a:{'2026-10-12':'','2026-10-13':'mon'}}),
+   'trainer3.history':'[]'
+ }};
+ const restored=backup.prepare(data,{},'all','');
+ assert.ok(restored.writes['trainer3.lite.weekOverrides.v041']);
+});
+test('0.4.1: trening i przerwy są rozróżnione, nagłówek nie pokazuje fikcyjnego ćwiczącego',()=>{
+ assert.match(fire,/ĆWICZY TERAZ/);
+ assert.match(fire,/TRWA ODPOCZYNEK/);
+ assert.match(fire,/liteFireOverview/);
+ assert.match(fire,/ZAPIS SERII PO PRZERWIE/);
+ assert.doesNotMatch(fire,/AKTUALNIE ĆWICZY/);
+ const css=fs.readFileSync(path.join(__dirname,'../scripts/lite-fire.css'),'utf8');
+ assert.match(css,/liteFireOverviewWork/);
+ assert.match(css,/liteFireOverviewRest/);
+ assert.match(css,/liteFireactive/);
+ assert.match(css,/liteFirerest/);
+});
+test('0.4.1: starszy harmonogram nie może ponownie wybrać przesuniętego treningu',()=>{
+ assert.match(parity,/v072-beta-plan-timers\.js/);
+ assert.match(parity,/movedAway/);
+});
