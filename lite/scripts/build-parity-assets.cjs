@@ -74,6 +74,25 @@ for(const ent of entries){
       "if(present&&!movedAway&&(!selected||nextDay)&&document.activeElement!==sel){");
     value=Buffer.from(js);
   }
+  // Lite: podczas grupowej sesji 1–6 osób jedynie jej sterownik może
+  // aktualizować osobę, ćwiczenie i etykiety przycisków.
+  // Pełny Trener 2 (main) pozostaje niezmieniony.
+  if(ent.name==='v055-workout-ui.js'){
+    let js=value.toString('utf8');
+    const needle='  function refresh(){';
+    if(!js.includes(needle))throw Error('Nie znaleziono odświeżania v055');
+    js=js.replace(needle,
+      "  function refresh(){\n    if(window.TrenerOnePhone086?.active)return;");
+    value=Buffer.from(js);
+  }
+  if(ent.name==='v062-compact-workout.js'){
+    let js=value.toString('utf8');
+    const needle="    if(!isRunning)return;\n    const focused=document.activeElement;";
+    if(!js.includes(needle))throw Error('Nie znaleziono odświeżania v062');
+    js=js.replace(needle,
+      "    if(!isRunning)return;\n    if(window.TrenerOnePhone086?.active)return;\n    const focused=document.activeElement;");
+    value=Buffer.from(js);
+  }
   if(ent.name==='v086-one-phone.js'){
     const patch=require('./patch-group-six.cjs').patch;
     value=Buffer.from(patch(value.toString('utf8')));
