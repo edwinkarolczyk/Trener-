@@ -60,6 +60,20 @@ for(const ent of entries){
     html=html.replace('</body>', '<script src="lite-pr-core.js"></script><script src="lite-pr.js"></script><script src="lite-data-manager.js"></script><script src="lite-inventory-ui.js"></script><script src="lite-fire-ui-core.js"></script><script src="lite-fire-ui.js"></script><script src="lite-exercise-core.js"></script><script src="lite-exercise-import.js"></script><script src="lite-profile-core.js"></script><script src="lite-profile-ui.js"></script><script src="lite-040-ui.js"></script></body>');
     value=Buffer.from(html);
   }
+  if(ent.name==='v072-beta-plan-timers.js'){
+    // Nie przywracaj stałej reguły tygodnia w dniu jednorazowo zwolnionym przez Lite.
+    let js=value.toString('utf8');
+    const needle='if(present&&(!selected||nextDay)&&document.activeElement!==sel){';
+    if(!js.includes(needle))throw Error('Zmienił się mechanizm wyboru planu dnia');
+    js=js.replace(needle,
+      "const exceptions=safe(localStorage.getItem('trainer3.lite.weekOverrides.v041'),{});"+
+      "const currentUsers=window.TrenerLiteProfiles?.selectedRoster?.()||[];"+
+      "const participant=currentUsers[0]?.id;"+
+      "const perDay=participant&&exceptions[participant];"+
+      "const movedAway=!!(perDay&&Object.prototype.hasOwnProperty.call(perDay,date)&&perDay[date]==='');"+
+      "if(present&&!movedAway&&(!selected||nextDay)&&document.activeElement!==sel){");
+    value=Buffer.from(js);
+  }
   if(ent.name==='v086-one-phone.js'){
     const patch=require('./patch-group-six.cjs').patch;
     value=Buffer.from(patch(value.toString('utf8')));
