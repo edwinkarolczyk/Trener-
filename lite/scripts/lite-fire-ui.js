@@ -3,6 +3,7 @@
 var core=window.TrenerLiteFireCore;
 if(!core)return;
 var doc=document,rosterNodes={},lastSession='',lastNativeActive=null,restSeen={},restAnnounced={};
+var DOCK_KEY='trainer3.lite.dock.collapsed.v042',dockNodes={},dockSession='';
 function $(id){return doc.getElementById(id);}
 function box(tag,cls,text){
  var e=doc.createElement(tag);if(cls)e.className=cls;
@@ -188,6 +189,144 @@ function syncRoster(group){
   var name=$('athlete');writeText(name,p.name);
  }
 }
+
+/* Stały pasek dolny: steruje oryginalnymi przyciskami, nie dubluje zapisu serii. */
+function dockButton(id,label,source,style){
+ var el=box('button','liteFireDockButton '+style,label);
+ el.type='button';el.id=id;el.setAttribute('data-source',source);
+ el.addEventListener('click',function(){
+  var action=$(source);
+  if(!action||action.disabled)return;
+  action.click();setTimeout(manageUi,80);
+ });
+ return el;
+}
+function collapsedDock(state,save){
+ var dock=$('liteFireDock');if(!dock)return;
+ dock.classList.toggle('liteFireDockCollapsed',!!state);
+ doc.body.classList.toggle('liteFireDockCollapsed',!!state);
+ var button=$('liteFireDockToggle');
+ if(button){
+  button.textContent=state?'ROZWIŃ ▲':'ZWIŃ ▼';
+  button.setAttribute('aria-expanded',state?'false':'true');
+ }
+ if(save){try{localStorage.setItem(DOCK_KEY,state?'yes':'no');}catch(e){}}
+}
+function installDock(){
+ if($('liteFireDock'))return;
+ var dock=box('aside','liteFireDock');dock.id='liteFireDock';
+ dock.setAttribute('role','region');
+ dock.setAttribute('aria-label','Stały pasek serii i przerw');
+ var head=box('div','liteFireDockHeader');
+ var summary=box('div','liteFireDockSummary','TRENING • SERIE I PRZERWY');
+ summary.id='liteFireDockSummary';head.appendChild(summary);
+ var toggle=box('button','liteFireDockToggle','ZWIŃ ▼');toggle.id='liteFireDockToggle';
+ toggle.type='button';toggle.setAttribute('aria-controls','liteFireDockDetails');
+ toggle.addEventListener('click',function(){
+  collapsedDock(!dock.classList.contains('liteFireDockCollapsed'),true);
+ });
+ head.appendChild(toggle);dock.appendChild(head);
+ var details=box('div','liteFireDockDetails');details.id='liteFireDockDetails';
+ var timers=box('div','liteFireDockTimers');timers.id='liteFireDockTimers';
+ timers.setAttribute('aria-label','Indywidualne czasy odpoczynku');details.appendChild(timers);
+ var series=box('div','liteFireDockSeries','Seria —');
+ series.id='liteFireDockSeries';details.appendChild(series);
+ var actions=box('div','liteFireDockActions');
+ actions.appendChild(dockButton('liteFireDockSave','ZAPISZ SERIĘ','saveSetBtn','liteFireDockSave'));
+ actions.appendChild(dockButton('liteFireDockSkipTurn','POMIŃ KOLEJKĘ','v086SkipTurn','liteFireDockSecondary'));
+ actions.appendChild(dockButton('liteFireDockSkipExercise','POMIŃ ĆWICZENIE','v086SkipExercise','liteFireDockSecondary'));
+ actions.appendChild(dockButton('liteFireDockSkipRest','POMIŃ PRZERWĘ','skipRestBtn','liteFireDockSecondary'));
+ actions.appendChild(dockButton('liteFireDockPause','PAUZA','pauseBtn','liteFireDockSecondary'));
+ actions.appendChild(dockButton('liteFireDockStop','STOP','stopBtn','liteFireDockDanger'));
+ details.appendChild(actions);dock.appendChild(details);
+ doc.body.appendChild(dock);
+ collapsedDock(localStorage.getItem(DOCK_KEY)==='yes',false);
+}
+function syncDockAction(id,label,show){
+ var dockButton=$(id);if(!dockButton)return;
+ var source=$(dockButton.getAttribute('data-source'));
+ dockButton.style.display=show?'block':'none';
+ if(!show)return;
+ dockButton.disabled=!source||!!source.disabled;
+ if(label)writeText(dockButton,label);
+}
+function dockChip(key,name,status,detail){
+ var parent=$('liteFireDockTimers');if(!parent)return;
+ var node=dockNodes[key];
+ if(!node){
+  node=box('div','liteFireDockPerson');
+  node.setAttribute('data-dock-person',key);
+  var who=box('strong','liteFireDockPersonName');
+  var clock=box('span','liteFireDockPersonTime');
+  node.appendChild(who);node.appendChild(clock);
+  dockNodes[key]=node;parent.appendChild(node);
+ }
+ var css='liteFireDockPerson liteFireDock'+status;
+ if(node.className!==css)node.className=css;
+ writeText(node.firstChild,name);
+ writeText(node.lastChild,detail);
+}
+function syncDock(group){
+ installDock();
+ var main=$('liteFireDock'),summary=$('liteFireDockSummary'),series=$('liteFireDockSeries');
+ if(!main)return;
+ var now=Date.now(),activePerson='',restLabel='',summaryText='',seriesText='',live={};
+ if(group&&Array.isArray(group.participants)){
+  if(dockSession!==group.sessionId){
+   dockSession=group.sessionId;dockNodes={};
+   var list=$('liteFireDockTimers');while(list&&list.firstChild)list.removeChild(list.firstChild);
+  }
+  group.participants.forEach(function(p){
+   var key=String(p.index),state=core.state(p,now,group.paused),isCurrent=group.personIndex===p.index;
+   var status=isCurrent&&state.code==='ready'?'Work':state.code==='rest'||state.code==='later'?'Rest':
+    state.code==='done'?'Done':state.code==='pause'?'Pause':'Ready';
+   var detail=status==='Rest'?'PRZERWA '+state.detail:status==='Work'?'ĆWICZY • '+(p.seriesDone+1)+'/'+p.seriesTotal:
+    status==='Done'?'KONIEC':status==='Pause'?'PAUZA':'GOTOWY';
+   dockChip(key,core.name(p),status,detail);live[key]=true;
+   if(status==='Work'){
+    activePerson=core.name(p);seriesText=core.name(p)+' • SERIA '+(p.seriesDone+1)+'/'+p.seriesTotal;
+   }
+   if(status==='Rest'&&!restLabel)restLabel=core.name(p)+' '+state.detail;
+  });
+  summaryText=group.paused?'PAUZA • '+group.participants.length+' OSÓB':
+   activePerson?'ĆWICZY: '+activePerson+(restLabel?' • PRZERWA: '+restLabel:''):
+   restLabel?'PRZERWA: '+restLabel:
+   'GOTOWI • '+group.participants.length+' OSÓB';
+  if(!seriesText){
+   var selected=group.participants.filter(function(p){return p.index===group.personIndex;})[0];
+   if(selected)seriesText=core.name(selected)+' • SERIA '+(selected.seriesDone+1)+'/'+selected.seriesTotal;
+  }
+ }else{
+  if(dockSession!=='solo'){
+   dockSession='solo';dockNodes={};
+   var list2=$('liteFireDockTimers');while(list2&&list2.firstChild)list2.removeChild(list2.firstChild);
+  }
+  var name=core.safeText($('athlete')&&$('athlete').textContent||'Uczestnik');
+  var rest=core.safeText($('restTime')&&$('restTime').textContent||'GOTOWY');
+  var isRest=/PRZERWA|ODPOCZYNEK|\\d\\d:\\d\\d/.test(rest)&&!/GOTOWY/.test(rest);
+  var paused=doc.body.classList.contains('paused')||($('stateBadge')&&/PAUZA/.test($('stateBadge').textContent));
+  dockChip('solo',name,paused?'Pause':isRest?'Rest':'Work',paused?'PAUZA':rest);
+  live.solo=true;summaryText=name+' • '+rest;
+  seriesText=core.safeText($('series')&&$('series').textContent||'SERIA');
+ }
+ Object.keys(dockNodes).forEach(function(key){
+  if(!live[key]){
+   var node=dockNodes[key];if(node.parentNode)node.parentNode.removeChild(node);
+   delete dockNodes[key];
+  }
+ });
+ writeText(summary,summaryText);
+ writeText(series,seriesText);
+ var save=$('saveSetBtn'),saveLabel=save&&save.textContent||'ZAPISZ SERIĘ';
+ syncDockAction('liteFireDockSave',saveLabel,true);
+ syncDockAction('liteFireDockSkipTurn','POMIŃ KOLEJKĘ',!!group);
+ syncDockAction('liteFireDockSkipExercise','POMIŃ ĆWICZENIE',!!group);
+ syncDockAction('liteFireDockSkipRest','POMIŃ PRZERWĘ',!group&&!!$('skipRestBtn')&&
+  !$('skipRestBtn').classList.contains('hidden'));
+ syncDockAction('liteFireDockPause',$('pauseBtn')&&$('pauseBtn').textContent||'PAUZA',true);
+ syncDockAction('liteFireDockStop','STOP',true);
+}
+
 function manageUi(){
  var active=hasActiveTraining(),group=active?snapshot():null;
  doc.body.classList.toggle('liteFireActive',active);
@@ -205,8 +344,8 @@ function manageUi(){
  var visual=$('v055Visual');
  if(more&&visual&&visual.parentNode!==more)more.appendChild(visual);
  if(extra&&tech)writeText(extra,tech.textContent||'');
- if(!group)return;
- syncRoster(group);
+ if(group)syncRoster(group);
+ syncDock(group);
 }
 function boot(){
  install();
@@ -214,6 +353,15 @@ function boot(){
  manageUi();
  setInterval(manageUi,1000);
  doc.addEventListener('visibilitychange',manageUi);
+ // Podczas wpisywania ciężaru/powtórzeń chowamy rozbudowaną część paska, nie licznik.
+ doc.addEventListener('focusin',function(e){
+  var target=e.target;
+  if(target&&(target.id==='weight'||target.id==='reps'))doc.body.classList.add('liteFireDockTyping');
+ });
+ doc.addEventListener('focusout',function(e){
+  var target=e.target;
+  if(target&&(target.id==='weight'||target.id==='reps'))doc.body.classList.remove('liteFireDockTyping');
+ });
  // Po START/ZAPISZ/PAUZA/STOP odśwież stan od razu, bez czekania sekundy.
  doc.addEventListener('click',function(e){
   var id=e.target&&e.target.id;
