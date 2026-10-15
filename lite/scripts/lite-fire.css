@@ -596,3 +596,15 @@ body.liteFireActive #training #skipRestBtn{
  body.liteFireActive.liteFireDockCollapsed #training.trainingCard,
  body.liteFireActive.liteFireDockTyping #training.trainingCard{padding-bottom:78px!important}
 }
+
+/* Nadpisanie późno ładowanych stylów pełnego Trenera (v062) — bez dwóch zestawów przycisków. */
+body.liteFireActive.v062Active #training #saveSetBtn,
+body.liteFireActive.v072Running #training #saveSetBtn,
+body.liteFireActive.v062Active #training .controls,
+body.liteFireActive.v072Running #training .controls,
+body.liteFireActive.v062Active #training #restBox,
+body.liteFireActive.v072Running #training #restBox,
+body.liteFireActive #training #restBox,
+body.liteFireActive.liteFireGroup #v086Workout .v086Actions{
+ display:none!important;
+}
