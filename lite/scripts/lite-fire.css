@@ -371,3 +371,98 @@ body.liteFireActive.v062Active #training .liteFireMore[open] #v055Visual .v055Sp
  margin:0 8px 0 0;
 }
 #liteFireSignals .liteFireSwitch span{font-weight:700}
+
+
+/* Lite 0.4.1 — uczestnik przy serii, odpoczynek i gotowość bez dwuznaczności. */
+.liteFireFormLabel{display:none}
+body.liteFireGroup #training .liteFireFormLabel{
+ display:block; margin:13px 0 3px!important;
+ font-size:13px!important;letter-spacing:.08em;font-weight:900;color:#aebdce;
+}
+body.liteFireGroup #training #v086Workout{
+ border:2px solid #454545!important;background:#15171a!important;
+ padding:12px!important;margin:10px 0 8px!important;
+}
+body.liteFireGroup #training #liteFireHeadline{
+ -webkit-order:1;order:1;min-height:30px!important;
+ font-size:15px!important;font-weight:900!important;color:#fff!important;
+}
+body.liteFireGroup #training #liteFireState{
+ font-size:12px!important;color:#becbd5!important;
+}
+body.liteFireGroup #training #liteFireNow{
+ display:block!important;-webkit-order:2;order:2;
+ margin:6px 0 8px!important;padding:12px 13px!important;
+ border-radius:12px;font-size:23px!important;font-weight:900!important;
+ line-height:1.2!important;overflow-wrap:break-word;
+ border:2px solid #536274;background:#1b2833;color:#ecf3f9;
+}
+body.liteFireGroup #training #liteFireNow.liteFireOverviewWork{
+ background:#173854!important;border-color:#4aaeff!important;color:#e0f3ff!important;
+}
+body.liteFireGroup #training #liteFireNow.liteFireOverviewRest{
+ background:#372c13!important;border-color:#f5c453!important;color:#ffe2a0!important;
+}
+body.liteFireGroup #training #liteFireNow.liteFireOverviewReady{
+ background:#153726!important;border-color:#56ca82!important;color:#c8ffda!important;
+}
+body.liteFireGroup #training #liteFireNow.liteFireOverviewPause{
+ background:#393735!important;border-color:#aaa!important;color:#fff!important;
+}
+body.liteFireGroup #training #v086Status{display:none!important}
+body.liteFireGroup #training #liteFireRoster{-webkit-order:3;order:3;margin:3px 0 8px!important}
+body.liteFireGroup .liteFirePerson{
+ background:#1b1d20;border-color:#50555b;min-height:112px;
+}
+body.liteFireGroup .liteFirePerson.liteFireactive{
+ background:#172d42;border-color:#4aaeff;
+}
+body.liteFireGroup .liteFirePerson.liteFireactive .liteFirePill{
+ background:#236597;color:#fff;
+}
+body.liteFireGroup .liteFirePerson.liteFireactive .liteFireRest{color:#80cbff}
+body.liteFireGroup .liteFirePerson.liteFireready{
+ background:#172b20;border-color:#358357;
+}
+body.liteFireGroup .liteFirePerson.liteFirerest,
+body.liteFireGroup .liteFirePerson.liteFirelater{
+ background:#302713;border-color:#c38a29;
+}
+body.liteFireGroup .liteFirePerson.liteFirerest.liteFireCurrent{
+ border-color:#f5c453!important;
+}
+body.liteFireGroup .liteFirePerson.liteFiredone{
+ background:#232426;border-color:#666;
+}
+body.liteFireGroup .liteFirePerson.liteFiredone .liteFirePill{
+ background:#383c40;color:#e0e0e0;
+}
+body.liteFireGroup .liteFirePerson.liteFiredone .liteFireRest{color:#bbb}
+body.liteFireGroup .liteFirePerson.liteFireCurrent.liteFireactive{
+ border-width:3px!important;
+}
+body.liteFireGroup .liteFirePersonName{
+ font-size:21px!important;white-space:normal;overflow-wrap:break-word;
+}
+body.liteFireGroup .liteFirePill{
+ font-size:12px!important;padding:7px 8px!important;
+}
+body.liteFireGroup .liteFirePersonExercise{
+ font-size:16px!important;white-space:normal;line-height:1.3;
+}
+body.liteFireGroup .liteFirePersonMeta{font-size:14px!important}
+body.liteFireGroup .liteFireRest{font-size:25px!important;min-width:58px;text-align:right}
+body.liteFireGroup #training #restBox{display:none!important}
+body.liteFireGroup #training #athlete{font-size:26px!important}
+body.liteFireGroup #training #exercise{font-size:23px!important}
+body.liteFireGroup #training #series{font-size:17px!important}
+body.liteFireGroup #training #v086Load{
+ background:#1d1f20!important;font-size:14px!important;
+ padding:9px!important;
+}
+@media(max-width:700px){
+ body.liteFireGroup #training #liteFireNow{font-size:20px!important}
+ body.liteFireGroup .liteFirePersonName{font-size:18px!important}
+ body.liteFireGroup .liteFireRest{font-size:22px!important}
+ body.liteFireGroup .liteFirePill{font-size:11px!important}
+}
