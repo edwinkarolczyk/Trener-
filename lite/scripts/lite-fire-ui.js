@@ -303,7 +303,7 @@ function syncDock(group){
   }
   var name=core.safeText($('athlete')&&$('athlete').textContent||'Uczestnik');
   var rest=core.safeText($('restTime')&&$('restTime').textContent||'GOTOWY');
-  var isRest=/PRZERWA|ODPOCZYNEK|\\d\\d:\\d\\d/.test(rest)&&!/GOTOWY/.test(rest);
+  var isRest=/PRZERWA|ODPOCZYNEK|\d\d:\d\d/.test(rest)&&!/GOTOWY/.test(rest);
   var paused=doc.body.classList.contains('paused')||($('stateBadge')&&/PAUZA/.test($('stateBadge').textContent));
   dockChip('solo',name,paused?'Pause':isRest?'Rest':'Work',paused?'PAUZA':rest);
   live.solo=true;summaryText=name+' • '+rest;
