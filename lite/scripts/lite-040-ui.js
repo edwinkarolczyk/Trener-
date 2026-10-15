@@ -62,6 +62,7 @@ function insertStart(){
  if(v)last.appendChild(v);
  if(cols)last.appendChild(cols);
  var primary=$('lite040Plan');
+ primary.appendChild(new Option('Brak planu na dziś — wybierz ręcznie',''));
  plans().forEach(function(p){primary.appendChild(new Option(p.label,p.value));});
  primary.onchange=function(){
   manualPlan=true;
@@ -166,8 +167,13 @@ function applyDailyPlan(){
  var first=core.effectivePlan(schedule,exceptions,ids[0],today);
  var valid=function(v){return preset.some(function(p){return p.value===v;});};
  var current=$('lite040Plan'),source=$('planSelect');
- if(first&&valid(first)&&!manualPlan){if(source)source.value=first;if(current)current.value=first;}
- else if(current&&source&&!manualPlan)current.value=source.value;
+ if(!manualPlan){
+  if(first&&valid(first)){if(source)source.value=first;if(current)current.value=first;}
+  else{
+   if(source)source.value='';
+   if(current)current.value='';
+  }
+ }
  var distinct=0;
  ids.forEach(function(id,index){
   var value=core.effectivePlan(schedule,exceptions,id,today);
