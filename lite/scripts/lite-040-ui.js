@@ -5,7 +5,8 @@ var doc=document,core=window.TrenerLite040Core;
 if(!core)return;
 var PROFILE_KEY='trainer3.lite.profiles.v037',WEEK_KEY='trainer3.lite.week.v040',
  PENDING='trainer3.onePhone.pending.v086',AVATARS='trainer3.lite.avatar.v040',
- KEEP='trainer3.lite.screen.keep.v040',VIDEO='trainer3.lite.videos.v040';
+ KEEP='trainer3.lite.screen.keep.v040',VIDEO='trainer3.lite.videos.v040',
+ EXCEPTIONS='trainer3.lite.weekOverrides.v041';
 var shown='start',signature='',startDate='',historyMode='mine',historyPerson='',manualPlan=false;
 function $(id){return doc.getElementById(id);}
 function esc(s){return String(s===undefined||s===null?'':s).replace(/[&<>"']/g,function(c){
@@ -24,7 +25,8 @@ function optionHtml(value,label){return '<option value="'+esc(value)+'">'+esc(la
 function plans(){
  var el=$('planSelect'),a=[];
  if(!el)return a;
- Array.prototype.forEach.call(el.options,function(o){if(!o.disabled)a.push({value:o.value,label:o.textContent});});
+ Array.prototype.forEach.call(el.options,function(o){if(!o.disabled&&o.value.indexOf('v070day:')!==0)
+   a.push({value:o.value,label:o.textContent});});
  return a;
 }
 function personLabel(id){return (people().filter(function(p){return p.id===id;})[0]||{}).name||'Uczestnik';}
@@ -49,7 +51,8 @@ function insertStart(){
  '<input type="file" accept="image/*" id="lite040Photo" class="hidden" aria-label="Zdjęcie profilu"></div>'+
  '<details id="lite040Last"><summary>Ostatni trening wybranej osoby</summary><div id="lite040LastInfo" class="hint"></div></details>'+
  '<div class="lite040Plan"><label for="lite040Plan">Plan na dziś</label>'+
- '<select id="lite040Plan"></select><div id="lite040PlanInfo" class="hint"></div></div>'+
+ '<select id="lite040Plan"></select><div id="lite040PlanInfo" class="hint"></div>'+
+ '<button type="button" id="lite040MoveTomorrow" class="secondary lite040MoveTomorrow">PRZENIEŚ DZISIEJSZY TRENING NA JUTRO →</button></div>'+
  '<p id="lite040Message" class="hint" role="status" aria-live="polite"></p>';
  setup.insertBefore(header,setup.firstChild);
  var last=make('details','lite040Options');last.id='lite040Options';
@@ -63,6 +66,11 @@ function insertStart(){
  primary.onchange=function(){
   manualPlan=true;
   var source=$('planSelect');if(source){source.value=this.value;source.dispatchEvent(new Event('change'));}
+ };
+ $('lite040MoveTomorrow').onclick=function(){
+  var id=pickedIds()[0];if(!id){message('Wybierz uczestnika.');return;}
+  if(active()){message('Nie można przenieść rozpoczętego treningu.');return;}
+  var today=new Date();moveTraining(id,today,core.dateShift(today,1));
  };
  $('lite040Resume').onclick=function(){var button=$('v086Resume');if(button)button.click();
   else message('Nie można wznowić: moduł treningu nie odpowiada.');};
@@ -131,17 +139,38 @@ function drawStart(force){
  applyDailyPlan();
 }
 function updateResume(){var box=$('lite040ResumeBox');if(box)box.classList.toggle('hidden',!pending()||active());}
+function chosenPlan(id,date){return core.effectivePlan(read(WEEK_KEY,{}),read(EXCEPTIONS,{}),id,date);}
+function moveTraining(id,fromDate,toDate){
+ if(active()){message('Nie można zmieniać planu podczas treningu.');return false;}
+ var plan=read(WEEK_KEY,{}),before=read(EXCEPTIONS,{});
+ var outcome=core.moveOnce(plan,before,id,fromDate,toDate);
+ if(!outcome.ok){
+  var error=outcome.reason==='missing'?'W tym dniu nie ma treningu do przeniesienia.':
+   outcome.reason==='occupied'?'Dzień docelowy ma już trening. Nie nadpisano go.':
+   'Wybierz termin w kolejnych 7 dniach.';
+  message(error);var weekMessage=$('lite040WeekMessage');if(weekMessage)weekMessage.textContent=error;
+  return false;
+ }
+ try{
+  write(EXCEPTIONS,outcome.exceptions);manualPlan=false;
+  applyDailyPlan();renderWeekDays();drawStart(true);
+  var note='Przeniesiono JEDEN trening '+personLabel(id)+': '+outcome.from+' → '+outcome.to+
+   '. Plan na kolejne tygodnie pozostaje bez zmian.';
+  message(note);var weekMessage=$('lite040WeekMessage');if(weekMessage)weekMessage.textContent=note;
+  return true;
+ }catch(e){message('Nie udało się zapisać przesunięcia: '+e.message);return false;}
+}
 function applyDailyPlan(){
- var ids=pickedIds(),schedule=read(WEEK_KEY,{}),today=new Date(),selectedPlans={},preset=plans();
+ var ids=pickedIds(),schedule=read(WEEK_KEY,{}),exceptions=read(EXCEPTIONS,{}),today=new Date(),selectedPlans={},preset=plans();
  if(!ids.length||!preset.length)return;
- var first=core.dayPlan(schedule,ids[0],today);
+ var first=core.effectivePlan(schedule,exceptions,ids[0],today);
  var valid=function(v){return preset.some(function(p){return p.value===v;});};
  var current=$('lite040Plan'),source=$('planSelect');
  if(first&&valid(first)&&!manualPlan){if(source)source.value=first;if(current)current.value=first;}
  else if(current&&source&&!manualPlan)current.value=source.value;
  var distinct=0;
  ids.forEach(function(id,index){
-  var value=core.dayPlan(schedule,id,today);
+  var value=core.effectivePlan(schedule,exceptions,id,today);
   if(!valid(value))value=index===0?source.value:'';
   if(value)distinct++;
   selectedPlans[id]=value;
@@ -151,6 +180,7 @@ function applyDailyPlan(){
   }
  });
  var mode=$('v086PlanMode');if(mode&&ids.length>1)mode.value='individual';
+ var shift=$('lite040MoveTomorrow');if(shift)shift.style.display=first&&!active()?'block':'none';
  var info=$('lite040PlanInfo');
  if(info)info.textContent=distinct===ids.length?'Plany dobrane według tygodnia każdej osoby.':
   'Brak planu na dziś dla części osób — możesz ustawić tygodniowy plan w zakładce Plan.';
@@ -188,10 +218,22 @@ function renderWeekDays(){
  var days=['Poniedziałek','Wtorek','Środa','Czwartek','Piątek','Sobota','Niedziela'];
  var week=read(WEEK_KEY,{})[sel.value]||[],p=plans();
  host.innerHTML=days.map(function(day,i){
-  return '<label>'+day+'<select class="lite040WeekDay" data-day="'+i+'">'+optionHtml('','Brak planu')+
-   p.map(function(x){return optionHtml(x.value,x.label);}).join('')+'</select></label>';
+  return '<div class="lite040WeekRow"><label>'+day+'<select class="lite040WeekDay" data-day="'+i+'">'+
+   optionHtml('','Brak planu')+
+   p.map(function(x){return optionHtml(x.value,x.label);}).join('')+
+   '</select></label><button type="button" class="secondary lite040MoveDay" data-day="'+i+
+   '" title="Przenieś tylko najbliższy trening z tego dnia na następny dzień">→ +1 DZIEŃ</button></div>';
  }).join('');
  Array.prototype.forEach.call(host.querySelectorAll('.lite040WeekDay'),function(el,i){el.value=week[i]||'';});
+ Array.prototype.forEach.call(host.querySelectorAll('.lite040MoveDay'),function(button){
+  var day=Number(button.getAttribute('data-day')),now=new Date(),shift=(day-core.weekday(now)+7)%7;
+  var from=core.dateShift(now,shift),value=chosenPlan(sel.value,from);
+  button.disabled=!value||active();button.style.visibility=value?'visible':'hidden';
+  button.onclick=function(){
+   var source=core.dateShift(new Date(),(day-core.weekday(new Date())+7)%7);
+   moveTraining(sel.value,source,core.dateShift(source,1));
+  };
+ });
 }
 function installExercises(){
  var plan=$('plan'),nav=doc.querySelector('.tabs');if(!plan||!nav||$('exercises'))return;
@@ -468,6 +510,10 @@ function installStyles(){
  '.lite040ProgressPerson{padding:10px;border:1px solid #353535;border-radius:10px;margin:7px 0}'+
  '.lite040ProgressPerson b,.lite040ProgressPerson span{display:block;margin:4px 0}'+
  '.lite040WeekDay{display:block;width:100%}#lite040WeekDays label{display:block;margin:8px 0}'+
+ '.lite040WeekRow{display:-webkit-flex;display:flex;align-items:flex-end;gap:8px}'+
+ '.lite040WeekRow label{-webkit-flex:1 1 auto;flex:1 1 auto;min-width:0}'+
+ '.lite040MoveDay{font-size:12px!important;min-height:52px!important;max-width:125px;white-space:normal}'+
+ '.lite040MoveTomorrow{width:100%;min-height:52px!important;margin:8px 0;font-size:15px!important}'+
  '@media(max-width:380px){.lite040Person{width:calc(50% - 8px);min-width:115px}}'+
  '@media(min-width:650px){.lite040Person{width:calc(25% - 9px)}}';
  doc.head.appendChild(s);
@@ -512,5 +558,5 @@ function boot(){
 if(doc.readyState==='loading')doc.addEventListener('DOMContentLoaded',function(){setTimeout(boot,250);});
 else setTimeout(boot,250);
 window.TrenerLite040={refreshStart:function(){drawStart(true);},refreshHistory:renderHistory,
- scheduleFor:function(id,date){return core.dayPlan(read(WEEK_KEY,{}),id,date);}};
+ scheduleFor:function(id,date){return chosenPlan(id,date);}};
 })();
