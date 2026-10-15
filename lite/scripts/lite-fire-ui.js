@@ -28,10 +28,12 @@ function addRoster(container){
 }
 function addStatus(container){
  var bar=box('div','liteFireHeadline');bar.id='liteFireHeadline';
- bar.appendChild(box('strong','', 'AKTUALNIE ĆWICZY'));
+ bar.appendChild(box('strong','', 'STATUS TRENINGU GRUPOWEGO'));
  var chip=box('span','liteFireChip','TRENING GRUPOWY');chip.id='liteFireState';
  bar.appendChild(chip);
  container.appendChild(bar);
+ var now=box('div','liteFireOverview','Przygotowanie treningu…');now.id='liteFireNow';
+ now.setAttribute('role','status');container.appendChild(now);
 }
 function install(){
  if($('liteFireRoster'))return;
@@ -39,6 +41,15 @@ function install(){
  if(!panel)return;
  addStatus(panel);
  addRoster(panel);
+ var training=$('training'),athlete=$('athlete');
+ // Najpierw status całej grupy, następnie formularz zapisu jednej serii.
+ if(training&&athlete){
+  training.insertBefore(panel,athlete);
+  if(!$('liteFireFormLabel')){
+   var sub=box('div','liteFireFormLabel','NASTĘPNA SERIA');sub.id='liteFireFormLabel';
+   training.insertBefore(sub,athlete);
+  }
+ }
  var extra=doc.createElement('details');extra.id='liteFireMore';extra.className='liteFireMore';
  var summary=box('summary','', 'Wskazówki i szczegóły treningu');
  extra.appendChild(summary);
@@ -128,9 +139,11 @@ function syncRoster(group){
   if(!node){node=makePerson(p);rosterNodes[key]=node;people.appendChild(node);}
   live[key]=true;
   var stat=core.state(p,now,group.paused),selected=group.personIndex===p.index;
-  node.className='liteFirePerson liteFire'+stat.code+(selected?' liteFireCurrent':'');
+  var code=selected&&stat.code==='ready'?'active':stat.code;
+  var classes='liteFirePerson liteFire'+code+(selected?' liteFireCurrent':'');
+  if(node.className!==classes)node.className=classes;
   writeText(node.querySelector('.liteFirePersonName'),core.name(p));
-  writeText(node.querySelector('[data-field=status]'),stat.label);
+  writeText(node.querySelector('[data-field=status]'),code==='active'?'ĆWICZY TERAZ':stat.label);
   writeText(node.querySelector('[data-field=exercise]'),p.done?'Ćwiczenia zakończone':
     core.safeText(p.exerciseName));
   writeText(node.querySelector('[data-field=progress]'),
@@ -138,7 +151,7 @@ function syncRoster(group){
       'Seria '+(p.seriesDone+1)+'/'+p.seriesTotal+' • '+p.completedSets+'/'+p.totalSets+' łącznie');
   writeText(node.querySelector('[data-field=rest]'),
     stat.code==='rest'||stat.code==='later'?stat.detail:
-    stat.code==='done'?'✓':stat.code==='pause'?'❚❚':'●');
+    stat.code==='done'?'✓':stat.code==='pause'?'❚❚':code==='active'?'▶':'●');
  });
  Object.keys(rosterNodes).forEach(function(key){
   if(!live[key]){var elem=rosterNodes[key];elem.parentNode&&elem.parentNode.removeChild(elem);delete rosterNodes[key];}
@@ -146,8 +159,29 @@ function syncRoster(group){
  signalCompletedRest(group,now);
  var s=core.summary(group,now);
  writeText($('liteFireCount'),s.total+' osób • '+s.ready+' gotowe • '+s.done+' zakończone');
- writeText($('liteFireState'),group.paused?'PAUZA':s.ready?'GOTOWI: '+s.ready:'TRWA ODPOCZYNEK');
- var p=group.participants.filter(function(x){return x.index===group.personIndex;})[0];
+ var current=group.participants.filter(function(x){return x.index===group.personIndex;})[0];
+ var currentState=current?core.state(current,now,group.paused):null;
+ var activePerson=current&&currentState&&currentState.code==='ready'?current:null;
+ var restCount=s.rest,waiting=s.ready-(activePerson?1:0);
+ var label=group.paused?'WSZYSCY: PAUZA':activePerson?
+  'ĆWICZY: '+core.name(activePerson):restCount?
+  'TRWA ODPOCZYNEK':s.done===s.total?'TRENING ZAKOŃCZONY':'CZEKAMY NA GOTOWOŚĆ';
+ writeText($('liteFireNow'),label);
+ var nowBox=$('liteFireNow');if(nowBox){
+  var cl='liteFireOverview '+(group.paused?'liteFireOverviewPause':activePerson?
+   'liteFireOverviewWork':restCount?'liteFireOverviewRest':'liteFireOverviewReady');
+  if(nowBox.className!==cl)nowBox.className=cl;
+ }
+ writeText($('liteFireState'),'GOTOWI: '+Math.max(0,waiting)+
+  ' • PRZERWA: '+restCount+' • KONIEC: '+s.done);
+ var form=$('liteFireFormLabel');if(form)
+  writeText(form,activePerson?'ZAPIS SERII — '+core.name(activePerson):
+   currentState&&currentState.code==='rest'?'PO PRZERWIE — '+core.name(current):
+   'PRZYGOTOWANIE NASTĘPNEJ SERII');
+ var save=$('saveSetBtn');
+ if(save)writeText(save,activePerson?'ZAPISZ SERIĘ — '+core.name(activePerson):
+  'ZAPIS SERII PO PRZERWIE');
+ var p=current;
  if(p){
   var m=$('v086Status');
   if(m&&m.getAttribute('role')!=='status')m.setAttribute('role','status');
