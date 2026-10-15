@@ -34,4 +34,22 @@ assert.strictEqual(core.matchesEquipment({equipment:'Hantle'},{bars:[{type:'dumb
 assert.strictEqual(core.matchesEquipment({equipment:'Sztanga'},{bars:[{type:'barbell'}]},false),true);
 assert.strictEqual(core.matchesEquipment({equipment:'Masa ciała'},{bars:[{type:'barbell'}]},false),true);
 assertSame([h1,h2].map(x=>JSON.stringify(x)),[JSON.stringify(h1),JSON.stringify(h2)]);
-console.log('Lite 0.4.0: 22 testy historii, profili, tygodnia, filtrów i niezmienności danych — PASS');
+
+const shifts={};
+const onlyOnce=core.moveOnce(schedule,shifts,'alice','2026-10-12T12:00:00','2026-10-13T12:00:00');
+assert.strictEqual(onlyOnce.ok,true);
+assert.strictEqual(onlyOnce.plan,'mon');
+assert.strictEqual(core.effectivePlan(schedule,onlyOnce.exceptions,'alice','2026-10-12T12:00:00'),'');
+assert.strictEqual(core.effectivePlan(schedule,onlyOnce.exceptions,'alice','2026-10-13T12:00:00'),'mon');
+assert.strictEqual(core.dayPlan(schedule,'alice','2026-10-12T12:00:00'),'mon');
+assert.strictEqual(core.effectivePlan(schedule,onlyOnce.exceptions,'alice','2026-10-19T12:00:00'),'mon');
+assert.strictEqual(core.effectivePlan(schedule,onlyOnce.exceptions,'bob','2026-10-14T12:00:00'),'wed');
+assert.strictEqual(core.isoDay(core.dateShift('2026-10-12T12:00:00',1)),'2026-10-13');
+assert.strictEqual(core.moveOnce(schedule,onlyOnce.exceptions,'alice','2026-10-12T12:00:00','2026-10-13T12:00:00').reason,'missing');
+const clash={alice:['mon','wed','','','','','']};
+assert.strictEqual(core.moveOnce(clash,{},'alice','2026-10-12T12:00:00','2026-10-13T12:00:00').reason,'occupied');
+assert.strictEqual(core.moveOnce(schedule,{},'alice','2026-10-12T12:00:00','2026-10-20T12:00:00').reason,'range');
+assert.deepStrictEqual(shifts,{});
+assert.deepStrictEqual(schedule,{alice:['mon','','','','','',''],bob:['b-mon','','wed','','','','']});
+console.log('Lite 0.4.1: wyjątki jednodniowe, konflikt terminów, brak nadpisywania i regresja tygodnia — PASS');
+
