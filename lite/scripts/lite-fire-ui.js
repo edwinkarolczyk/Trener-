@@ -358,7 +358,11 @@ function boot(){
  // Podczas wpisywania ciężaru/powtórzeń chowamy rozbudowaną część paska, nie licznik.
  doc.addEventListener('focusin',function(e){
   var target=e.target;
-  if(target&&(target.id==='weight'||target.id==='reps'))doc.body.classList.add('liteFireDockTyping');
+  if(target&&(target.id==='weight'||target.id==='reps')){
+   doc.body.classList.add('liteFireDockTyping');
+   if($('liteFireDock')&&$('liteFireDock').classList.contains('liteFireDockCollapsed'))
+    collapsedDock(false,false);
+  }
  });
  doc.addEventListener('focusout',function(e){
   var target=e.target;
