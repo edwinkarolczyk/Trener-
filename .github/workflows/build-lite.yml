@@ -1,5 +1,5 @@
 name: Build Trener 2 Lite (Fire OS 5)
-# Wydanie 0.4.1 (15+) dopiero po testach i podpisaniu na gałęzi Lite.
+# Wydanie 0.4.2 (16+) dopiero po testach i podpisaniu na gałęzi Lite.
 on:
   push:
     branches: [feature/trener2-lite-fire5]
@@ -109,7 +109,7 @@ jobs:
           ! grep -q 'v076-diet.js' lite/build/generated/parityAssets/feature-loader.js
       - name: Testy bezpieczeństwa kopii, migracji i rekordów
         run: node --test lite/tests/pr-core.test.cjs lite/tests/data-safety.test.cjs lite/tests/group-six.test.cjs lite/tests/inventory.test.cjs lite/tests/fire-ui.test.cjs lite/tests/exercise-import.test.cjs lite/tests/profile-lock.test.cjs lite/tests/start-unified.test.cjs lite/tests/installer-fire5.test.cjs
-      - name: Testy nowego interfejsu, planów i historii 0.4.1
+      - name: Testy nowego interfejsu, planów i historii 0.4.2
         run: node --test lite/scripts/lite-040-core.test.cjs lite/tests/lite040-ui-contract.test.cjs
       - name: Testy regresyjne treningu i progresji
         run: gradle :lite:testDebugUnitTest --no-daemon
@@ -132,7 +132,7 @@ jobs:
           VERSION=$(sed -n "s/.*versionName[[:space:]]*'\\([^']*\\)'.*/\\1/p" lite/build.gradle | head -1)
           CODE=$(awk '/versionCode/{print $2; exit}' lite/build.gradle)
           test -n "$VERSION" && test -n "$CODE"
-          test "$VERSION" = "0.4.1" && test "$CODE" -gt 14 || { echo 'Blokada publikacji: wydanie 0.4.1 wymaga testów.' >&2; exit 1; }
+          test "$VERSION" = "0.4.2" && test "$CODE" -gt 15 || { echo 'Blokada publikacji: wydanie 0.4.2 wymaga testów.' >&2; exit 1; }
           TAG="lite-v${VERSION}"
           APK_NAME="Trener2-Lite-v${VERSION}.apk"
           cp lite/build/outputs/apk/release/lite-release.apk "$APK_NAME"
