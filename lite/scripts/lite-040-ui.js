@@ -165,8 +165,17 @@ function applyDailyPlan(){
  var ids=pickedIds(),schedule=read(WEEK_KEY,{}),exceptions=read(EXCEPTIONS,{}),today=new Date(),selectedPlans={},preset=plans();
  if(!ids.length||!preset.length)return;
  var first=core.effectivePlan(schedule,exceptions,ids[0],today);
- var valid=function(v){return preset.some(function(p){return p.value===v;});};
  var current=$('lite040Plan'),source=$('planSelect');
+ var valid=function(v){
+  if(preset.some(function(p){return p.value===v;}))return true;
+  if(!v||!source)return false;
+  return Array.prototype.some.call(source.options,function(opt){return opt.value===v&&!opt.disabled;});
+ };
+ if(first&&valid(first)&&current&&
+   !Array.prototype.some.call(current.options,function(opt){return opt.value===first;})){
+  var from=Array.prototype.filter.call(source.options,function(opt){return opt.value===first;})[0];
+  current.appendChild(new Option('Starszy zapis — '+(from?from.textContent:first),first));
+ }
  if(!manualPlan){
   if(first&&valid(first)){if(source)source.value=first;if(current)current.value=first;}
   else{
@@ -230,7 +239,14 @@ function renderWeekDays(){
    '</select></label><button type="button" class="secondary lite040MoveDay" data-day="'+i+
    '" title="Przenieś tylko najbliższy trening z tego dnia na następny dzień">→ +1 DZIEŃ</button></div>';
  }).join('');
- Array.prototype.forEach.call(host.querySelectorAll('.lite040WeekDay'),function(el,i){el.value=week[i]||'';});
+ Array.prototype.forEach.call(host.querySelectorAll('.lite040WeekDay'),function(el,i){
+  var old=week[i]||'';
+  if(old&&!Array.prototype.some.call(el.options,function(o){return o.value===old;})){
+   var src=$('planSelect'),found=src&&Array.prototype.filter.call(src.options,function(o){return o.value===old;})[0];
+   el.appendChild(new Option('Zachowany starszy plan — '+(found?found.textContent:old),old));
+  }
+  el.value=old;
+ });
  Array.prototype.forEach.call(host.querySelectorAll('.lite040MoveDay'),function(button){
   var day=Number(button.getAttribute('data-day')),now=new Date(),shift=(day-core.weekday(now)+7)%7;
   var from=core.dateShift(now,shift),value=chosenPlan(sel.value,from);
