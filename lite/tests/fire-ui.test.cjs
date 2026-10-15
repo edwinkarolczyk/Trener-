@@ -104,3 +104,23 @@ test('Lite 0.4.2: osobne liczniki i stan serii są na pasku również przy przew
  assert.match(css,/padding-bottom:254px!important/);
  assert.match(css,/@media\(max-width:650px\)/);
 });
+
+test('Lite: kg i powtórzenia na dole to te same pola, których używa silnik',()=>{
+ const js=fs.readFileSync(path.join(root,'lite-fire-ui.js'),'utf8');
+ const css=fs.readFileSync(path.join(root,'lite-fire.css'),'utf8');
+ assert.match(js,/querySelector\('\.inputs'\)/);
+ assert.match(js,/details\.appendChild\(inputs\)/);
+ assert.match(js,/liteFireDockInputFields/);
+ assert.doesNotMatch(js,/cloneNode\(/);
+ assert.match(css,/\.liteFireDockInputFields input/);
+ assert.match(css,/liteFireDockTyping #liteFireDock \.liteFireDockDetails/);
+ assert.match(css,/liteFireDockTyping #liteFireDock \.liteFireDockSave/);
+});
+test('Lite: starsze odświeżacze 200 i 250 ms nie mogą nadpisywać aktywnej osoby',()=>{
+ const pack=fs.readFileSync(path.join(root,'build-parity-assets.cjs'),'utf8');
+ assert.match(pack,/ent\.name==='v055-workout-ui\.js'/);
+ assert.match(pack,/ent\.name==='v062-compact-workout\.js'/);
+ assert.match(pack,/if\(window\.TrenerOnePhone086\?\.active\)return;/);
+ // Poprawka tylko do wytwarzanego Lite, pełny silnik pozostaje bez zmian.
+ assert.match(pack,/if\(ent\.name==='v086-one-phone\.js'\)/);
+});
