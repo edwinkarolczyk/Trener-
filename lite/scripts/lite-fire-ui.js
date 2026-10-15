@@ -229,6 +229,8 @@ function installDock(){
  var details=box('div','liteFireDockDetails');details.id='liteFireDockDetails';
  var timers=box('div','liteFireDockTimers');timers.id='liteFireDockTimers';
  timers.setAttribute('aria-label','Indywidualne czasy odpoczynku');details.appendChild(timers);
+ var inputs=$('training')&&$('training').querySelector('.inputs');
+ if(inputs){inputs.classList.add('liteFireDockInputFields');details.appendChild(inputs);}
  var series=box('div','liteFireDockSeries','Seria —');
  series.id='liteFireDockSeries';details.appendChild(series);
  var actions=box('div','liteFireDockActions');
