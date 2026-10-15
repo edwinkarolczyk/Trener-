@@ -70,3 +70,37 @@ test('Fire: opcjonalne sygnały i flagi ekranu w czasie treningu',()=>{
  assert.match(java,/FLAG_KEEP_SCREEN_ON/);
  assert.match(java,/ToneGenerator/);
 });
+
+test('Lite 0.4.2: pasek dolny jest przypięty do body, można go zwinąć i przywrócić',()=>{
+ const js=fs.readFileSync(path.join(root,'lite-fire-ui.js'),'utf8');
+ const css=fs.readFileSync(path.join(root,'lite-fire.css'),'utf8');
+ assert.match(js,/doc\.body\.appendChild\(dock\)/);
+ assert.match(js,/liteFireDockDetails/);
+ assert.match(js,/aria-expanded/);
+ assert.match(js,/trainer3\.lite\.dock\.collapsed\.v042/);
+ assert.match(js,/ROZWIŃ ▲/);
+ assert.match(css,/position:fixed!important/);
+ assert.match(css,/body\.liteFireActive #liteFireDock/);
+ assert.match(css,/\.liteFireDockCollapsed \.liteFireDockDetails/);
+});
+test('Lite 0.4.2: sterowanie używa oryginalnych akcji treningu, bez podwójnego zapisu',()=>{
+ const js=fs.readFileSync(path.join(root,'lite-fire-ui.js'),'utf8');
+ assert.match(js,/action\.click\(\)/);
+ for(const id of ['saveSetBtn','v086SkipTurn','v086SkipExercise','pauseBtn','stopBtn'])
+  assert.ok(js.includes("'"+id+"'"),id);
+ assert.match(js,/dockButton\.disabled=!source\|\|!!source\.disabled/);
+ assert.match(js,/syncDock\(group\)/);
+ assert.match(js,/dockSession!==group\.sessionId/);
+});
+test('Lite 0.4.2: osobne liczniki i stan serii są na pasku również przy przewijaniu',()=>{
+ const js=fs.readFileSync(path.join(root,'lite-fire-ui.js'),'utf8');
+ const css=fs.readFileSync(path.join(root,'lite-fire.css'),'utf8');
+ assert.match(js,/group\.participants\.forEach/);
+ assert.match(js,/core\.state\(p,now,group\.paused\)/);
+ assert.match(js,/SERIA/);
+ assert.match(js,/PRZERWA/);
+ assert.match(js,/liteFireDockTyping/);
+ assert.match(css,/\.liteFireDockPerson/);
+ assert.match(css,/padding-bottom:254px!important/);
+ assert.match(css,/@media\(max-width:650px\)/);
+});
