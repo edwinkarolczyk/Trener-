@@ -618,3 +618,48 @@ body.liteFireActive.liteFireDockTyping .toast{
  bottom:78px!important;
 }
 @media(min-width:651px){body.liteFireActive .toast{bottom:254px!important}}
+
+/* 0.4.3: fizycznie te same pola danych silnika przeniesiono do dolnego paska. */
+body.liteFireActive #liteFireDock .liteFireDockInputFields{
+ display:-webkit-flex!important;display:flex!important;
+ -webkit-flex-wrap:nowrap;flex-wrap:nowrap;gap:10px!important;
+ margin:6px 0 9px!important;padding:0!important;
+}
+body.liteFireActive #liteFireDock .liteFireDockInputFields>div{
+ -webkit-flex:1 1 50%;flex:1 1 50%;min-width:0!important;
+}
+body.liteFireActive #liteFireDock .liteFireDockInputFields label{
+ display:block!important;font-size:15px!important;font-weight:800!important;
+ color:#f3f3f3!important;margin:0 0 5px!important;
+}
+body.liteFireActive #liteFireDock .liteFireDockInputFields input{
+ display:block!important;width:100%!important;min-width:0!important;
+ box-sizing:border-box!important;height:57px!important;min-height:57px!important;
+ font-size:27px!important;font-weight:900!important;text-align:center!important;
+ padding:7px!important;border:2px solid #666!important;border-radius:10px!important;
+ color:#fff!important;background:#181818!important;
+}
+/* Gdy otwarta klawiatura, formularz i zapis nadal są na ekranie. */
+body.liteFireActive.liteFireDockTyping #liteFireDock .liteFireDockDetails{
+ display:block!important;
+}
+body.liteFireActive.liteFireDockTyping #liteFireDock .liteFireDockTimers,
+body.liteFireActive.liteFireDockTyping #liteFireDock .liteFireDockSeries,
+body.liteFireActive.liteFireDockTyping #liteFireDock .liteFireDockSecondary,
+body.liteFireActive.liteFireDockTyping #liteFireDock .liteFireDockDanger{
+ display:none!important;
+}
+body.liteFireActive.liteFireDockTyping #liteFireDock .liteFireDockSave{
+ display:block!important;-webkit-flex:1 1 100%;flex:1 1 100%;
+}
+body.liteFireActive.liteFireDockTyping #training.trainingCard{
+ padding-bottom:200px!important;
+}
+@media(max-width:650px){
+ body.liteFireActive #liteFireDock .liteFireDockInputFields input{
+  min-height:53px!important;height:53px!important;font-size:25px!important;
+ }
+ body.liteFireActive.liteFireDockTyping #training.trainingCard{
+  padding-bottom:200px!important;
+ }
+}
