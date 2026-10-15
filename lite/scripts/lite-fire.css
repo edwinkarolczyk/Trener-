@@ -608,3 +608,13 @@ body.liteFireActive #training #restBox,
 body.liteFireActive.liteFireGroup #v086Workout .v086Actions{
  display:none!important;
 }
+
+/* Powiadomienia walidacji serii muszą być widoczne NAD przypiętym panelem. */
+body.liteFireActive .toast{
+ z-index:22000!important;bottom:310px!important;pointer-events:none!important;
+}
+body.liteFireActive.liteFireDockCollapsed .toast,
+body.liteFireActive.liteFireDockTyping .toast{
+ bottom:78px!important;
+}
+@media(min-width:651px){body.liteFireActive .toast{bottom:254px!important}}
