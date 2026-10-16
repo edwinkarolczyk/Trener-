@@ -19,17 +19,17 @@
   </header>
 
   <nav class="tabs">
-    <button class="tab active" data-tab="start">Start</button>
-    <button class="tab" data-tab="plan">Plan</button>
-    <button class="tab" data-tab="history">Historia</button>
-    <button class="tab" data-tab="progress">Postępy</button>
-    <button class="tab" data-tab="diet">Dieta</button>
-    <button class="tab" data-tab="recipes">Przepisy</button>
-    <button class="tab" data-tab="settings">Ustawienia</button>
+    <button class="tab hidden" data-tab="start">Start</button>
+    <button class="tab hidden" data-tab="plan">Plan</button>
+    <button class="tab hidden" data-tab="history">Historia</button>
+    <button class="tab hidden" data-tab="progress">Postępy</button>
+    <button class="tab active" data-tab="diet">Dieta</button>
+    <button class="tab hidden" data-tab="recipes">Przepisy</button>
+    <button class="tab tabSettings" data-tab="settings" aria-label="Ustawienia i włączanie zakładek">⚙ Ustawienia</button>
   </nav>
 
   <main>
-    <section id="start" class="screen show">
+    <section id="start" class="screen">
       <div id="setup" class="card heroCard">
         <div class="eyebrow">DZISIEJSZY TRENING</div>
         <h2>Ustaw sesję</h2>
@@ -166,7 +166,7 @@
       </div>
     </section>
 
-    <section id="diet" class="screen">
+    <section id="diet" class="screen show">
       <div class="card dietHero">
         <span class="statusSoon">PROJEKT UI — LICZENIE WYŁĄCZONE</span>
         <h2>Dieta</h2>
@@ -186,6 +186,20 @@
     <section id="recipes" class="screen"></section>
 
     <section id="settings" class="screen">
+      <div class="card">
+        <div class="eyebrow">WYGLĄD APLIKACJI</div>
+        <h2>Widoczne zakładki</h2>
+        <p class="hint">Włącz tylko moduły, z których korzystasz. Wyłączenie zakładki ukrywa ją z menu, ale nie usuwa danych. Ustawienia są zawsze dostępne.</p>
+        <div class="moduleSwitches">
+          <label class="switchRow"><input type="checkbox" data-module-tab="start"><span>Start — trening</span></label>
+          <label class="switchRow"><input type="checkbox" data-module-tab="plan"><span>Plan treningowy</span></label>
+          <label class="switchRow"><input type="checkbox" data-module-tab="history"><span>Historia treningów</span></label>
+          <label class="switchRow"><input type="checkbox" data-module-tab="progress"><span>Postępy</span></label>
+          <label class="switchRow"><input type="checkbox" data-module-tab="diet" checked><span>Dieta</span></label>
+          <label class="switchRow"><input type="checkbox" data-module-tab="recipes"><span>Przepisy</span></label>
+        </div>
+        <p class="hint">Domyślnie włączona jest tylko Dieta. Przynajmniej jedna zakładka musi pozostać aktywna. Zmiany zapisują się automatycznie.</p>
+      </div>
       <div class="card">
         <div class="eyebrow">POWIADOMIENIA</div>
         <h2>Przypomnienia o treningu</h2>
