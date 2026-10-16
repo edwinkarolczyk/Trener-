@@ -11,5 +11,5 @@ assert.equal(channel,'beta','main APK is expected to use the beta updater channe
 assert(updater.includes('!release.optBoolean("prerelease")'),'beta updater must filter GitHub releases to prereleases');
 assert(main.includes('UpdateInstaller.fetchLatestBetaUpdateJson()'),'beta channel must use the GitHub prerelease feed');
 assert(workflow.includes('gh release edit "$TAG" --draft=false --prerelease'),'existing main releases must stay prerelease');
-assert(workflow.includes('--notes "Beta Trener 2 ${VERSION}') && workflow.includes('--prerelease'),'new main releases must be published as beta prerelease');
+assert(workflow.includes('--notes-file "$RELEASE_NOTES"') && workflow.includes('--prerelease'),'new main releases must be published as beta prerelease');
 console.log('Release channel: beta APK, updater and GitHub publication are aligned');
