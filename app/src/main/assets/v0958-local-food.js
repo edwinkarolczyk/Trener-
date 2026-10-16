@@ -18,7 +18,7 @@ function findBarcode(raw){
 }
 function asScan(p){
  if(!p)return null;
- return {id:p.id||'',barcode:normal(p.barcode)||normal(String(p.id||'').replace(/^off:/,'')),
+ return {id:p.id||'',barcode:normal(p.barcode)||(String(p.id||'').startsWith('off:')?normal(String(p.id).slice(4)):''),
   name:String(p.name||'Produkt'),brand:String(p.brand||''),quantity:String(p.quantity||''),
   servingQuantity:number(p.servingGrams??p.servingQuantity)||100,
   kcal100:number(p.kcal100),protein100:number(p.protein100),
@@ -46,6 +46,11 @@ function saveOwn(raw){
  const name=String(raw?.name||'').trim().slice(0,90),barcode=normal(raw?.barcode);
  if(!name||!good({...raw,name}))return {ok:false,message:'Podaj nazwę i wartości odżywcze.'};
  if(raw.barcode&&!barcode)return {ok:false,message:'Kod EAN/UPC musi mieć 8–14 cyfr.'};
+ const oldRaw=localStorage.getItem(OWN);
+ if(oldRaw!==null){
+  try{if(!Array.isArray(JSON.parse(oldRaw)))throw Error('bad catalog');}
+  catch(e){return {ok:false,message:'Nieprawidłowy zapis bazy produktów. Zrób kopię danych; nie nadpisano starej bazy.'};}
+ }
  const rows=list();
  let index=rows.findIndex(p=>barcode&&normal(p.barcode)===barcode);
  if(index<0&&raw.id)index=rows.findIndex(p=>p.id===raw.id&&p.source==='Własny produkt');
@@ -64,9 +69,9 @@ function saveOwn(raw){
 function removeOwn(id){
  const rows=list(),next=rows.filter(x=>x.id!==id);
  if(next.length===rows.length)return false;
- try{localStorage.setItem(OWN,JSON.stringify(next));
-  localStorage.setItem(RECENT,JSON.stringify(recents().filter(x=>x.id!==id)));return true;
- }catch(e){return false;}
+ try{localStorage.setItem(OWN,JSON.stringify(next));}catch(e){return false;}
+ try{localStorage.setItem(RECENT,JSON.stringify(recents().filter(x=>x.id!==id)));}catch(e){}
+ return true;
 }
 function captureMeal(p){
  const grams=number(p?.grams);if(!(grams>0)||!String(p?.name||'').trim())return {ok:false,skipped:true};
