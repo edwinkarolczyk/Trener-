@@ -145,12 +145,14 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="v${VERSION}"
+          RELEASE_NOTES="$RUNNER_TEMP/trener2-release-notes.md"
+          awk '/^## / {if(seen) exit; seen=1; next} seen{print}' CHANGELOG.md > "$RELEASE_NOTES"
           publish_release() {
             if gh release view "$TAG" >/dev/null 2>&1; then
               gh release upload "$TAG" "$APK_NAME" --clobber
-              gh release edit "$TAG" --draft=false --prerelease
+              gh release edit "$TAG" --draft=false --prerelease --notes-file "$RELEASE_NOTES"
             else
-              gh release create "$TAG" "$APK_NAME" --target "$GITHUB_SHA" --title "Trener 2 ${VERSION}" --notes "Beta Trener 2 ${VERSION}. Wydanie dla wbudowanego kanału aktualizacji beta; podpis APK pozostaje bez zmian." --prerelease
+              gh release create "$TAG" "$APK_NAME" --target "$GITHUB_SHA" --title "Trener 2 ${VERSION}" --notes-file "$RELEASE_NOTES" --prerelease
             fi
           }
           for attempt in 1 2 3; do
@@ -172,15 +174,13 @@ jobs:
             echo "Updater metadata already points to newer versionCode $CURRENT_CODE; refusing downgrade to $VERSION_CODE."
             exit 0
           fi
+          NOTES_JSON=$(python3 -c 'import json; from pathlib import Path; data=Path("CHANGELOG.md").read_text(encoding="utf-8").splitlines(); items=[line.strip()[2:].replace("**","") for line in data[1:] if line.startswith("- ")][:6]; print(json.dumps(items,ensure_ascii=False))')
           cat > update.json <<EOF
           {
             "version": "${VERSION}",
             "versionCode": ${VERSION_CODE},
             "title": "Trener 2 v${VERSION}",
-            "notes": [
-              "Najnowsza wersja beta Trener 2",
-              "Metadane aktualizacji są synchronizowane automatycznie z każdym wydaniem"
-            ],
+            "notes": ${NOTES_JSON},
             "pageUrl": "https://github.com/edwinkarolczyk/Trener-/releases/tag/v${VERSION}",
             "apkUrl": "https://github.com/edwinkarolczyk/Trener-/releases/download/v${VERSION}/Trener2-v${VERSION}.apk"
           }
