@@ -1,3 +1,12 @@
+## 0.9.5.9 — zakładki na życzenie, domyślnie Dieta
+
+- **Domyślny układ:** po instalacji lub aktualizacji, o ile nie zapisano jeszcze preferencji modułów, w menu aktywna jest tylko Dieta; ekran otwiera się na Diecie.
+- **Ustawienia → Widoczne zakładki:** niezależne przełączniki Start, Plan, Historia, Postępy, Dieta i Przepisy. Przełącznik działa natychmiast, bez restartu.
+- **Ustawienia zawsze dostępne:** widoczna pozycja z ikoną koła zębatego pozwala ponownie włączyć moduły. Co najmniej jeden moduł musi pozostać aktywny.
+- **Zapisywanie wyboru:** widoczność i ostatnia otwarta zakładka zapisywane lokalnie i są zachowywane przy kolejnych aktualizacjach oraz w eksporcie kopii.
+- **Bezpieczna nawigacja:** ukryte zakładki nie otwierają się przez standardowe menu; aktywny trening nie może stracić dostępu do Start.
+- **Bez usuwania danych:** ukrywanie modułu nie usuwa historii treningów, planów, przepisów, produktów ani posiłków. Układ menu dostosowuje się do liczby widocznych zakładek.
+
 ## 0.9.5.8 — jedna baza produktów i pamięć skanera
 
 - **Moje produkty i kody EAN/UPC:** własny produkt można zapisać z kodem kreskowym; przy kolejnym skanowaniu zostanie rozpoznany lokalnie, również bez internetu.
