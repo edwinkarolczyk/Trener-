@@ -41,7 +41,8 @@
   }
   function setCatalogSource(p,grams,unit,amount){
     const g=num(grams);if(!(g>0))return;
-    state.selected={base100:base100(p),grams:g,unit:String(unit||'g'),amount:num(amount),source:String(p.source||''),imageUrl:String(p.imageUrl||'')};
+    state.selected={base100:base100(p),grams:g,unit:String(unit||'g'),amount:num(amount),source:String(p.source||''),imageUrl:String(p.imageUrl||''),
+      barcode:String(p.barcode||''),catalogId:String(p.id||'')};
     if($('v0885Grams'))$('v0885Grams').value=round(g,2);
     if($('v0885Source'))$('v0885Source').textContent='Z bazy: '+state.selected.source+
       '. Zmiana gramów automatycznie przelicza kcal, B, W i T.';
@@ -58,7 +59,8 @@
     }
     const norm={};
     for(const key of nutrients)norm[key]=round(values[key]*100/grams,5);
-    return {grams,base100:norm,source:state.selected?.source||'Ręcznie',imageUrl:state.selected?.imageUrl||''};
+    return {grams,base100:norm,source:state.selected?.source||'Ręcznie',imageUrl:state.selected?.imageUrl||'',
+      barcode:state.selected?.barcode||'',catalogId:state.selected?.catalogId||''};
   }
   function restoreSelection(meal){
     clearSelection();
@@ -74,7 +76,8 @@
       for(const key of nutrients)normal[key]=round((Number(meal[key])||0)*100/grams,5);
       source='Odtworzone ze starej porcji — sprawdź wartości z etykietą';
     }
-    state.selected={base100:normal,grams,source,imageUrl:meal.imageUrl||''};
+    state.selected={base100:normal,grams,source,imageUrl:meal.imageUrl||'',
+      barcode:meal.barcode||'',catalogId:meal.catalogId||''};
     if($('v0885Grams'))$('v0885Grams').value=grams;
     if($('v0885Source'))$('v0885Source').textContent='Edycja gramów przelicza wszystkie wartości. '+source;
   }
@@ -121,7 +124,8 @@
         carbs:round(carbs*100/grams,5),fat:round(fat*100/grams,5)};
     }
     return {id:id(),name,portion,grams:grams||null,base100:normalized,
-      source:source?.source||'Ręcznie',imageUrl:source?.imageUrl||'',kcal,protein,carbs,fat};
+      source:source?.source||'Ręcznie',imageUrl:source?.imageUrl||'',
+      barcode:source?.barcode||'',catalogId:source?.catalogId||'',kcal,protein,carbs,fat};
   }
   function addIngredient(){
     const x=readItem();if(!x)return;
@@ -177,6 +181,11 @@
         date:window.TrenerDiet076?.getDate?.()||localDay(),createdAt:now,...row});
     }
     if(!save(d))return;
+    state.items.forEach(x=>{
+      if(x.grams>0)window.TrenerLocalFood0958?.captureMeal({name:x.name,grams:x.grams,
+        kcal:x.kcal,protein:x.protein,carbs:x.carbs,fat:x.fat,
+        barcode:x.barcode||'',catalogId:x.catalogId||'',imageUrl:x.imageUrl||''});
+    });
     state.items=[];state.editId=null;state.editDate='';clearFood();
     $('v0885Name').value='';window.TrenerMealTime0889?.reset?.();
     render();toastSafe('Posiłek zapisany — jedna pozycja w bilansie dnia.');
