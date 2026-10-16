@@ -89,7 +89,7 @@ function displayPl(original){
 function off(p){
   const n=p.nutriments||{},nget=k=>num(n[k]);let kcal=nget('energy-kcal_100g');
   const joules=nget('energy_100g');if(kcal===null&&joules!==null)kcal=rnd(joules/4.184);
-  return {id:'off:'+String(p.code||''),name:String(p.product_name_pl||p.product_name||'').trim().slice(0,90),
+  return {id:'off:'+String(p.code||''),barcode:String(p.code||''),name:String(p.product_name_pl||p.product_name||'').trim().slice(0,90),
     source:'Open Food Facts',kcal100:kcal,protein100:nget('proteins_100g'),
     carbs100:nget('carbohydrates_100g'),fat100:nget('fat_100g'),
     servingGrams:num(p.serving_quantity),gramsPerPiece:null,gramsPerMl:null,
@@ -123,7 +123,10 @@ function render(){
 }
 function merge(items){
  const seen=new Set(state.found.map(p=>p.id));
- items.forEach(p=>{if(complete(p)&&!seen.has(p.id)){state.found.push(p);seen.add(p.id);}});
+ const barcodes=new Set(state.found.map(p=>p.barcode).filter(Boolean));
+ items.forEach(p=>{if(complete(p)&&!seen.has(p.id)&&(!p.barcode||!barcodes.has(p.barcode))){
+   state.found.push(p);seen.add(p.id);if(p.barcode)barcodes.add(p.barcode);
+ }});
  render();
 }
 function search(){
@@ -177,6 +180,7 @@ function pick(p){
  $('v083EditorTitle').textContent=p.name||'Nowy produkt';
  $('v083Source').textContent='Źródło: '+p.source;
  $('v083Name').value=p.name||'';
+ $('v083Barcode').value=p.barcode||'';
  [['v083Kcal','kcal100'],['v083Protein','protein100'],['v083Carbs','carbs100'],
   ['v083Fat','fat100'],['v083Piece','gramsPerPiece'],['v083Density','gramsPerMl']]
  .forEach(([id,k])=>$(id).value=p[k]===null||p[k]===undefined?'':p[k]);
@@ -185,7 +189,7 @@ function pick(p){
 }
 function data(){
  const p=state.picked||{};
- return {id:p.id||'',name:$('v083Name').value.trim().slice(0,90),source:p.source||'Własny produkt',
+ return {id:p.id||'',barcode:$('v083Barcode').value.trim(),name:$('v083Name').value.trim().slice(0,90),source:p.source||'Własny produkt',
   kcal100:num($('v083Kcal').value),protein100:num($('v083Protein').value),
   carbs100:num($('v083Carbs').value),fat100:num($('v083Fat').value),
   gramsPerPiece:num($('v083Piece').value),gramsPerMl:num($('v083Density').value),
@@ -204,12 +208,15 @@ function calculate(){
 }
 function saveProduct(){
  const p=data();if(!p.name||!complete(p)){status('Podaj nazwę i co najmniej jedną wartość odżywczą.',true);return;}
- const id=state.picked?.source==='Własny produkt'&&state.picked.id?state.picked.id:
-  'own:'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
- const item={...p,id,source:'Własny produkt'};
- try{writeOwn([item,...own().filter(x=>x.id!==id)]);state.picked=item;
-   status('Zapisano produkt lokalnie. Uwzględni go kopia danych.');}
- catch(e){status('Nie udało się zapisać produktu — sprawdź pamięć telefonu.',true);}
+ const api=window.TrenerLocalFood0958;
+ if(!api){status('Nie załadowano lokalnej bazy produktów. Uruchom ponownie aplikację.',true);return;}
+ const result=api.saveOwn(p);
+ if(!result.ok){status(result.message,true);return;}
+ state.picked=result.product;
+ state.found=[result.product,...state.found.filter(x=>x.id!==result.product.id&&
+   !(result.product.barcode&&x.barcode===result.product.barcode))];
+ render();
+ status('Zapisano do Moich produktów. Kod i poprawione wartości działają offline; produkt jest w kopii danych.');
 }
 function use(){
  const p=data(),grams=calculate();
@@ -223,6 +230,7 @@ function use(){
  const u=$('v083Unit').value;
  if($('v077Portion'))$('v077Portion').value=fmt(num($('v083Amount').value))+' '+u+' ('+fmt(grams)+' g)';
  try{window.TrenerMealComposer0885?.setCatalogSource?.(p,grams,u,num($('v083Amount').value));}catch(e){}
+ window.TrenerLocalFood0958?.remember(p);
  $('v076AddMeal')?.scrollIntoView({behavior:'smooth',block:'center'});
  status('Przeliczono '+fmt(grams)+' g. Sprawdź pola i naciśnij DODAJ POSIŁEK.');
 }
@@ -261,6 +269,7 @@ function install(){
  <div id="v083Editor" class="foodHidden">
  <h3 id="v083EditorTitle">Produkt</h3><p class="foodMeta" id="v083Source"></p>
  <label>Nazwa produktu</label><input id="v083Name" maxlength="90">
+ <label>Kod EAN/UPC (opcjonalnie)</label><input id="v083Barcode" inputmode="numeric" maxlength="14" placeholder="np. 5901234123457">
  <div class="foodGrid">
  <div><label>kcal / 100 g</label><input id="v083Kcal" type="number" min="0" step="0.1"></div>
  <div><label>Białko / 100 g</label><input id="v083Protein" type="number" min="0" step="0.1"></div>
@@ -288,7 +297,7 @@ function install(){
  $('v083ApiKey').value=localStorage.getItem(USDA_KEY)||'';
  $('v083Search').onclick=search;
  $('v083Query').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();search();}});
- $('v083New').onclick=()=>pick({id:'',name:'',source:'Własny produkt',kcal100:null,
+ $('v083New').onclick=()=>pick({id:'',barcode:'',name:'',source:'Własny produkt',kcal100:null,
   protein100:null,carbs100:null,fat100:null,gramsPerPiece:null,gramsPerMl:null,servingGrams:null});
  $('v083Own').onclick=()=>{state.found=own();state.query='';state.requestId++;state.waiting=0;
    render();status('Produkty zapisane na telefonie.');};
@@ -307,13 +316,30 @@ function install(){
    const p=state.found[Number(b.dataset.index)];if(!p)return;
    if(b.dataset.food==='pick')pick(p);
    if(b.dataset.food==='delete'&&p.source==='Własny produkt'&&confirm('Usunąć produkt „'+p.name+'”?')){
-     writeOwn(own().filter(x=>x.id!==p.id));state.found=state.found.filter(x=>x.id!==p.id);render();
+     if(!window.TrenerLocalFood0958?.removeOwn(p.id)){status('Nie udało się usunąć produktu.',true);return;}
+     state.found=state.found.filter(x=>x.id!==p.id);render();
    }
  });
  return true;
 }
+function openNew(barcode){
+ const code=window.TrenerLocalFood0958?.normal(barcode)||'';
+ if(barcode&&!code)return false;
+ window.TrenerDietVisual0890?.openSheet?.('add','search');
+ pick({id:'',barcode:code,name:'',source:'Własny produkt',
+  kcal100:null,protein100:null,carbs100:null,fat100:null,
+  gramsPerPiece:null,gramsPerMl:null,servingGrams:null});
+ return true;
+}
+function openRecent(p){
+ if(!p?.name)return false;
+ const current=own().find(x=>x.id===p.id||(p.barcode&&x.barcode===p.barcode));
+ window.TrenerDietVisual0890?.openSheet?.('add','search');
+ pick(current||p);
+ return true;
+}
 function boot(){let tries=0;const t=setInterval(()=>{tries++;if(install()||tries>=60)clearInterval(t);},100);}
-window.TrenerFoodCatalog={nativeResult,parseOff:off,parseUsda:usda,offQuery,usdaQuery,displayPl,
+window.TrenerFoodCatalog={nativeResult,parseOff:off,parseUsda:usda,offQuery,usdaQuery,displayPl,openNew,openRecent,
   calculate:(p,amount,unit,gPiece,gMl)=>{const k=unit==='g'?1:unit==='szt'?gPiece:unit==='ml'?gMl:null;
     if(!(k>0)||!(amount>0))return null;const grams=amount*k,out={grams};
     ['kcal100','protein100','carbs100','fat100'].forEach(f=>out[f]=p[f]===null?null:rnd(p[f]*grams/100));return out;}};
