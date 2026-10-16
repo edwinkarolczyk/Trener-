@@ -23,6 +23,7 @@
     try{localStorage.setItem(CACHE_KEY,JSON.stringify(out))}catch(e){}
   }
   function recents(){
+    if(window.TrenerLocalFood0958)return window.TrenerLocalFood0958.recents();
     const r=safe(localStorage.getItem(RECENT_KEY),[]);
     return Array.isArray(r)?r.slice(0,20):[];
   }
@@ -31,6 +32,7 @@
     const cache=readCache();cache[product.barcode]={savedAt:Date.now(),product};writeCache(cache);
     const list=recents().filter(x=>x?.barcode!==product.barcode);list.unshift(product);
     try{localStorage.setItem(RECENT_KEY,JSON.stringify(list.slice(0,20)))}catch(e){}
+    window.TrenerLocalFood0958?.remember(product);
     renderRecents();
   }
 
@@ -102,13 +104,14 @@
       <div class="eyebrow">SKAN PRODUKTU • OPEN FOOD FACTS</div>
       <div class="v0802ScanActions">
         <button id="v0802Scan" class="primary" type="button">📷 SKANUJ KOD</button>
-        <button id="v0802Last" class="secondary" type="button">OSTATNIO SKANOWANE</button>
+        <button id="v0802Last" class="secondary" type="button">OSTATNIO UŻYWANE</button>
       </div>
       <div class="v0802Manual">
         <div><label>Kod kreskowy</label><input id="v0802Barcode" inputmode="numeric" maxlength="14" placeholder="np. 5901234123457"></div>
         <button id="v0802Lookup" class="secondary" type="button">SZUKAJ</button>
       </div>
       <div id="v0802Status" class="v0802Status">Zeskanuj EAN/UPC albo wpisz kod ręcznie.</div>
+      <button id="v0802NewOwn" class="secondary hidden" type="button">+ DODAJ WŁASNY PRODUKT Z TYM KODEM</button>
       <div id="v0802Recent" class="v0802Recent hidden"></div>
       <div id="v0802Result" class="v0802Result hidden"></div>
       <div class="v0802Source">Dane pochodzą ze społecznościowej bazy Open Food Facts. Po wstawieniu do formularza możesz poprawić każdą wartość według etykiety produktu.</div>`;
@@ -118,9 +121,15 @@
     $('v0802Lookup').onclick=()=>lookup($('v0802Barcode')?.value||'');
     $('v0802Barcode').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();lookup(e.target.value)}});
     $('v0802Last').onclick=()=>{$('v0802Recent')?.classList.toggle('hidden');renderRecents()};
+    $('v0802NewOwn').onclick=()=>{
+      const code=state.pendingBarcode;
+      if(!window.TrenerFoodCatalog?.openNew?.(code)){setStatus('Otwórz Bazę żywności → + Nowy własny.',false);}
+    };
     $('v0802Recent').addEventListener('click',ev=>{
-      const b=ev.target.closest('[data-off-barcode]');if(!b)return;
-      const p=recents().find(x=>x.barcode===b.dataset.offBarcode);if(p)showProduct(p);
+      const b=ev.target.closest('[data-off-index]');if(!b)return;
+      const p=recents()[Number(b.dataset.offIndex)];if(!p)return;
+      if(p.barcode)lookup(p.barcode);
+      else window.TrenerFoodCatalog?.openRecent?.(p);
     });
     $('v0802Result').addEventListener('input',ev=>{
       if(ev.target?.id==='v0802Grams'){state.grams=num(ev.target.value);updatePreview();}
@@ -135,7 +144,7 @@
   function renderRecents(){
     const root=$('v0802Recent');if(!root)return;
     const list=recents().slice(0,8);
-    root.innerHTML=list.length?list.map(p=>`<button class="secondary" type="button" data-off-barcode="${esc(p.barcode)}">${esc(p.name||p.barcode)}</button>`).join(''):'<span class="v0802Status">Brak ostatnio skanowanych produktów.</span>';
+    root.innerHTML=list.length?list.map((p,i)=>`<button class="secondary" type="button" data-off-index="${i}">${esc(p.name||p.barcode)}</button>`).join(''):'<span class="v0802Status">Brak ostatnio używanych produktów.</span>';
   }
 
   function setStatus(text,busy){
@@ -159,9 +168,10 @@
     state.pendingBarcode=barcode;
     if($('v0802Barcode'))$('v0802Barcode').value=barcode;
 
-    const cached=readCache()[barcode]?.product;
+    $('v0802NewOwn')?.classList.add('hidden');
+    const cached=window.TrenerLocalFood0958?.findBarcode(barcode)||readCache()[barcode]?.product;
     if(cached){
-      setStatus('Produkt wczytany z pamięci telefonu.',false);
+      setStatus(cached.source==='Własny produkt'?'Produkt wczytany z Twojej bazy.':'Produkt wczytany z pamięci telefonu.',false);
       showProduct(cached);
       return;
     }
@@ -178,6 +188,7 @@
 
   function showProduct(product){
     state.product=product;
+    $('v0802NewOwn')?.classList.add('hidden');
     const serving=num(product.servingQuantity);
     state.grams=serving>0&&serving<=1000?serving:100;
     remember(product);
@@ -249,7 +260,8 @@
     if(status==='not_found'){
       state.product=null;
       $('v0802Result')?.classList.add('hidden');
-      setStatus('Nie znaleziono produktu. Wpisz dane ręcznie z etykiety.',false);
+      $('v0802NewOwn')?.classList.remove('hidden');
+      setStatus('Nie znaleziono kodu. Dodaj własny produkt, aby następny skan działał offline.',false);
       return;
     }
     if(status!=='ok'){
@@ -262,7 +274,8 @@
     if(!product){
       state.product=null;
       $('v0802Result')?.classList.add('hidden');
-      setStatus('Produkt nie istnieje w bazie albo nie ma danych. Wpisz go ręcznie.',false);
+      $('v0802NewOwn')?.classList.remove('hidden');
+      setStatus('Brak danych produktu. Dodaj go do swojej bazy z tym kodem.',false);
       return;
     }
     setStatus('Produkt znaleziony w Open Food Facts.',false);
