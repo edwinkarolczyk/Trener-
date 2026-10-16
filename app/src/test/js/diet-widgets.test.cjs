@@ -111,22 +111,31 @@ const tabStart=appSource.indexOf("const LAST_TAB_KEY=");
 const tabEnd=appSource.indexOf('function loadSettings()',tabStart);
 assert(tabStart>0&&tabEnd>tabStart,'last-tab implementation missing');
 const memory=new Map(),screens={};
-const tabs=['start','plan','history','progress','diet','settings'];
-for(const id of tabs)screens[id]={classList:{add(){},remove(){}}};
-const tabButtons=tabs.map(id=>({dataset:{tab:id},classList:{toggle(){}}}));
+const tabs=['start','plan','history','progress','diet','recipes','settings'];
+const states=new Map(tabs.map(id=>[id,new Set()]));
+const cls=id=>({add:k=>states.get(id).add(k),remove:k=>states.get(id).delete(k),
+ contains:k=>states.get(id).has(k),toggle:(k,force)=>force?states.get(id).add(k):states.get(id).delete(k)});
+for(const id of tabs)screens[id]={id,classList:cls(id)};
+const tabButtons=tabs.map(id=>({dataset:{tab:id},classList:{toggle(){}},setAttribute(){}}));
+const toggles=tabs.filter(x=>x!=='settings').map(id=>({dataset:{moduleTab:id},checked:false,disabled:false}));
 const tabWindow={};
-vm.runInNewContext(appSource.slice(tabStart,tabEnd)+'\nwindow.tabApi={showTab,rememberedTab};',{
+vm.runInNewContext(appSource.slice(tabStart,tabEnd)+'\nwindow.tabApi={showTab,rememberedTab,setTabVisibility};',{
  window:tabWindow,localStorage:{getItem:k=>memory.get(k)||null,setItem:(k,v)=>memory.set(k,v)},
- document:{querySelectorAll:selector=>selector==='.screen'?Object.values(screens):tabButtons},
- $:id=>screens[id],renderHistory(){},renderProgress(){},refreshWifiInfo(){}
+ document:{querySelectorAll:selector=>selector==='.screen'?Object.values(screens):selector==='.tab'?tabButtons:toggles,
+ querySelector:selector=>selector==='.screen.show'?Object.values(screens).find(s=>s.classList.contains('show')):null},
+ $:id=>screens[id],safeJson:(raw,fallback)=>{try{return raw?JSON.parse(raw):fallback;}catch(e){return fallback;}},
+ running:false,net:{active:false},renderHistory(){},renderProgress(){},refreshWifiInfo(){}
 },{filename:'last-tab.js',timeout:2000});
-assert.equal(tabWindow.tabApi.rememberedTab(),'start');
+assert.equal(tabWindow.tabApi.rememberedTab(),'diet','new module layout should start in Dieta');
 tabWindow.tabApi.showTab('diet');
 assert.equal(tabWindow.tabApi.rememberedTab(),'diet');
 tabWindow.tabApi.showTab('does-not-exist');
 assert.equal(tabWindow.tabApi.rememberedTab(),'diet','invalid tabs must not overwrite saved tab');
 tabWindow.tabApi.showTab('start');
-assert.equal(tabWindow.tabApi.rememberedTab(),'start','explicit widget navigation must persist');
+assert.equal(tabWindow.tabApi.rememberedTab(),'diet','hidden Start must not replace Dieta');
+assert.equal(tabWindow.tabApi.setTabVisibility('start',true),true);
+tabWindow.tabApi.showTab('start');
+assert.equal(tabWindow.tabApi.rememberedTab(),'start','explicit navigation is saved when Start is enabled');
 const activity=fs.readFileSync('app/src/main/java/pl/edwin/trener2/MainActivityV077.java','utf8');
 assert(activity.includes('betaWebView.getProgress() < 100'),'widget intents must wait for loaded app');
 assert(activity.includes('pending.removeExtra("open_diet")'),'widget deep link must be consumed once');
