@@ -1,3 +1,12 @@
+## 0.9.5.8 — jedna baza produktów i pamięć skanera
+
+- **Moje produkty i kody EAN/UPC:** własny produkt można zapisać z kodem kreskowym; przy kolejnym skanowaniu zostanie rozpoznany lokalnie, również bez internetu.
+- **Priorytet danych użytkownika:** skaner sprawdza własną bazę przed pamięcią skanów i Open Food Facts; poprawione nazwy oraz makro nie są nadpisywane danymi z internetu.
+- **Nieznany kod:** po nieudanym skanowaniu dostępny jest przycisk „Dodaj własny produkt z tym kodem”, który otwiera formularz z uzupełnionym EAN/UPC.
+- **Automatyczne zapamiętywanie:** po zapisaniu pojedynczego posiłku lub składnika z gramaturą aplikacja aktualizuje własny katalog wartościami z zatwierdzonego formularza (na 100 g), także po ręcznych poprawkach.
+- **Ostatnio używane:** jedna lokalna lista 20 ostatnio użytych produktów, zarówno skanowanych, jak i ręcznych; pozostała historia skanów jest odczytywana zgodnie ze starszym formatem.
+- **Ochrona danych:** bez czyszczenia wcześniejszych posiłków; zachowane klucze własnych produktów, automatyczna kopia obejmuje wspólną historię, blokowane jest ciche wyparcie 301. produktu przy limicie 300. Dodano testy regresji.
+
 ## 0.9.5.7 — AI Foto w Diecie
 
 - dodano analizę posiłku ze zdjęcia w Diecie: zdjęcie + jedna waga całego jedzenia,
