@@ -199,18 +199,18 @@
     const newer=isNewer(info.version,current);
     el('updateHeader')?.classList.toggle('hidden',!newer);
     el('downloadUpdateBtn')?.classList.toggle('hidden',!newer);
+    const notes=Array.isArray(info.notes)?info.notes:[];
+    if(notes.length){
+      el('updateNotes').classList.remove('hidden');
+      el('updateNotes').innerHTML='<strong>Zmiany w wersji '+esc(info.version)+':</strong><ul>'+
+        notes.slice(0,6).map(n=>'<li>'+esc(n)+'</li>').join('')+'</ul>';
+    }else el('updateNotes').classList.add('hidden');
     if(newer){
       el('updateStatus').innerHTML='<b>Dostępna nowa wersja '+esc(info.version)+'.</b> '+(config().autoInstall!==false?'Pobieram ją automatycznie…':'Możesz zainstalować ją tutaj.');
-      const notes=Array.isArray(info.notes)?info.notes:[];
-      if(notes.length){
-        el('updateNotes').classList.remove('hidden');
-        el('updateNotes').innerHTML='<strong>Co nowego:</strong><ul>'+notes.map(n=>'<li>'+esc(n)+'</li>').join('')+'</ul>';
-      }else el('updateNotes').classList.add('hidden');
       try{if(window.Android&&Android.vibrate)Android.vibrate(100)}catch(e){}
       if(config().autoInstall!==false&&canAutoInstallNow())setTimeout(()=>downloadUpdate(true),500);
     }else{
       el('updateStatus').textContent='Masz najnowszą wersję Trener 2.';
-      el('updateNotes').classList.add('hidden');
     }
   }
 
