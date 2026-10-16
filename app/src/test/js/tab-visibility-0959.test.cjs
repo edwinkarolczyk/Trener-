@@ -26,9 +26,9 @@ function runtime(){
  const toastEl={textContent:'',classList:makeClassList()};
  nodes.toast=toastEl;
  const window={};
- const expression=script.replace(/\\ninit\\(\\);\\s*$/,'')+
- '\\nrefreshWifiInfo=()=>{};renderHistory=()=>{};renderProgress=()=>{};'+
- '\\nwindow.testTabs={loadTabPreferences,rememberedTab,showTab,applyTabVisibility,setTabVisibility,firstTab,tabEnabled,'+
+ const expression=script.replace(/\ninit\(\);\s*$/,'')+
+ '\nrefreshWifiInfo=()=>{};renderHistory=()=>{};renderProgress=()=>{};'+
+ '\nwindow.testTabs={loadTabPreferences,rememberedTab,showTab,applyTabVisibility,setTabVisibility,firstTab,tabEnabled,'+
  'startSession:()=>{running=true;},endSession:()=>{running=false;}};';
  assert(!expression.endsWith('init();'),'unit tests must skip regular application initialization');
  vm.runInNewContext(expression,{window,document,localStorage:storage,Date,Math,setTimeout(){},clearTimeout(){},navigator:{}},{timeout:3000});
