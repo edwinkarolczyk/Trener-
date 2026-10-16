@@ -181,14 +181,18 @@
         date:window.TrenerDiet076?.getDate?.()||localDay(),createdAt:now,...row});
     }
     if(!save(d))return;
+    let catalogWarning='';
     state.items.forEach(x=>{
-      if(x.grams>0)window.TrenerLocalFood0958?.captureMeal({name:x.name,grams:x.grams,
+      if(!(x.grams>0))return;
+      const saved=window.TrenerLocalFood0958?.captureMeal({name:x.name,grams:x.grams,
         kcal:x.kcal,protein:x.protein,carbs:x.carbs,fat:x.fat,
         barcode:x.barcode||'',catalogId:x.catalogId||'',imageUrl:x.imageUrl||''});
+      if(saved&&!saved.ok&&!saved.skipped)catalogWarning=saved.message;
     });
     state.items=[];state.editId=null;state.editDate='';clearFood();
     $('v0885Name').value='';window.TrenerMealTime0889?.reset?.();
-    render();toastSafe('Posiłek zapisany — jedna pozycja w bilansie dnia.');
+    render();toastSafe(catalogWarning?'Posiłek zapisany, ale produkt nie trafił do Mojej bazy: '+catalogWarning:
+      'Posiłek zapisany — jedna pozycja w bilansie dnia.');
   }
   function localDay(){
     const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+
