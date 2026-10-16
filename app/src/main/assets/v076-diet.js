@@ -255,11 +255,14 @@
           barcode:portionSource.barcode||'',catalogId:portionSource.catalogId||''}:{})});
     }
     if(!save(d))return;
-    if(portionSource?.grams>0)window.TrenerLocalFood0958?.captureMeal({name,grams:portionSource.grams,
-      kcal,protein,carbs,fat,barcode:portionSource.barcode||'',
-      catalogId:portionSource.catalogId||'',imageUrl:portionSource.imageUrl||''});
+    const savedProduct=portionSource?.grams>0?window.TrenerLocalFood0958?.captureMeal({
+      name,grams:portionSource.grams,kcal,protein,carbs,fat,barcode:portionSource.barcode||'',
+      catalogId:portionSource.catalogId||'',imageUrl:portionSource.imageUrl||''
+    }):null;
     clearMealEdit();
-    render();try{toast(editing?'Zmiany posiłku zapisane.':'Posiłek zapisany.');}catch(e){}
+    render();try{toast(savedProduct&&!savedProduct.ok&&!savedProduct.skipped?
+      'Posiłek zapisany, ale produkt nie trafił do Mojej bazy: '+savedProduct.message:
+      editing?'Zmiany posiłku zapisane.':'Posiłek zapisany.');}catch(e){}
   }
 
   function saveTargets(){
