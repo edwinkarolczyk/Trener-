@@ -43,7 +43,7 @@ assert(!diet.includes('.slice(-1500)'), 'legacy diet must never silently cap mea
 assert(!diet.includes('.slice(-300)'), 'legacy diet must never silently cap shopping');
 assert(!composer.includes('.slice(-1500)'), 'composer must never silently cap meals');
 assert(!visual.includes('.slice(-1500)'), 'visual shortcuts must never silently cap meals');
-assert(/if\(!save\(d\)\)return;\s*if\(portionSource\?\.grams>0\)/.test(diet),
+assert(/if\(!save\(d\)\)return;\s*const savedProduct=portionSource\?\.grams>0/.test(diet),
  'failed meal save must not clear user input or claim success');
 assert(diet.includes('if(!save(d))return;render()'),
  'failed target save must not claim success');
