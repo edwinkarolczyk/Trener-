@@ -50,21 +50,76 @@ function migrateOldData(){
   if(!localStorage.getItem('trainer3.history') && localStorage.getItem('trainer2.history')) localStorage.setItem('trainer3.history',localStorage.getItem('trainer2.history'));
 }
 
-const LAST_TAB_KEY='trainer3.lastTab.v0884';
-const TAB_IDS=['start','plan','history','progress','diet','recipes','settings'];
+const LAST_TAB_KEY='trainer3.lastTab.v0959';
+const TAB_PREF_KEY='trainer3.enabledTabs.v0959';
+const MODULE_IDS=['start','plan','history','progress','diet','recipes'];
+const TAB_IDS=[...MODULE_IDS,'settings'];
+function tabDefaults(){return {start:false,plan:false,history:false,progress:false,diet:true,recipes:false};}
+function loadTabPreferences(){
+  const prefs=safeJson(localStorage.getItem(TAB_PREF_KEY),null);
+  const result=tabDefaults();
+  if(prefs&&typeof prefs==='object'&&!Array.isArray(prefs)){
+    for(const id of MODULE_IDS)if(typeof prefs[id]==='boolean')result[id]=prefs[id];
+  }
+  // Zawsze przynajmniej jeden modul; ustawienia nie sa modulem i nie mozna ich ukryc.
+  if(!MODULE_IDS.some(id=>result[id]))result.diet=true;
+  return result;
+}
+function tabEnabled(id,prefs=loadTabPreferences()){
+  return id==='settings'||!!prefs[id]||(id==='start'&&(running||net.active));
+}
+function firstTab(prefs=loadTabPreferences()){
+  return prefs.diet?'diet':MODULE_IDS.find(id=>tabEnabled(id,prefs))||'diet';
+}
+function applyTabVisibility(){
+  const prefs=loadTabPreferences();
+  document.querySelectorAll('.tab').forEach(b=>{
+    const id=b.dataset.tab;
+    b.classList.toggle('hidden',!tabEnabled(id,prefs));
+    b.setAttribute('aria-hidden',String(!tabEnabled(id,prefs)));
+  });
+  document.querySelectorAll('[data-module-tab]').forEach(box=>{
+    const id=box.dataset.moduleTab;
+    box.checked=!!prefs[id];
+    box.disabled=id==='start'&&(running||net.active);
+  });
+  return prefs;
+}
+function setTabVisibility(id,enabled){
+  if(!MODULE_IDS.includes(id))return false;
+  if(id==='start'&&!enabled&&(running||net.active)){
+    toast('Nie można wyłączyć Start podczas treningu.');applyTabVisibility();return false;
+  }
+  const prefs=loadTabPreferences();
+  if(!enabled&&prefs[id]&&MODULE_IDS.filter(k=>prefs[k]).length===1){
+    toast('Pozostaw przynajmniej jedną włączoną zakładkę.');applyTabVisibility();return false;
+  }
+  prefs[id]=!!enabled;
+  try{localStorage.setItem(TAB_PREF_KEY,JSON.stringify(prefs));}
+  catch(e){toast('Nie udało się zapisać ustawień zakładek.');applyTabVisibility();return false;}
+  applyTabVisibility();
+  const current=document.querySelector('.screen.show')?.id;
+  if(current&&!tabEnabled(current,prefs))showTab(firstTab(prefs));
+  return true;
+}
 function rememberedTab(){
-  try {const saved=localStorage.getItem(LAST_TAB_KEY);return TAB_IDS.includes(saved)?saved:'start';}
-  catch(e){return 'start';}
+  const prefs=loadTabPreferences();
+  try{
+    const saved=localStorage.getItem(LAST_TAB_KEY);
+    return TAB_IDS.includes(saved)&&tabEnabled(saved,prefs)?saved:firstTab(prefs);
+  }catch(e){return firstTab(prefs);}
 }
 function showTab(id){
+  const prefs=applyTabVisibility();
   if(!TAB_IDS.includes(id)||!$(id))return;
+  if(!tabEnabled(id,prefs))id=firstTab(prefs);
   try{localStorage.setItem(LAST_TAB_KEY,id);}catch(e){}
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('show'));
   document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===id));
   $(id).classList.add('show');
-  if(id==='history') renderHistory();
-  if(id==='progress') renderProgress();
-  if(id==='settings') refreshWifiInfo();
+  if(id==='history')renderHistory();
+  if(id==='progress')renderProgress();
+  if(id==='settings')refreshWifiInfo();
 }
 
 function loadSettings(){
@@ -1062,6 +1117,7 @@ function toast(msg){const e=$('toast');e.textContent=msg;e.classList.add('show')
 
 function bind(){
   document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.tab)));
+  document.querySelectorAll('[data-module-tab]').forEach(box=>box.addEventListener('change',()=>setTabVisibility(box.dataset.moduleTab,box.checked)));
   $('soloBtn').addEventListener('click',()=>setMode(1));
   $('duoBtn').addEventListener('click',()=>setMode(2));
   $('startBtn').addEventListener('click',startWorkout);
